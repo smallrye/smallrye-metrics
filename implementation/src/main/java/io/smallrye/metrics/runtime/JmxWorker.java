@@ -37,9 +37,10 @@ import java.util.Set;
 @ApplicationScoped
 public class JmxWorker {
 
+    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
+
     private static final String PLACEHOLDER = "%s";
     private MBeanServer mbs;
-    private Logger LOG = Logger.getLogger("org.wildfly.swarm.microprofile.metrics");
 
     @PostConstruct
     void init() {
@@ -125,7 +126,7 @@ public class JmxWorker {
                         String keyValue = oName.getKeyPropertyList().get(keyHolder);
                         String newName = entry.getName();
                         if (!newName.contains(PLACEHOLDER)) {
-                            LOG.warn("Name [" + newName + "] did not contain a %s, no replacement will be done, check" +
+                            log.warn("Name [" + newName + "] did not contain a %s, no replacement will be done, check" +
                                     " the configuration");
                         }
                         newName = newName.replace(PLACEHOLDER, keyValue);
@@ -145,7 +146,7 @@ public class JmxWorker {
         }
         entries.removeAll(toBeRemoved);
         entries.addAll(result);
-        LOG.info("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
+        log.info("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
     }
 
     private String findKeyForValueToBeReplaced(ObjectName objectName) {

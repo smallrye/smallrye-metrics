@@ -44,7 +44,7 @@ import java.lang.reflect.Modifier;
 // See http://docs.oracle.com/javaee/7/tutorial/doc/interceptors.htm
 /* package-private */ class MetricsInterceptor {
 
-    private static final Logger LOGGER = Logger.getLogger(MetricsInterceptor.class);
+    private static final Logger log = Logger.getLogger(MetricsInterceptor.class);
 
     private final MetricRegistry registry;
 
@@ -60,7 +60,7 @@ import java.lang.reflect.Modifier;
     @AroundConstruct
     private Object metrics(InvocationContext context) throws Exception {
         Class<?> bean = context.getConstructor().getDeclaringClass();
-        LOGGER.infof("MetricsInterceptor, bean=%s\n", bean);
+        log.infof("MetricsInterceptor, bean=%s\n", bean);
         // Registers the bean constructor metrics
         registerMetrics(bean, context.getConstructor());
 

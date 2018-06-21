@@ -39,7 +39,7 @@ import java.util.Map;
  */
 public class JsonExporter implements Exporter {
 
-    private static Logger LOG = Logger.getLogger("org.wildfly.swarm.microprofile.metrics");
+    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     private static final String COMMA_LF = ",\n";
     private static final String LF = "\n";
@@ -110,7 +110,7 @@ public class JsonExporter implements Exporter {
                     writeEndLine(sb);
                     break;
                 default:
-                    LOG.error("JSE, Not yet supported: " + metadata);
+                    log.error("JSE, Not yet supported: " + metadata);
 
             }
             if (iterator.hasNext()) {
@@ -184,13 +184,13 @@ public class JsonExporter implements Exporter {
             if (value != null) {
                 return value;
             } else {
-                LOG.warn("Value is null for " + name);
+                log.warn("Value is null for " + name);
                 return -142.142; // TODO
             }
         } else if (theMetric instanceof Counter) {
             return ((Counter) theMetric).getCount();
         } else {
-            LOG.error("Not yet supported metric: " + theMetric.getClass().getName());
+            log.error("Not yet supported metric: " + theMetric.getClass().getName());
             return -42.42;
         }
     }

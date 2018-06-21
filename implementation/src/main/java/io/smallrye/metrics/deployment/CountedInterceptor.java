@@ -15,8 +15,10 @@
  */
 package io.smallrye.metrics.deployment;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.jboss.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
@@ -27,11 +29,8 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.jboss.logging.Logger;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 @SuppressWarnings("unused")
 @Counted
@@ -39,7 +38,7 @@ import org.jboss.logging.Logger;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 /* package-private */ class CountedInterceptor {
 
-    private static final Logger LOGGER = Logger.getLogger(CountedInterceptor.class);
+    private static final Logger log = Logger.getLogger(CountedInterceptor.class);
 
     private final Bean<?> bean;
 
@@ -76,13 +75,13 @@ import org.jboss.logging.Logger;
         if (counter == null) {
             throw new IllegalStateException("No counter with name [" + name + "] found in registry [" + registry + "]");
         }
-        LOGGER.debugf("Increment counter [metricName: %s]", name);
+        log.debugf("Increment counter [metricName: %s]", name);
         counter.inc();
         try {
             return context.proceed();
         } finally {
             if (!counted.metricAnnotation().monotonic()) {
-                LOGGER.debugf("Decrement counter [metricName: %s]", name);
+                log.debugf("Decrement counter [metricName: %s]", name);
                 counter.dec();
             }
         }

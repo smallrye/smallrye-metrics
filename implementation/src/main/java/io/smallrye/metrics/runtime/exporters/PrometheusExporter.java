@@ -47,10 +47,11 @@ import java.util.Optional;
  */
 public class PrometheusExporter implements Exporter {
 
-    // This allows to suppress the (noisy) # HELP line
-    private static final String SWARM_MICROPROFILE_METRICS_OMIT_HELP_LINE = "swarm.microprofile.metrics.omitHelpLine";
+    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
-    private static Logger LOG = Logger.getLogger("org.wildfly.swarm.microprofile.metrics");
+    // This allows to suppress the (noisy) # HELP line
+    private static final String MICROPROFILE_METRICS_OMIT_HELP_LINE = "microprofile.metrics.omitHelpLine";
+
 
     private static final String LF = "\n";
     private static final String GAUGE = "gauge";
@@ -65,7 +66,7 @@ public class PrometheusExporter implements Exporter {
     public PrometheusExporter(MetricRegistries registries) {
         this.registries = registries;
         Config config = ConfigProvider.getConfig();
-        Optional<Boolean> tmp = config.getOptionalValue(SWARM_MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
+        Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
         writeHelpLine = !tmp.isPresent() || !tmp.get();
     }
 
@@ -335,7 +336,7 @@ public class PrometheusExporter implements Exporter {
             if (value1 != null) {
                 valIn = value1.doubleValue();
             } else {
-                LOG.warn("Value is null for " + key);
+                log.warn("Value is null for " + key);
                 throw new IllegalStateException("Value must not be null for " + key);
             }
         } else {

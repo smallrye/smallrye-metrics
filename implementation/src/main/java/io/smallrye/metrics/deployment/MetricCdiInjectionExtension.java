@@ -56,7 +56,7 @@ import java.util.Map;
  */
 public class MetricCdiInjectionExtension implements Extension {
 
-    private static final Logger LOGGER = Logger.getLogger("io.smallrye.metrics");
+    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     private static final AnnotationLiteral<MetricsBinding> METRICS_BINDING = new AnnotationLiteral<MetricsBinding>() {
     };
@@ -69,12 +69,12 @@ public class MetricCdiInjectionExtension implements Extension {
     private final List<Class<?>> metricsInterfaces;
 
     public MetricCdiInjectionExtension() {
-        LOGGER.debug("MetricCdiInjectionExtension");
+        log.debug("MetricCdiInjectionExtension");
         metricsInterfaces = new ArrayList<>();
     }
 
     private void addInterceptorBindings(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
-        LOGGER.info("MicroProfile: Metrics activated");
+        log.info("MicroProfile: Metrics activated");
 
         // It seems that fraction deployment module cannot be picked up as a CDI bean archive - see also SWARM-1725
         bbd.addAnnotatedType(manager.createAnnotatedType(JmxWorker.class));
@@ -102,20 +102,20 @@ public class MetricCdiInjectionExtension implements Extension {
             metricsInterfaces.add(clazz);
         } else {
             AnnotatedTypeDecorator newPAT = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), METRICS_BINDING);
-            LOGGER.debugf("annotations: %s", newPAT.getAnnotations());
-            LOGGER.debugf("methods: %s", newPAT.getMethods());
+            log.debugf("annotations: %s", newPAT.getAnnotations());
+            log.debugf("methods: %s", newPAT.getMethods());
             pat.setAnnotatedType(newPAT);
         }
     }
 
     private void metricProducerField(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
-        LOGGER.infof("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
+        log.infof("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
         metrics.put(ppf.getBean(), ppf.getAnnotatedProducerField());
     }
 
     private void metricProducerMethod(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
         if (!ppm.getBean().getBeanClass().equals(MetricProducer.class)) {
-            LOGGER.infof("Metrics producer method discovered: %s", ppm.getAnnotatedProducerMethod());
+            log.infof("Metrics producer method discovered: %s", ppm.getAnnotatedProducerMethod());
             metrics.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
         }
     }

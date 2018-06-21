@@ -31,7 +31,7 @@ import java.io.InputStream;
  */
 public class ConfigReader {
 
-    private static Logger log = Logger.getLogger("org.wildfly.swarm.microprofile.metrics");
+    private static Logger log = Logger.getLogger("io.smallrye.metrics");
 
     public MetadataList readConfig(String mappingFile) {
         try {

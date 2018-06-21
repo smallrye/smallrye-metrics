@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Vetoed
 public class MetricsRegistryImpl extends MetricRegistry {
 
-    private static final Logger LOGGER = Logger.getLogger(MetricsRegistryImpl.class);
+    private static final Logger log = Logger.getLogger(MetricsRegistryImpl.class);
 
     private Map<String, Metadata> metadataMap = new HashMap<>();
     private Map<String, Metric> metricMap = new ConcurrentHashMap<>();
@@ -177,7 +177,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     private <T extends Metric> T get(Metadata metadata, MetricType type) {
         String name = metadata.getName();
-        LOGGER.debugf("Get metric [name: %s, type: %s]", name, type);
+        log.debugf("Get metric [name: %s, type: %s]", name, type);
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Name must not be null or empty");
         }
@@ -206,7 +206,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 default:
                     throw new IllegalStateException("Must not happen");
             }
-            LOGGER.infof("Register metric [name: %s, type: %s]", name, type);
+            log.infof("Register metric [name: %s, type: %s]", name, type);
             register(metadata, m);
         } else if (!previous.getTypeRaw().equals(metadata.getTypeRaw())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " is of type "
@@ -254,7 +254,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public boolean remove(String metricName) {
         if (metricMap.containsKey(metricName)) {
-            LOGGER.infof("Remove metric [name: %s]", metricName);
+            log.infof("Remove metric [name: %s]", metricName);
             metricMap.remove(metricName);
             metadataMap.remove(metricName);
             return true;
