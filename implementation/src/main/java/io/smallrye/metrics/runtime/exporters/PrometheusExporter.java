@@ -63,8 +63,7 @@ public class PrometheusExporter implements Exporter {
 
     private boolean writeHelpLine;
 
-    public PrometheusExporter(MetricRegistries registries) {
-        this.registries = registries;
+    public PrometheusExporter() {
         Config config = ConfigProvider.getConfig();
         Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
         writeHelpLine = !tmp.isPresent() || !tmp.get();
@@ -91,7 +90,7 @@ public class PrometheusExporter implements Exporter {
 
     @Override
     public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
-        MetricRegistry registry = registries.get(scope);
+        MetricRegistry registry = MetricRegistries.get(scope);
         Map<String, Metric> metricMap = registry.getMetrics();
 
         Metric m = metricMap.get(metricName);
@@ -111,7 +110,7 @@ public class PrometheusExporter implements Exporter {
     }
 
     private void getEntriesForScope(MetricRegistry.Type scope, StringBuffer sb) {
-        MetricRegistry registry = registries.get(scope);
+        MetricRegistry registry = MetricRegistries.get(scope);
         Map<String, Metric> metricMap = registry.getMetrics();
 
         exposeEntries(scope, sb, registry, metricMap);
@@ -364,6 +363,4 @@ public class PrometheusExporter implements Exporter {
     private String decamelize(String in) {
         return in.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
     }
-
-    private final MetricRegistries registries;
 }

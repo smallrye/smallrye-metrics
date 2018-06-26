@@ -18,8 +18,9 @@
 package io.smallrye.metrics.deployment;
 
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
@@ -30,10 +31,8 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 @SuppressWarnings("unused")
 @Timed

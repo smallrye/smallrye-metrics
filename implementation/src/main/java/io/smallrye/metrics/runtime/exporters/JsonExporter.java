@@ -44,10 +44,6 @@ public class JsonExporter implements Exporter {
     private static final String COMMA_LF = ",\n";
     private static final String LF = "\n";
 
-    public JsonExporter(MetricRegistries registries) {
-        this.registries = registries;
-    }
-
     @Override
     public StringBuffer exportOneScope(MetricRegistry.Type scope) {
 
@@ -60,7 +56,7 @@ public class JsonExporter implements Exporter {
 
     private void getMetricsForAScope(StringBuffer sb, MetricRegistry.Type scope) {
 
-        MetricRegistry registry = getRegistry(scope);
+        MetricRegistry registry = MetricRegistries.get(scope);
         Map<String, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
@@ -202,7 +198,7 @@ public class JsonExporter implements Exporter {
 
         boolean first = true;
         for (MetricRegistry.Type scope : MetricRegistry.Type.values()) {
-            MetricRegistry registry = getRegistry(scope);
+            MetricRegistry registry = MetricRegistries.get(scope);
             if (registry.getNames().size() > 0) {
                 if (!first) {
                     sb.append(",");
@@ -220,7 +216,7 @@ public class JsonExporter implements Exporter {
 
     @Override
     public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
-        MetricRegistry registry = getRegistry(scope);
+        MetricRegistry registry = MetricRegistries.get(scope);
         Map<String, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
@@ -243,11 +239,4 @@ public class JsonExporter implements Exporter {
     public String getContentType() {
         return "application/json";
     }
-
-    private MetricRegistry getRegistry(MetricRegistry.Type scope) {
-        return registries.get(scope);
-    }
-
-
-    private final MetricRegistries registries;
 }

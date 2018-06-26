@@ -17,15 +17,15 @@
  */
 package io.smallrye.metrics.deployment;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
-
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 class MetricsMetadata {
 

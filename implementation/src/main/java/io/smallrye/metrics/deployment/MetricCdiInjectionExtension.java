@@ -19,6 +19,7 @@ package io.smallrye.metrics.deployment;
 
 import io.smallrye.metrics.runtime.JmxWorker;
 import io.smallrye.metrics.runtime.MetricRegistries;
+import io.smallrye.metrics.runtime.MetricsRequestHandler;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -87,6 +88,8 @@ public class MetricCdiInjectionExtension implements Extension {
         bbd.addAnnotatedType(manager.createAnnotatedType(MeteredInterceptor.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(CountedInterceptor.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(TimedInterceptor.class));
+        bbd.addAnnotatedType(manager.createAnnotatedType(MetricsRequestHandler.class));
+        bbd.addAnnotatedType(manager.createAnnotatedType(BaseMetricsInitializer.class));
     }
 
     private <X> void metricsAnnotations(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class, Timed.class }) ProcessAnnotatedType<X> pat) {

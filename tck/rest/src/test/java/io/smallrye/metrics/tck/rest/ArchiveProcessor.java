@@ -33,7 +33,7 @@ import java.io.File;
  * <br>
  * Date: 6/19/18
  */
-public class SmallRyeMetricsArchiveProcessor implements ProtocolArchiveProcessor {
+public class ArchiveProcessor implements ProtocolArchiveProcessor {
     @Override
     public void process(TestDeployment testDeployment, Archive<?> protocolArchive) {
         WebArchive war = (WebArchive)protocolArchive;
@@ -50,8 +50,8 @@ public class SmallRyeMetricsArchiveProcessor implements ProtocolArchiveProcessor
         war.addAsLibraries(dependencies);
 
         war.addClass(SmallRyeBeanArchiveHandler.class);
-        war.addClass(SmallRyeMetricsService.class);
-        war.addAsResource("mapping.yml", "mapping.yml");
+        war.addClass(MetricsHttpServlet.class);
+        war.addAsResource("io/smallrye/metrics/mapping.yml", "io/smallrye/metrics/mapping.yml");
         war.addAsServiceProvider(BeanArchiveHandler.class, SmallRyeBeanArchiveHandler.class);
         war.addAsServiceProvider(Extension.class, ConfigExtension.class);
         war.addAsServiceProvider(ConfigProviderResolver.class, SmallRyeConfigProviderResolver.class);

@@ -13,17 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.smallrye.metrics.tck.rest;
+package io.smallrye.metrics.tck.api;
 
-import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
+import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 
-public class SmallRyeMetricsExtension implements LoadableExtension {
+/**
+ *
+ * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
+ * <br>
+ * Date: 6/25/18
+ */
+public class MetricsExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder extensionBuilder) {
-        extensionBuilder.service(ProtocolArchiveProcessor.class, SmallRyeMetricsArchiveProcessor.class);
+        extensionBuilder.service(ApplicationArchiveProcessor.class, ArchiveProcessor.class);
     }
 
 }
-

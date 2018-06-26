@@ -14,7 +14,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package io.smallrye.metrics.tck.rest;
+package io.smallrye.metrics.deployment;
 
 import io.smallrye.metrics.runtime.ConfigReader;
 import io.smallrye.metrics.runtime.ExtendedMetadata;
@@ -42,7 +42,9 @@ import java.util.Optional;
  * @author Heiko W. Rupp
  */
 @ApplicationScoped
-public class SmallRyeMetricsService {
+public class BaseMetricsInitializer {
+
+    public static final String MAPPING_FILE_PATH = "/io/smallrye/metrics/mapping.yml";
 
     public void initialize(@Observes @Initialized(ApplicationScoped.class) Object ignored) {
         initBaseAndVendorConfiguration();
@@ -53,7 +55,11 @@ public class SmallRyeMetricsService {
      * along with their metadata.
      */
     private void initBaseAndVendorConfiguration() {
-        InputStream is = getClass().getResourceAsStream("/mapping.yml");
+
+        InputStream is = getClass().getResourceAsStream(MAPPING_FILE_PATH);
+        if (is == null) {
+            is = Thread.currentThread().getContextClassLoader().getResourceAsStream(MAPPING_FILE_PATH);
+        }
 
         if (is != null) {
             ConfigReader cr = new ConfigReader();

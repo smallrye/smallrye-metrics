@@ -37,10 +37,6 @@ import java.util.stream.Collectors;
  */
 public class JsonMetadataExporter implements Exporter {
 
-    public JsonMetadataExporter(MetricRegistries registries) {
-        this.registries = registries;
-    }
-
     @Override
     public String getContentType() {
         return "application/json";
@@ -48,7 +44,7 @@ public class JsonMetadataExporter implements Exporter {
 
     @Override
     public StringBuffer exportOneScope(MetricRegistry.Type scope) {
-        MetricRegistry registry = getRegistry(scope);
+        MetricRegistry registry = MetricRegistries.get(scope);
         if (registry == null) {
             return null;
         }
@@ -65,7 +61,7 @@ public class JsonMetadataExporter implements Exporter {
 
     @Override
     public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
-        MetricRegistry registry = getRegistry(scope);
+        MetricRegistry registry = MetricRegistries.get(scope);
         if (registry == null) {
             return null;
         }
@@ -79,10 +75,6 @@ public class JsonMetadataExporter implements Exporter {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         metricJSON(builder, metricName, metric);
         return stringify(builder.build());
-    }
-
-    private MetricRegistry getRegistry(MetricRegistry.Type scope) {
-        return registries.get(scope);
     }
 
     private static final Map<String, ?> JSON_CONFIG = new HashMap<String, Object>() {{
@@ -101,9 +93,9 @@ public class JsonMetadataExporter implements Exporter {
     private JsonObject rootJSON() {
         JsonObjectBuilder root = Json.createObjectBuilder();
 
-        root.add("base", registryJSON(getRegistry(MetricRegistry.Type.BASE)));
-        root.add("vendor", registryJSON(getRegistry(MetricRegistry.Type.VENDOR)));
-        root.add("application", registryJSON(getRegistry(MetricRegistry.Type.APPLICATION)));
+        root.add("base", registryJSON(MetricRegistries.get(MetricRegistry.Type.BASE)));
+        root.add("vendor", registryJSON(MetricRegistries.get(MetricRegistry.Type.VENDOR)));
+        root.add("application", registryJSON(MetricRegistries.get(MetricRegistry.Type.APPLICATION)));
 
         return root.build();
     }
@@ -146,6 +138,4 @@ public class JsonMetadataExporter implements Exporter {
 
         return obj.build();
     }
-
-    private final MetricRegistries registries;
 }
