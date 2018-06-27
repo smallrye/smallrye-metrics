@@ -16,7 +16,7 @@
  */
 package io.smallrye.metrics.tck.rest;
 
-import io.smallrye.metrics.runtime.MetricsRequestHandler;
+import io.smallrye.metrics.MetricsRequestHandler;
 
 import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
