@@ -62,7 +62,7 @@
 
   <modules>
     <module>implementation</module>
-    <module>tck</module>
+    <module>testsuite</module>
   </modules>
 
   <dependencyManagement>
