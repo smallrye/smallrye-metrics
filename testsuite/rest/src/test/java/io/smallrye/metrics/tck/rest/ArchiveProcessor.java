@@ -17,6 +17,7 @@ package io.smallrye.metrics.tck.rest;
 
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import io.smallrye.config.inject.ConfigExtension;
+import io.smallrye.metrics.testsuite.MetricsInitializer;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.arquillian.container.test.spi.TestDeployment;
 import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
@@ -42,8 +43,7 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
                 "io.smallrye:smallrye-config",
                 "io.smallrye:smallrye-metrics",
                 "io.smallrye:smallrye-metrics-testsuite-common",
-                "org.jboss.weld.servlet:weld-servlet",
-                "org.yaml:snakeyaml",
+                "org.jboss.weld.servlet:weld-servlet"
         };
 
         File[] dependencies = Maven.resolver().loadPomFromFile(new File("pom.xml")).resolve(deps).withTransitivity().asFile();
@@ -52,7 +52,8 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
 
         war.addClass(SmallRyeBeanArchiveHandler.class);
         war.addClass(MetricsHttpServlet.class);
-        war.addAsResource("io/smallrye/metrics/mapping.yml", "io/smallrye/metrics/mapping.yml");
+        war.addClass(MetricsInitializer.class);
+        war.addAsResource("io/smallrye/metrics/base-metrics.properties", "/io/smallrye/metrics/base-metrics.properties");
         war.addAsServiceProvider(BeanArchiveHandler.class, SmallRyeBeanArchiveHandler.class);
         war.addAsServiceProvider(Extension.class, ConfigExtension.class);
         war.addAsServiceProvider(ConfigProviderResolver.class, SmallRyeConfigProviderResolver.class);

@@ -17,7 +17,6 @@
  */
 package io.smallrye.metrics.setup;
 
-import io.smallrye.metrics.JmxWorker;
 import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRequestHandler;
@@ -87,7 +86,6 @@ public class MetricCdiInjectionExtension implements Extension {
         log.info("MicroProfile: Metrics activated");
 
         // It seems that fraction deployment module cannot be picked up as a CDI bean archive - see also SWARM-1725
-        bbd.addAnnotatedType(manager.createAnnotatedType(JmxWorker.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(MetricProducer.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(MetricNameFactory.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(MetricsInterceptor.class));
@@ -98,13 +96,12 @@ public class MetricCdiInjectionExtension implements Extension {
         bbd.addAnnotatedType(manager.createAnnotatedType(CountedInterceptor.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(TimedInterceptor.class));
         bbd.addAnnotatedType(manager.createAnnotatedType(MetricsRequestHandler.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(BaseMetricsInitializer.class));
     }
 
     private <X> void metricsAnnotations(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class, Timed.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
-        if (pack != null && pack.getName().equals(MetricCdiInjectionExtension.class.getPackage().getName())) {
+        if (pack != null && pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
             // Do not add MetricsBinding to metrics interceptor classes
             return;
         }

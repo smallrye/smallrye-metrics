@@ -18,8 +18,7 @@ package io.smallrye.metrics.testsuite;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.api.container.ResourceContainer;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
@@ -30,14 +29,11 @@ public class ArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> applicationArchive, TestClass testClass) {
-        if (applicationArchive instanceof JavaArchive) {
-            JavaArchive archive = (JavaArchive)applicationArchive;
-            archive.addAsResource("io/smallrye/metrics/mapping.yml", "/io/smallrye/metrics/mapping.yml");
-        } else if (applicationArchive instanceof WebArchive) {
-            WebArchive archive = (WebArchive)applicationArchive;
-            archive.addAsResource("io/smallrye/metrics/mapping.yml", "/io/smallrye/metrics/mapping.yml");
+        if (applicationArchive instanceof ResourceContainer) {
+            ResourceContainer archive = (ResourceContainer)applicationArchive;
+            archive.addAsResource("io/smallrye/metrics/base-metrics.properties", "/io/smallrye/metrics/base-metrics.properties");
         } else {
-            throw new IllegalStateException(this.getClass().getCanonicalName() + " works only with JavaArchives and WebArchives");
+            throw new IllegalStateException(this.getClass().getCanonicalName() + " works only with ResourceContainers");
         }
     }
 }

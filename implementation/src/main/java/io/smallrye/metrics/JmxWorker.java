@@ -19,8 +19,6 @@ package io.smallrye.metrics;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -34,19 +32,25 @@ import java.util.Set;
 /**
  * @author hrupp
  */
-@ApplicationScoped
 public class JmxWorker {
 
     private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     private static final String PLACEHOLDER = "%s";
-    private MBeanServer mbs;
+    private static MBeanServer mbs;
+    private static JmxWorker worker;
 
-    @PostConstruct
-    void init() {
-        this.mbs = ManagementFactory.getPlatformMBeanServer();
+    private JmxWorker() { /* singleton */ }
+
+
+    public static JmxWorker instance() {
+        if (worker == null) {
+            worker = new JmxWorker();
+            mbs = ManagementFactory.getPlatformMBeanServer();
+        }
+
+        return worker;
     }
-
     /**
      * Read a value from the MBeanServer
      *

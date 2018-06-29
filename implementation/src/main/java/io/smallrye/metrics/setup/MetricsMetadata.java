@@ -17,6 +17,7 @@
  */
 package io.smallrye.metrics.setup;
 
+import io.smallrye.metrics.OriginTrackedMetadata;
 import io.smallrye.metrics.interceptors.MetricResolver;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -37,25 +38,25 @@ public class MetricsMetadata {
         MetricResolver.Of<Counted> counted = resolver.counted(bean, element);
         if (counted.isPresent()) {
             Counted t = counted.metricAnnotation();
-            Metadata metadata = getMetadata(counted.metricName(), t.unit(), t.description(), t.displayName(), MetricType.COUNTER, t.tags());
+            Metadata metadata = getMetadata(t, counted.metricName(), t.unit(), t.description(), t.displayName(), MetricType.COUNTER, t.reusable(), t.tags());
             registry.counter(metadata);
         }
         MetricResolver.Of<Metered> metered = resolver.metered(bean, element);
         if (metered.isPresent()) {
             Metered t = metered.metricAnnotation();
-            Metadata metadata = getMetadata(metered.metricName(), t.unit(), t.description(), t.displayName(), MetricType.METERED, t.tags());
+            Metadata metadata = getMetadata(t, metered.metricName(), t.unit(), t.description(), t.displayName(), MetricType.METERED, t.reusable(), t.tags());
             registry.meter(metadata);
         }
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
         if (timed.isPresent()) {
             Timed t = timed.metricAnnotation();
-            Metadata metadata = getMetadata(timed.metricName(), t.unit(), t.description(), t.displayName(), MetricType.TIMER, t.tags());
+            Metadata metadata = getMetadata(t, timed.metricName(), t.unit(), t.description(), t.displayName(), MetricType.TIMER, t.reusable(), t.tags());
             registry.timer(metadata);
         }
     }
 
-    static Metadata getMetadata(String name, String unit, String description, String displayName, MetricType type, String... tags) {
-        Metadata metadata = new Metadata(name, type);
+    public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName, MetricType type, boolean reusable, String... tags) {
+        Metadata metadata = new OriginTrackedMetadata(origin, name, type);
         if (!unit.isEmpty()) {
             metadata.setUnit(unit);
         }
@@ -65,6 +66,7 @@ public class MetricsMetadata {
         if (!displayName.isEmpty()) {
             metadata.setDisplayName(displayName);
         }
+        metadata.setReusable(reusable);
         if (tags != null && tags.length > 0) {
             for (String tag : tags) {
                 metadata.addTags(tag);
