@@ -55,9 +55,9 @@ public class MetricsRequestHandler {
      * @param acceptHeaders accepted content types
      * @param responder a method that returns a response to the caller. See {@link Responder}
      *
-     * @return An exporter instance or null in case no matching exporter existed.
+     * @throws IOException rethrows IOException if thrown by the responder
      *
-     * @see io.smallrye.metrics.tck.rest.MetricsHttpServlet
+     * You can find example usage in the tests, in io.smallrye.metrics.tck.rest.MetricsHttpServlet
      */
     public void handleRequest(String requestPath,
                               String method,
