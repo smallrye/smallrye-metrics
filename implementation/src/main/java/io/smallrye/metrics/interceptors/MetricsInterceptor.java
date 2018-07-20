@@ -55,7 +55,7 @@ public class MetricsInterceptor {
     @AroundConstruct
     private Object metrics(InvocationContext context) throws Exception {
         Class<?> bean = context.getConstructor().getDeclaringClass();
-        log.infof("MetricsInterceptor, bean=%s\n", bean);
+        log.debugf("MetricsInterceptor, bean=%s\n", bean);
         // Registers the bean constructor metrics
         MetricsMetadata.registerMetrics(registry, resolver, bean, context.getConstructor());
 
