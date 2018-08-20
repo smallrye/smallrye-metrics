@@ -114,6 +114,7 @@ public class MetricsRequestHandler {
             MetricRegistry reg = MetricRegistries.get(scope);
             if (reg.getMetadata().size() == 0) {
                 responder.respondWith( 204, "No data in scope " + scopePath, Collections.emptyMap());
+                return;
             }
 
             sb = exporter.exportOneScope(scope);
