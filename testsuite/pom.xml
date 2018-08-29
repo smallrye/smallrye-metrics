@@ -36,9 +36,9 @@
 
   <modules>
     <module>common</module>
-    <module>api</module>
+    <module>api-tck</module>
     <module>extra</module>
-    <module>rest</module>
+    <module>rest-tck</module>
   </modules>
 
   <dependencyManagement>
