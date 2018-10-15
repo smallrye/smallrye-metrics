@@ -25,17 +25,24 @@ import org.junit.Test;
 public class PrometheusUnitScalingTest {
 
     @Test
+    public void testScaleToSecondsForNanos() {
+        String foo = MetricUnits.NANOSECONDS;
+        double out = PrometheusUnit.scaleToBase(foo, 3.0);
+        assert out == 0.000_000_003 : "Out was " + out;
+    }
+
+    @Test
     public void testScaleToSeconds() {
         String foo = MetricUnits.SECONDS;
         double out = PrometheusUnit.scaleToBase(foo, 3.0);
-        assert out == 0.000_000_003 : "Out was " + out;
+        assert out == 3 : "Out was " + out;
     }
 
     @Test
     public void testScaleToSecondsForDays() {
         String foo = MetricUnits.DAYS;
         double out = PrometheusUnit.scaleToBase(foo, 3.0);
-        assert out == 0.000_000_003 : "Out was " + out;
+        assert out == 3 * 24 * 60 * 60 : "Out was " + out;
     }
 
     @Test

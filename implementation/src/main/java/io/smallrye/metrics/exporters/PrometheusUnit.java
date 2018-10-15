@@ -17,6 +17,13 @@
 
 package io.smallrye.metrics.exporters;
 
+import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_DAY;
+import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_HOUR;
+import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_MICROSECOND;
+import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_MILLI;
+import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_MINUTE;
+import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_SECOND;
+
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
@@ -122,13 +129,25 @@ public class PrometheusUnit {
                 out = value * 1_000_000_000;
                 break;
             case MetricUnits.NANOSECONDS:
-            case MetricUnits.MICROSECONDS:
-            case MetricUnits.MILLISECONDS:
-            case MetricUnits.SECONDS:
-            case MetricUnits.MINUTES:
-            case MetricUnits.HOURS:
-            case MetricUnits.DAYS:
                 out = ExporterUtil.convertNanosTo(value, MetricUnits.SECONDS);
+                break;
+            case MetricUnits.MICROSECONDS:
+                out = ExporterUtil.convertNanosTo(value * NANOS_PER_MICROSECOND, MetricUnits.SECONDS);
+                break;
+            case MetricUnits.MILLISECONDS:
+                out = ExporterUtil.convertNanosTo(value * NANOS_PER_MILLI, MetricUnits.SECONDS);
+                break;
+            case MetricUnits.SECONDS:
+                out = ExporterUtil.convertNanosTo(value * NANOS_PER_SECOND, MetricUnits.SECONDS);
+                break;
+            case MetricUnits.MINUTES:
+                out = ExporterUtil.convertNanosTo(value * NANOS_PER_MINUTE, MetricUnits.SECONDS);
+                break;
+            case MetricUnits.HOURS:
+                out = ExporterUtil.convertNanosTo(value * NANOS_PER_HOUR, MetricUnits.SECONDS);
+                break;
+            case MetricUnits.DAYS:
+                out = ExporterUtil.convertNanosTo(value * NANOS_PER_DAY, MetricUnits.SECONDS);
                 break;
             default:
                 out = value;
