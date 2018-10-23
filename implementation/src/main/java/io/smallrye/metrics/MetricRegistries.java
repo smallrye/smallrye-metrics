@@ -41,15 +41,15 @@ public class MetricRegistries {
     }
 
     @Produces
-    @ApplicationScoped
     @RegistryType(type = MetricRegistry.Type.BASE)
+    @ApplicationScoped
     public MetricRegistry getBaseRegistry() {
         return get(MetricRegistry.Type.BASE);
     }
 
     @Produces
-    @ApplicationScoped
     @RegistryType(type = MetricRegistry.Type.VENDOR)
+    @ApplicationScoped
     public MetricRegistry getVendorRegistry() {
         return get(MetricRegistry.Type.VENDOR);
     }
@@ -60,7 +60,7 @@ public class MetricRegistries {
 
     @PreDestroy
     public void cleanUp() {
-        registries.clear();
+        registries.remove(MetricRegistry.Type.APPLICATION);
     }
 
     private static final Map<MetricRegistry.Type, MetricRegistry> registries = new ConcurrentHashMap<>();
