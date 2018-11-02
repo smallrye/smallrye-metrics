@@ -75,7 +75,7 @@ public class JmxRegistrar {
         Properties baseMetricsProps = new Properties();
         baseMetricsProps.load(propertiesResource);
 
-        Map<String, List<MetricProperty>> parsedMetrics = baseMetricsProps.entrySet() 
+        Map<String, List<MetricProperty>> parsedMetrics = baseMetricsProps.entrySet()
                 .stream()
                 .map(MetricProperty::new)
                 .collect(Collectors.groupingBy(MetricProperty::getMetricName));
@@ -102,11 +102,11 @@ public class JmxRegistrar {
                 .forEach(
                         prop -> entryProperties.put(prop.propertyKey, prop.propertyValue)
                 );
-        ExtendedMetadata meta = new ExtendedMetadata(name, metricTypeOf(entryProperties.get("type")));
+        ExtendedMetadata meta = new ExtendedMetadata(name, entryProperties.get("displayName"),
+                                                     entryProperties.get("description"),
+                                                     metricTypeOf(entryProperties.get("type")),entryProperties.get(
+                                                         "unit"));
         meta.setMbean(entryProperties.get("mbean"));
-        meta.setDisplayName(entryProperties.get("displayName"));
-        meta.setDescription(entryProperties.get("description"));
-        meta.setUnit(entryProperties.get("unit"));
         meta.setMulti("true".equalsIgnoreCase(entryProperties.get("multi")));
         return meta;
     }

@@ -24,6 +24,7 @@ import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_MILLI;
 import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_MINUTE;
 import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_SECOND;
 
+import java.util.Optional;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
@@ -36,7 +37,13 @@ public class PrometheusUnit {
     }
 
 
-    public static String getBaseUnitAsPrometheusString(String unit) {
+    public static String getBaseUnitAsPrometheusString(Optional<String> optUnit) {
+
+        if (!optUnit.isPresent()) {
+            return "NONE";
+        }
+
+        String unit = optUnit.get();
 
         String out;
         switch (unit) {

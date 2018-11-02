@@ -81,7 +81,6 @@ public class JsonExporter implements Exporter {
             if (metadata == null) {
                 throw new IllegalArgumentException("MD is null for " + key);
             }
-
             StringBuffer metricBuffer = new StringBuffer();
 
 
@@ -107,7 +106,7 @@ public class JsonExporter implements Exporter {
                     case TIMER:
                         TimerImpl timer = (TimerImpl) value;
                         writeStartLine(metricBuffer, key);
-                        writeTimerValues(metricBuffer, timer, metadata.getUnit());
+                        writeTimerValues(metricBuffer, timer, metadata.getUnit().get());
                         writeEndLine(metricBuffer);
                         break;
                     case HISTOGRAM:
