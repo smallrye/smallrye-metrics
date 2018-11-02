@@ -16,7 +16,8 @@
  */
 package io.smallrye.metrics;
 
-import org.eclipse.microprofile.metrics.Metadata;
+import java.util.HashMap;
+import org.eclipse.microprofile.metrics.DefaultMetadata;
 import org.eclipse.microprofile.metrics.MetricType;
 
 import java.util.ArrayList;
@@ -26,21 +27,17 @@ import java.util.Map;
 /**
  * @author hrupp
  */
-public class ExtendedMetadata extends Metadata {
+public class ExtendedMetadata extends DefaultMetadata {
 
     private String mbean;
     boolean multi;
 
-    public ExtendedMetadata() {
-        super("-dummy-", MetricType.INVALID);
-    }
-
     public ExtendedMetadata(String name, MetricType type) {
-        super(name, type);
+        this(name,null,null,type,null);
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) {
-        super(name, displayName, description, typeRaw, unit);
+        super(name, displayName, description, typeRaw, unit,false,new HashMap<>());
     }
 
     public String getMbean() {
@@ -59,11 +56,11 @@ public class ExtendedMetadata extends Metadata {
         this.multi = multi;
     }
 
-    public void setLabels(List<Tag> in) {
-        for (Tag tag : in) {
-            addTag(tag.toKVString());
-        }
-    }
+//    public void setLabels(List<Tag> in) {
+//        for (Tag tag : in) {
+//            addTag(tag.toKVString());
+//        }
+//    }
 
     public List<Tag> getLabels() {
         List<Tag> out = new ArrayList<>(getTags().size());

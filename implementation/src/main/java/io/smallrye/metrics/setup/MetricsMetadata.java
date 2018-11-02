@@ -18,7 +18,10 @@
 package io.smallrye.metrics.setup;
 
 import io.smallrye.metrics.OriginTrackedMetadata;
+import io.smallrye.metrics.Tag;
 import io.smallrye.metrics.interceptors.MetricResolver;
+import java.util.HashMap;
+import java.util.Map;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -56,22 +59,16 @@ public class MetricsMetadata {
     }
 
     public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName, MetricType type, boolean reusable, String... tags) {
-        Metadata metadata = new OriginTrackedMetadata(origin, name, type);
-        if (!unit.isEmpty()) {
-            metadata.setUnit(unit);
-        }
-        if (!description.isEmpty()) {
-            metadata.setDescription(description);
-        }
-        if (!displayName.isEmpty()) {
-            metadata.setDisplayName(displayName);
-        }
-        metadata.setReusable(reusable);
+        Map<String,String> tagMap = new HashMap<>();
         if (tags != null && tags.length > 0) {
             for (String tag : tags) {
-                metadata.addTags(tag);
+                Tag t = new Tag(tag);
+                tagMap.put(t.getKey(),t.getValue());
             }
         }
+
+        Metadata metadata = new OriginTrackedMetadata(origin, name, type, unit, description, displayName, reusable,
+                                                      tagMap);
         return metadata;
     }
 

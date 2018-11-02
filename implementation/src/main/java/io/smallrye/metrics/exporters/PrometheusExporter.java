@@ -62,6 +62,7 @@ public class PrometheusExporter implements Exporter {
     private static final String USCORE = "_";
     private static final String COUNTER = "counter";
     private static final String QUANTILE = "quantile";
+    private static final String NONE = "none";
 
     private boolean writeHelpLine;
 
@@ -168,10 +169,9 @@ public class PrometheusExporter implements Exporter {
 
     private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md) {
 
-        String unit = md.getUnit();
-        unit = PrometheusUnit.getBaseUnitAsPrometheusString(unit);
+        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
 
-        String theUnit = unit.equals("none") ? "" : USCORE + unit;
+        String theUnit = unit.equals(NONE) ? "" : USCORE + unit;
 
         writeMeterRateValues(sb, scope, timer, md);
         Snapshot snapshot = timer.getSnapshot();
@@ -188,8 +188,8 @@ public class PrometheusExporter implements Exporter {
     private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, Histogram histogram, Metadata md) {
 
         Snapshot snapshot = histogram.getSnapshot();
-        String unit = md.getUnit();
-        unit = PrometheusUnit.getBaseUnitAsPrometheusString(unit);
+        Optional<String> optUnit = md.getUnit();
+        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(optUnit);
 
         String theUnit = unit.equals("none") ? "" : USCORE + unit;
 
@@ -281,6 +281,7 @@ public class PrometheusExporter implements Exporter {
             value = valueRaw;
         }
         sb.append(value).append(LF);
+
     }
 
     private void addTags(StringBuffer sb, Map<String, String> tags) {
@@ -297,12 +298,12 @@ public class PrometheusExporter implements Exporter {
     }
 
     private void fillBaseName(StringBuffer sb, MetricRegistry.Type scope, String key) {
-        sb.append(scope.getName().toLowerCase()).append(":").append(key);
+        sb.append(scope.getName().toLowerCase()).append("_").append(key);
     }
 
     private void writeHelpLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
         // Only write this line if we actually have a description in metadata
-        if (writeHelpLine && md.getDescription() != null) {
+        if (writeHelpLine && md.getDescription().isPresent()) {
             sb.append("# HELP ");
             sb.append(scope.getName().toLowerCase());
             sb.append(':').append(getPrometheusMetricName(key));
@@ -310,7 +311,7 @@ public class PrometheusExporter implements Exporter {
                 sb.append(suffix);
             }
             sb.append(SPACE);
-            sb.append(md.getDescription());
+            sb.append(md.getDescription().get());
             sb.append(LF);
         }
 
@@ -340,16 +341,16 @@ public class PrometheusExporter implements Exporter {
 
         // value line
         fillBaseName(sb, scope, key);
-        if (!md.getUnit().equals(MetricUnits.NONE)) {
-            String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
-            sb.append("_").append(unit);
+        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+        if (!unit.equals(NONE)) {
+            sb.append(USCORE).append(unit);
         }
         String tags = md.getTagsAsString();
         if (tags != null && !tags.isEmpty()) {
             sb.append('{').append(tags).append('}');
         }
 
-        Double valIn;
+        double valIn;
         if (md.getTypeRaw().equals(MetricType.GAUGE)) {
             Number value1 = (Number) ((Gauge) metric).getValue();
             if (value1 != null) {
@@ -362,7 +363,7 @@ public class PrometheusExporter implements Exporter {
             valIn = (double) ((Counter) metric).getCount();
         }
 
-        Double value = PrometheusUnit.scaleToBase(md.getUnit(), valIn);
+        Double value = PrometheusUnit.scaleToBase(md.getUnit().orElse(NONE), valIn);
         sb.append(SPACE).append(value).append(LF);
 
     }

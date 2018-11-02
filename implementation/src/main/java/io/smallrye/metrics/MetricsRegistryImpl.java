@@ -21,10 +21,13 @@ import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
+import java.util.Optional;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -49,9 +52,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MetricsRegistryImpl extends MetricRegistry {
 
     private static final Logger log = Logger.getLogger(MetricsRegistryImpl.class);
+    private static final String NONE = "NONE";
 
     private Map<String, Metadata> metadataMap = new HashMap<>();
     private Map<String, Metric> metricMap = new ConcurrentHashMap<>();
+
+    Optional<String> globalTags;
+
+    public MetricsRegistryImpl() {
+
+        Config c  = org.eclipse.microprofile.config.ConfigProvider.getConfig();
+
+        // TODO find out if this dance is still needed in newer versions of config
+        globalTags = c.getOptionalValue("mp.metrics.tags", String.class);
+        if (globalTags.isPresent()) {
+            return;
+        }
+        globalTags = c.getOptionalValue("MP_METRICS_TAGS",String.class);
+
+    }
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
@@ -78,19 +97,26 @@ public class MetricsRegistryImpl extends MetricRegistry {
             }
         }
 
-        Metadata m = new Metadata(name, type);
+        MetadataBuilder  mb = Metadata.builder().withName(name).withType(type);
+        if (globalTags.isPresent()) {
+            addGlobalTags(mb);
+        }
+        Metadata m = mb.build();
         metricMap.put(name, metric);
 
         metadataMap.put(name, m);
         return metric;
     }
 
-    @Override
-    public <T extends Metric> T register(String name, T metric, Metadata metadata) throws IllegalArgumentException {
+    private void addGlobalTags(MetadataBuilder mb) {
+        if (!globalTags.isPresent()) {
+            return;
+        }
 
-        metadata.setName(name);
-
-        return register(metadata, metric);
+        String[] tagsArray=globalTags.get().split(",");
+        for (String aTag : tagsArray) {
+            mb.addTag(aTag);
+        }
     }
 
     @Override
@@ -129,25 +155,48 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     protected Metadata duplicate(Metadata meta) {
         Metadata copy = null;
-        if (meta instanceof OriginTrackedMetadata) {
-            copy = new OriginTrackedMetadata(((OriginTrackedMetadata) meta).getOrigin(), meta.getName(), meta.getTypeRaw());
-        } else {
-            copy = new Metadata(meta.getName(), meta.getTypeRaw());
-        }
-        copy.setDescription(meta.getDescription());
-        copy.setUnit(meta.getUnit());
-        copy.setDisplayName(meta.getDisplayName());
-        copy.setReusable(meta.isReusable());
-
-        HashMap<String, String> tagsCopy = new HashMap<>();
+        Map<String, String> tagsCopy = new HashMap<>();
         tagsCopy.putAll(meta.getTags());
-        copy.setTags(tagsCopy);
+        if (globalTags.isPresent()) {
+            String[] tagsArray = globalTags.get().split(",");
+            for (String aTag : tagsArray) {
+                Tag t = new Tag(aTag);
+                tagsCopy.put(t.getKey(),t.getValue());
+            }
+        }
+
+
+        if (meta instanceof OriginTrackedMetadata) {
+            copy = new OriginTrackedMetadata(((OriginTrackedMetadata) meta).getOrigin(), meta.getName(),
+                                             meta.getTypeRaw(), meta.getUnit().orElse(NONE), meta.getDescription().orElse(""),
+                                             meta.getDisplayName(),
+                                             meta.isReusable(),
+                                             tagsCopy);
+        } else {
+            MetadataBuilder builder = Metadata.builder().withName(meta.getName()).withType(meta.getTypeRaw());
+
+            builder.withDisplayName(meta.getDisplayName());
+            if (meta.isReusable()) {
+                builder.reusable();
+            } else {
+                builder.notReusable();
+            }
+            builder.withUnit(meta.getUnit().orElse(NONE));
+            builder.withDescription(meta.getDescription().orElse(""));
+
+            for (Map.Entry<String,String> tag : tagsCopy.entrySet()) {
+                builder.addTag(tag.getKey()+"="+tag.getValue());
+            }
+            addGlobalTags(builder);
+            copy = builder.build();
+        }
+
         return copy;
     }
 
     @Override
     public Counter counter(String name) {
-        return counter(new Metadata(name, MetricType.COUNTER));
+        return counter(Metadata.builder().withName(name).withType(MetricType.COUNTER).build());
     }
 
     @Override
@@ -157,7 +206,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Histogram histogram(String name) {
-        return histogram(new Metadata(name, MetricType.HISTOGRAM));
+        return histogram(Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build());
     }
 
     @Override
@@ -167,7 +216,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Meter meter(String s) {
-        return meter(new Metadata(s, MetricType.METERED));
+        return meter(Metadata.builder().withName(s).withType(MetricType.METERED).build());
     }
 
     @Override
@@ -243,7 +292,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Timer timer(String s) {
-        return timer(new Metadata(s, MetricType.TIMER));
+        return timer(Metadata.builder().withName(s).withType(MetricType.TIMER).build());
     }
 
     @Override
