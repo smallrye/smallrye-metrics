@@ -124,33 +124,39 @@ public class PrometheusExporter implements Exporter {
 
             Metric metric = entry.getValue();
 
-            switch (md.getTypeRaw()) {
-                case GAUGE:
-                case COUNTER:
-                    key = getPrometheusMetricName(md, key);
-                    String suffix = null;
-                    if (!md.getUnit().equals(MetricUnits.NONE)) {
-                        suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
-                    }
-                    writeHelpLine(sb, scope, key, md, suffix);
-                    writeTypeLine(sb, scope, key, md, suffix, null);
-                    createSimpleValueLine(sb, scope, key, md, metric);
-                    break;
-                case METERED:
-                    MeterImpl meter = (MeterImpl) metric;
-                    writeMeterValues(sb, scope, meter, md);
-                    break;
-                case TIMER:
-                    TimerImpl timer = (TimerImpl) metric;
-                    writeTimerValues(sb, scope, timer, md);
-                    break;
-                case HISTOGRAM:
-                    HistogramImpl histogram = (HistogramImpl) metric;
-                    writeHistogramValues(sb, scope, histogram, md);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Not supported: " + key);
+            StringBuffer metricBuf = new StringBuffer();
 
+            try {
+                switch (md.getTypeRaw()) {
+                    case GAUGE:
+                    case COUNTER:
+                        key = getPrometheusMetricName(md, key);
+                        String suffix = null;
+                        if (!md.getUnit().equals(MetricUnits.NONE)) {
+                            suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+                        }
+                        writeHelpLine(metricBuf, scope, key, md, suffix);
+                        writeTypeLine(metricBuf, scope, key, md, suffix, null);
+                        createSimpleValueLine(metricBuf, scope, key, md, metric);
+                        break;
+                    case METERED:
+                        MeterImpl meter = (MeterImpl) metric;
+                        writeMeterValues(metricBuf, scope, meter, md);
+                        break;
+                    case TIMER:
+                        TimerImpl timer = (TimerImpl) metric;
+                        writeTimerValues(metricBuf, scope, timer, md);
+                        break;
+                    case HISTOGRAM:
+                        HistogramImpl histogram = (HistogramImpl) metric;
+                        writeHistogramValues(metricBuf, scope, histogram, md);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Not supported: " + key);
+                }
+                sb.append(metricBuf);
+            } catch (Exception e) {
+                log.warn("Unable to export metric " + key, e);
             }
         }
     }

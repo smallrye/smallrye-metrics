@@ -64,10 +64,12 @@ public class JsonExporter implements Exporter {
 
         writeMetricsForMap(sb, metricMap, metadataMap);
 
-        sb.append("}");
+        sb.append(LF).append("}");
     }
 
     private void writeMetricsForMap(StringBuffer sb, Map<String, Metric> metricMap, Map<String, Metadata> metadataMap) {
+
+        boolean first = true;
 
         for (Iterator<Map.Entry<String, Metric>> iterator = metricMap.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<String, Metric> entry = iterator.next();
@@ -80,39 +82,49 @@ public class JsonExporter implements Exporter {
                 throw new IllegalArgumentException("MD is null for " + key);
             }
 
-            switch (metadata.getTypeRaw()) {
-                case GAUGE:
-                case COUNTER:
-                    Number val = getValueFromMetric(value, key);
-                    sb.append("  ").append('"').append(key).append('"').append(" : ").append(val);
-                    break;
-                case METERED:
-                    MeterImpl meter = (MeterImpl) value;
-                    writeStartLine(sb, key);
-                    writeMeterValues(sb, meter);
-                    writeEndLine(sb);
-                    break;
-                case TIMER:
-                    TimerImpl timer = (TimerImpl) value;
-                    writeStartLine(sb, key);
-                    writeTimerValues(sb, timer, metadata.getUnit());
-                    writeEndLine(sb);
-                    break;
-                case HISTOGRAM:
-                    HistogramImpl hist = (HistogramImpl) value;
-                    writeStartLine(sb, key);
-                    sb.append("    \"count\": ").append(hist.getCount()).append(COMMA_LF);
-                    writeSnapshotValues(sb, hist.getSnapshot());
-                    writeEndLine(sb);
-                    break;
-                default:
-                    log.error("JSE, Not yet supported: " + metadata);
+            StringBuffer metricBuffer = new StringBuffer();
 
+
+            if (first) {
+                first = false;
+            } else {
+                metricBuffer.append(',').append(LF);
             }
-            if (iterator.hasNext()) {
-                sb.append(',');
+
+            try {
+                switch (metadata.getTypeRaw()) {
+                    case GAUGE:
+                    case COUNTER:
+                        Number val = getValueFromMetric(value, key);
+                        metricBuffer.append("  ").append('"').append(key).append('"').append(" : ").append(val);
+                        break;
+                    case METERED:
+                        MeterImpl meter = (MeterImpl) value;
+                        writeStartLine(metricBuffer, key);
+                        writeMeterValues(metricBuffer, meter);
+                        writeEndLine(metricBuffer);
+                        break;
+                    case TIMER:
+                        TimerImpl timer = (TimerImpl) value;
+                        writeStartLine(metricBuffer, key);
+                        writeTimerValues(metricBuffer, timer, metadata.getUnit());
+                        writeEndLine(metricBuffer);
+                        break;
+                    case HISTOGRAM:
+                        HistogramImpl hist = (HistogramImpl) value;
+                        writeStartLine(metricBuffer, key);
+                        metricBuffer.append("    \"count\": ").append(hist.getCount()).append(COMMA_LF);
+                        writeSnapshotValues(metricBuffer, hist.getSnapshot());
+                        writeEndLine(metricBuffer);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Not supported: " + key);
+                }
+
+                sb.append(metricBuffer);
+            } catch (Exception e) {
+                log.warn("Unable to export metric " + key, e);
             }
-            sb.append(LF);
         }
     }
 
