@@ -1,5 +1,7 @@
 package io.smallrye.metrics.exporters;
 
+import static io.smallrye.metrics.exporters.PrometheusExporter.getPrometheusMetricName;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -13,6 +15,7 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class PrometheusExporterTest {
@@ -40,5 +43,15 @@ public class PrometheusExporterTest {
         }
         assertTrue(valueFromPrometheus != -1);
         assertTrue(valueFromPrometheus >= actualUptimeInSeconds);
+    }
+
+    @Test
+    public void metricNameConversion() {
+        assertEquals("frag3", getPrometheusMetricName("FRAG3"));
+        assertEquals("unicast3", getPrometheusMetricName("UNICAST3"));
+
+        assertEquals("foo_bar", getPrometheusMetricName("FOO-BAR"));
+        assertEquals("foo_bar", getPrometheusMetricName("FooBAR"));
+        assertEquals("foo_bar", getPrometheusMetricName("FooBar"));
     }
 }

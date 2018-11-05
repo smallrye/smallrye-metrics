@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Export data in Prometheus text format
@@ -51,6 +53,7 @@ public class PrometheusExporter implements Exporter {
 
     // This allows to suppress the (noisy) # HELP line
     private static final String MICROPROFILE_METRICS_OMIT_HELP_LINE = "microprofile.metrics.omitHelpLine";
+    private static final Pattern SNAKE_CASE_PATTERN = Pattern.compile("(?<=[a-z])[A-Z]");
 
 
     private static final String LF = "\n";
@@ -121,6 +124,9 @@ public class PrometheusExporter implements Exporter {
             String key = entry.getKey();
             Metadata md = registry.getMetadata().get(key);
 
+            if (md == null) {
+                throw new IllegalStateException("No entry for " + key + " found");
+            }
 
             Metric metric = entry.getValue();
 
@@ -130,7 +136,7 @@ public class PrometheusExporter implements Exporter {
                 switch (md.getTypeRaw()) {
                     case GAUGE:
                     case COUNTER:
-                        key = getPrometheusMetricName(md, key);
+                        key = getPrometheusMetricName(key);
                         String suffix = null;
                         if (!md.getUnit().equals(MetricUnits.NONE)) {
                             suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
@@ -248,7 +254,7 @@ public class PrometheusExporter implements Exporter {
                                 Tag extraTag,
                                 boolean scaled) {
         String name = md.getName();
-        name = getPrometheusMetricName(md, name);
+        name = getPrometheusMetricName(name);
         fillBaseName(sb, scope, name);
         if (suffix != null) {
             sb.append(suffix);
@@ -291,7 +297,7 @@ public class PrometheusExporter implements Exporter {
         if (writeHelpLine && md.getDescription() != null) {
             sb.append("# HELP ");
             sb.append(scope.getName().toLowerCase());
-            sb.append(':').append(getPrometheusMetricName(md, key));
+            sb.append(':').append(getPrometheusMetricName(key));
             if (suffix != null) {
                 sb.append(suffix);
             }
@@ -305,7 +311,7 @@ public class PrometheusExporter implements Exporter {
     private void writeTypeLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix, String typeOverride) {
         sb.append("# TYPE ");
         sb.append(scope.getName().toLowerCase());
-        sb.append(':').append(getPrometheusMetricName(md, key));
+        sb.append(':').append(getPrometheusMetricName(key));
         if (suffix != null) {
             sb.append(suffix);
         }
@@ -354,19 +360,22 @@ public class PrometheusExporter implements Exporter {
     }
 
 
-    private String getPrometheusMetricName(Metadata entry, String name) {
+    static String getPrometheusMetricName(String name) {
         String out = name.replaceAll("[^\\w]+",USCORE);
         out = decamelize(out);
-        if (entry == null) {
-            throw new IllegalStateException("No entry for " + name + " found");
-        }
         out = out.replace("__", USCORE);
         out = out.replace(":_", ":");
 
         return out;
     }
 
-    private String decamelize(String in) {
-        return in.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+    private static String decamelize(String in) {
+        Matcher m = SNAKE_CASE_PATTERN.matcher(in);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, USCORE + m.group().toLowerCase());
+        }
+        m.appendTail(sb);
+        return sb.toString().toLowerCase();
     }
 }
