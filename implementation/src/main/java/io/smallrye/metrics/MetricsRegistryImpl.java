@@ -254,7 +254,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public boolean remove(String metricName) {
         if (metricMap.containsKey(metricName)) {
-            log.infof("Remove metric [name: %s]", metricName);
+            log.debugf("Remove metric [name: %s]", metricName);
             metricMap.remove(metricName);
             metadataMap.remove(metricName);
             return true;
