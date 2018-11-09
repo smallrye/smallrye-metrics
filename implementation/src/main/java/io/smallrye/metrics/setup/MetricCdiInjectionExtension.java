@@ -85,17 +85,22 @@ public class MetricCdiInjectionExtension implements Extension {
     private void addInterceptorBindings(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
         log.info("MicroProfile: Metrics activated");
 
+        String extensionName = MetricCdiInjectionExtension.class.getName();
+
         // It seems that fraction deployment module cannot be picked up as a CDI bean archive - see also SWARM-1725
-        bbd.addAnnotatedType(manager.createAnnotatedType(MetricProducer.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(MetricNameFactory.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(MetricsInterceptor.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(MetricRegistries.class));
+        for (Class clazz : new Class[] {
+                MetricProducer.class,
+                MetricNameFactory.class,
+                MetricsInterceptor.class,
+                MetricRegistries.class,
 
-
-        bbd.addAnnotatedType(manager.createAnnotatedType(MeteredInterceptor.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(CountedInterceptor.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(TimedInterceptor.class));
-        bbd.addAnnotatedType(manager.createAnnotatedType(MetricsRequestHandler.class));
+                MeteredInterceptor.class,
+                CountedInterceptor.class,
+                TimedInterceptor.class,
+                MetricsRequestHandler.class
+        }) {
+            bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
+        }
     }
 
     private <X> void metricsAnnotations(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class, Timed.class }) ProcessAnnotatedType<X> pat) {
