@@ -56,17 +56,19 @@ public class JmxRegistrar {
     }
 
     private List<ExtendedMetadata> findMetadata(String propertiesFile) throws IOException {
-        InputStream propertiesResource = getResource("/io/smallrye/metrics/" + propertiesFile);
+        try (
+                InputStream propertiesResource = getResource("/io/smallrye/metrics/" + propertiesFile)
+        ) {
+            if (propertiesResource == null) {
+                return Collections.emptyList();
+            }
 
-        if (propertiesResource == null) {
-            return Collections.emptyList();
+            List<ExtendedMetadata> resultList = loadMetadataFromProperties(propertiesResource);
+
+            JmxWorker.instance().expandMultiValueEntries(resultList);
+
+            return resultList;
         }
-
-        List<ExtendedMetadata> resultList = loadMetadataFromProperties(propertiesResource);
-
-        JmxWorker.instance().expandMultiValueEntries(resultList);
-
-        return resultList;
     }
 
     List<ExtendedMetadata> loadMetadataFromProperties(InputStream propertiesResource) throws IOException {
