@@ -50,7 +50,7 @@
     <version.junit>4.12</version.junit>
     <version.org.jboss.logging.jboss-logging>3.3.1.Final</version.org.jboss.logging.jboss-logging>
     <version.org.jboss.weld.weld>2.4.3.Final</version.org.jboss.weld.weld>
-    <version.weld>2.4.7.Final</version.weld>
+    <version.weld>2.4.8.Final</version.weld>
     <!-- Used by smallrye-metrics-rest-tck to download WildFly Servlet distribution -->
     <version.wildfly>13.0.0.Final</version.wildfly>
   </properties>
