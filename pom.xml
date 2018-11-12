@@ -46,7 +46,7 @@
     <version.javax.json>1.1.2</version.javax.json>
     <version.glassfish.javax.json>1.1.2</version.glassfish.javax.json>
 
-    <version.jboss.servlet>1.0.0.Final</version.jboss.servlet>
+    <version.jboss.servlet>1.0.2.Final</version.jboss.servlet>
     <version.junit>4.12</version.junit>
     <version.org.jboss.logging.jboss-logging>3.3.1.Final</version.org.jboss.logging.jboss-logging>
     <version.org.jboss.weld.weld>2.4.3.Final</version.org.jboss.weld.weld>
