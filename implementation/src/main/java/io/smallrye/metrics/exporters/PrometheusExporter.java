@@ -61,6 +61,7 @@ public class PrometheusExporter implements Exporter {
     private static final String SPACE = " ";
     private static final String SUMMARY = "summary";
     private static final String USCORE = "_";
+    private static final String TOTAL = "_total";
     private static final String COUNTER = "counter";
     private static final String QUANTILE = "quantile";
 
@@ -138,12 +139,15 @@ public class PrometheusExporter implements Exporter {
                     case COUNTER:
                         key = getPrometheusMetricName(key);
                         String suffix = null;
-                        if (!md.getUnit().equals(MetricUnits.NONE)) {
+                        if (md.getTypeRaw().equals(MetricType.GAUGE) && !md.getUnit().equals(MetricUnits.NONE)) {
                             suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+                        }
+                        if (md.getTypeRaw().equals(MetricType.COUNTER) && !key.endsWith(TOTAL)) {
+                            suffix = TOTAL;
                         }
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
-                        createSimpleValueLine(metricBuf, scope, key, md, metric);
+                        createSimpleValueLine(metricBuf, scope, key, md, suffix, metric);
                         break;
                     case METERED:
                         MeterImpl meter = (MeterImpl) metric;
@@ -220,8 +224,8 @@ public class PrometheusExporter implements Exporter {
     }
 
     private void writeMeterValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md) {
-        writeHelpLine(sb, scope, md.getName(), md, "_total");
-        writeTypeAndValue(sb, scope, "_total", metric.getCount(), COUNTER, md);
+        writeHelpLine(sb, scope, md.getName(), md, TOTAL);
+        writeTypeAndValue(sb, scope, TOTAL, metric.getCount(), COUNTER, md);
         writeMeterRateValues(sb, scope, metric, md);
     }
 
@@ -328,13 +332,12 @@ public class PrometheusExporter implements Exporter {
         sb.append(LF);
     }
 
-    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric) {
+    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix, Metric metric) {
 
         // value line
         fillBaseName(sb, scope, key);
-        if (!md.getUnit().equals(MetricUnits.NONE)) {
-            String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
-            sb.append("_").append(unit);
+        if (suffix != null) {
+            sb.append(suffix);
         }
         String tags = md.getTagsAsString();
         if (tags != null && !tags.isEmpty()) {

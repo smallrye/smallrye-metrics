@@ -30,6 +30,7 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
@@ -107,6 +108,14 @@ public class MetricsRegistryImpl extends MetricRegistry {
         //Gauges are not reusable
         if (metadata.getTypeRaw().equals(MetricType.GAUGE)) {
             reusableFlag = false;
+        }
+
+        if (metadata.getTypeRaw().equals(MetricType.COUNTER)) {
+            String unit = metadata.getUnit();
+            if (unit != null && !unit.isEmpty() && !unit.equals(MetricUnits.NONE)) {
+                // 3.2.3. Handling of units - Counter metrics are considered dimensionless
+                throw new IllegalArgumentException("Counter metric " + metadata.getName() + " must not provide unit");
+            }
         }
 
         if (metricMap.keySet().contains(metadata.getName()) && !reusableFlag) {
