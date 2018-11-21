@@ -77,13 +77,6 @@ public class CountedInterceptor {
         }
         log.debugf("Increment counter [metricName: %s]", name);
         counter.inc();
-        try {
-            return context.proceed();
-        } finally {
-            if (!counted.metricAnnotation().monotonic()) {
-                log.debugf("Decrement counter [metricName: %s]", name);
-                counter.dec();
-            }
-        }
+        return context.proceed();
     }
 }
