@@ -15,30 +15,25 @@
  */
 package io.smallrye.metrics.interceptors;
 
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.jboss.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
 import javax.enterprise.inject.spi.Bean;
 import javax.inject.Inject;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.AroundTimeout;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
+import javax.interceptor.*;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 
 @SuppressWarnings("unused")
-@Counted
+@ConcurrentGauge
 @Interceptor
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
-public class CountedInterceptor {
+public class ConcurrentGaugeInterceptor {
 
-    private static final Logger log = Logger.getLogger(CountedInterceptor.class);
+    private static final Logger log = Logger.getLogger(ConcurrentGaugeInterceptor.class);
 
     private final Bean<?> bean;
 
@@ -47,7 +42,7 @@ public class CountedInterceptor {
     private final MetricResolver resolver;
 
     @Inject
-    private CountedInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
+    private ConcurrentGaugeInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
         this.bean = bean;
         this.registry = registry;
         this.resolver = new MetricResolver();
@@ -55,28 +50,33 @@ public class CountedInterceptor {
 
     @AroundConstruct
     private Object countedConstructor(InvocationContext context) throws Exception {
-        return countedCallable(context, context.getConstructor());
+        return concurrentCallable(context, context.getConstructor());
     }
 
     @AroundInvoke
     private Object countedMethod(InvocationContext context) throws Exception {
-        return countedCallable(context, context.getMethod());
+        return concurrentCallable(context, context.getMethod());
     }
 
     @AroundTimeout
     private Object countedTimeout(InvocationContext context) throws Exception {
-        return countedCallable(context, context.getMethod());
+        return concurrentCallable(context, context.getMethod());
     }
 
-    private <E extends Member & AnnotatedElement> Object countedCallable(InvocationContext context, E element) throws Exception {
-        MetricResolver.Of<Counted> counted = resolver.counted(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
-        String name = counted.metricName();
-        Counter counter = registry.getCounters().get(name);
-        if (counter == null) {
-            throw new IllegalStateException("No counter with name [" + name + "] found in registry [" + registry + "]");
+    private <E extends Member & AnnotatedElement> Object concurrentCallable(InvocationContext context, E element) throws Exception {
+        MetricResolver.Of<ConcurrentGauge> concurrentGaugeResolver = resolver.concurrentGauge(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
+        String name = concurrentGaugeResolver.metricName();
+        org.eclipse.microprofile.metrics.ConcurrentGauge concurrentGauge = registry.getConcurrentGauges().get(name);
+        if (concurrentGauge == null) {
+            throw new IllegalStateException("No concurrent gauge with name [" + name + "] found in registry [" + registry + "]");
         }
-        log.debugf("Increment counter [metricName: %s]", name);
-        counter.inc();
-        return context.proceed();
+        log.debugf("Increment concurrent gauge [metricName: %s]", name);
+        concurrentGauge.inc();
+        try {
+            return context.proceed();
+        } finally {
+            log.debugf("Decrement concurrent gauge [metricName: %s]", name);
+            concurrentGauge.dec();
+        }
     }
 }

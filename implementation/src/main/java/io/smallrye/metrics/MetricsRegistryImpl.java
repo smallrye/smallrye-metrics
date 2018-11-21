@@ -16,13 +16,14 @@
  */
 package io.smallrye.metrics;
 
+import io.smallrye.metrics.app.ConcurrentGaugeImpl;
 import io.smallrye.metrics.app.CounterImpl;
 import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
-import java.util.Optional;
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -41,6 +42,7 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -205,6 +207,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public ConcurrentGauge concurrentGauge(String name) {
+        return concurrentGauge(Metadata.builder().withName(name).withType(MetricType.CONCURRENT_GAUGE).build());
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata) {
+        return get(metadata, MetricType.CONCURRENT_GAUGE);
+    }
+
+    @Override
     public Histogram histogram(String name) {
         return histogram(Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build());
     }
@@ -250,6 +262,9 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     break;
                 case TIMER:
                     m = new TimerImpl(new ExponentiallyDecayingReservoir());
+                    break;
+                case CONCURRENT_GAUGE:
+                    m = new ConcurrentGaugeImpl();
                     break;
                 case INVALID:
                 default:
@@ -345,6 +360,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public SortedMap<String, Counter> getCounters(MetricFilter metricFilter) {
         return getMetrics(MetricType.COUNTER, metricFilter);
+    }
+
+    @Override
+    public SortedMap<String, ConcurrentGauge> getConcurrentGauges() {
+        return getConcurrentGauges(MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<String, ConcurrentGauge> getConcurrentGauges(MetricFilter metricFilter) {
+        return getMetrics(MetricType.CONCURRENT_GAUGE, metricFilter);
     }
 
     @Override
