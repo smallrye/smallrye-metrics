@@ -21,6 +21,7 @@ import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -83,7 +84,6 @@ public class JsonExporter implements Exporter {
             }
             StringBuffer metricBuffer = new StringBuffer();
 
-
             if (first) {
                 first = false;
             } else {
@@ -102,6 +102,12 @@ public class JsonExporter implements Exporter {
                         writeStartLine(metricBuffer, key);
                         writeMeterValues(metricBuffer, meter);
                         writeEndLine(metricBuffer);
+                        break;
+                    case CONCURRENT_GAUGE:
+                        ConcurrentGauge gauge = (ConcurrentGauge) value;
+                        writeStartLine(sb, key);
+                        writeConcurrentGaugeValues(sb, gauge);
+                        writeEndLine(sb);
                         break;
                     case TIMER:
                         TimerImpl timer = (TimerImpl) value;
@@ -133,6 +139,12 @@ public class JsonExporter implements Exporter {
 
     private void writeStartLine(StringBuffer sb, String key) {
         sb.append("  ").append('"').append(key).append('"').append(" : ").append("{\n");
+    }
+
+    private void writeConcurrentGaugeValues(StringBuffer sb, ConcurrentGauge concurrentGauge) {
+        sb.append("    \"callCount\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
+        sb.append("    \"max\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
+        sb.append("    \"min\": ").append(concurrentGauge.getMin()).append(LF);
     }
 
     private void writeMeterValues(StringBuffer sb, Metered meter) {

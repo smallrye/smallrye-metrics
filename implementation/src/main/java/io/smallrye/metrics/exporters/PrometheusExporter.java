@@ -24,6 +24,7 @@ import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -146,6 +147,10 @@ public class PrometheusExporter implements Exporter {
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
                         createSimpleValueLine(metricBuf, scope, key, md, metric);
                         break;
+                    case CONCURRENT_GAUGE:
+                        ConcurrentGauge concurrentGauge = (ConcurrentGauge) metric;
+                        writeConcurrentGaugeValues(sb, scope, concurrentGauge, md, key);
+                        break;
                     case METERED:
                         MeterImpl meter = (MeterImpl) metric;
                         writeMeterValues(metricBuf, scope, meter, md);
@@ -184,6 +189,14 @@ public class PrometheusExporter implements Exporter {
         writeValueLine(sb,scope,suffix + "_count",timer.getCount(),md, null, false);
 
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit);
+    }
+
+    private void writeConcurrentGaugeValues(StringBuffer sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge, Metadata md, String key) {
+        key = getPrometheusMetricName(key);
+        writeHelpLine(sb, scope, key, md, "_current");
+        writeTypeAndValue(sb, scope, "_current", concurrentGauge.getCount(), GAUGE, md);
+        writeTypeAndValue(sb, scope, "_max", concurrentGauge.getMax(), GAUGE, md);
+        writeTypeAndValue(sb, scope, "_min", concurrentGauge.getMin(), GAUGE, md);
     }
 
     private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, HistogramImpl histogram, Metadata md) {

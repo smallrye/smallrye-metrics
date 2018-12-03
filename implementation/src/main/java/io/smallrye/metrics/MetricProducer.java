@@ -20,6 +20,8 @@ package io.smallrye.metrics;
 import io.smallrye.metrics.interceptors.MetricName;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -65,6 +67,11 @@ public class MetricProducer {
     @Produces
     Counter getCounter(InjectionPoint ip) {
         return this.applicationRegistry.counter(getMetadata(ip, MetricType.COUNTER));
+    }
+
+    @Produces
+    ConcurrentGauge getConcurrentGauge(InjectionPoint ip) {
+        return this.applicationRegistry.concurrentGauge(getMetadata(ip, MetricType.CONCURRENT_GAUGE));
     }
 
     @Produces
