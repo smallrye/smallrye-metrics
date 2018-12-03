@@ -305,12 +305,7 @@ public class PrometheusExporter implements Exporter {
         // Only write this line if we actually have a description in metadata
         if (writeHelpLine && md.getDescription().isPresent()) {
             sb.append("# HELP ");
-            sb.append(scope.getName().toLowerCase());
-            sb.append(':').append(getPrometheusMetricName(key));
-            if (suffix != null) {
-                sb.append(suffix);
-            }
-            sb.append(SPACE);
+            getNameWithScopeAndSuffix(sb, scope, key, suffix);
             sb.append(md.getDescription().get());
             sb.append(LF);
         }
@@ -319,12 +314,7 @@ public class PrometheusExporter implements Exporter {
 
     private void writeTypeLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix, String typeOverride) {
         sb.append("# TYPE ");
-        sb.append(scope.getName().toLowerCase());
-        sb.append(':').append(getPrometheusMetricName(key));
-        if (suffix != null) {
-            sb.append(suffix);
-        }
-        sb.append(SPACE);
+        getNameWithScopeAndSuffix(sb, scope, key, suffix);
         if (typeOverride != null) {
             sb.append(typeOverride);
         } else if (md.getTypeRaw().equals(MetricType.TIMER)) {
@@ -335,6 +325,15 @@ public class PrometheusExporter implements Exporter {
             sb.append(md.getType());
         }
         sb.append(LF);
+    }
+
+    private void getNameWithScopeAndSuffix(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {
+        sb.append(scope.getName().toLowerCase());
+        sb.append('_').append(getPrometheusMetricName(key));
+        if (suffix != null) {
+            sb.append(suffix);
+        }
+        sb.append(SPACE);
     }
 
     private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric) {

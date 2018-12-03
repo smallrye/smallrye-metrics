@@ -51,12 +51,13 @@ public class JmxRegistrarTest {
         ExtendedMetadata loadedClasses = getSingleMatch("classloader\\.currentLoadedClass\\.count");
 
         assertThat(loadedClasses.getName()).isEqualTo("classloader.currentLoadedClass.count");
-        assertThat(loadedClasses.getDescription()).isEqualTo("Displays the number of classes that are currently loaded in the Java virtual machine.");
+        assertThat(loadedClasses.getDescription().get()).isEqualTo("Displays the number of classes that are currently " +
+                                                                  "loaded in the Java virtual machine.");
         assertThat(loadedClasses.getDisplayName()).isEqualTo("Current Loaded Class Count");
         assertThat(loadedClasses.getMbean()).isEqualTo("java.lang:type=ClassLoading/LoadedClassCount");
         assertThat(loadedClasses.getTags()).isEmpty();
         assertThat(loadedClasses.getType()).isEqualTo("counter");
-        assertThat(loadedClasses.getUnit()).isEqualTo("none");
+        assertThat(loadedClasses.getUnit().get()).isEqualTo("none");
     }
 
     @Test
