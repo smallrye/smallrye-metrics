@@ -28,8 +28,10 @@ import io.smallrye.metrics.interceptors.MetricResolver;
 import io.smallrye.metrics.interceptors.MetricsBinding;
 import io.smallrye.metrics.interceptors.MetricsInterceptor;
 import io.smallrye.metrics.interceptors.TimedInterceptor;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -148,7 +150,23 @@ public class MetricCdiInjectionExtension implements Extension {
             }
 
             String metricName = name.of(bean.getValue());
-            registry.register(metricName, getReference(manager, bean.getValue().getBaseType(), bean.getKey()));
+            org.eclipse.microprofile.metrics.annotation.Metric metricAnnotation = bean.getValue().getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class);
+            if(metricAnnotation != null) {
+                Object reference = getReference(manager, bean.getValue().getBaseType(), bean.getKey());
+                Class<?> clazz = reference.getClass();
+                MetricType type = MetricType.from(clazz.getInterfaces().length == 0 ? clazz.getSuperclass().getInterfaces()[0] : clazz.getInterfaces()[0]);
+                Metadata metadata = MetricsMetadata.getMetadata(metricAnnotation,
+                        metricName,
+                        metricAnnotation.unit(),
+                        metricAnnotation.description(),
+                        metricAnnotation.displayName(),
+                        type,
+                        false,
+                        metricAnnotation.tags());
+                registry.register(metadata, getReference(manager, bean.getValue().getBaseType(), bean.getKey()));
+            } else {
+                registry.register(metricName, getReference(manager, bean.getValue().getBaseType(), bean.getKey()));
+            }
         }
 
         // THORN-2068: MicroProfile Rest Client basic support
