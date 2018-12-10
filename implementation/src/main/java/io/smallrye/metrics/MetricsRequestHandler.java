@@ -90,11 +90,9 @@ public class MetricsRequestHandler {
                               String method,
                               Stream<String> acceptHeaders,
                               Responder responder) throws IOException {
-        Exporter exporter = obtainExporter(method, acceptHeaders);
-        if (exporter == null) {
-            responder.respondWith(406, "No exporter found for method " + method + " and media type", Collections.emptyMap());
+        Exporter exporter = obtainExporter(method, acceptHeaders, responder);
+        if(exporter == null)
             return;
-        }
 
         if(!requestPath.startsWith(contextRoot)) {
             responder.respondWith(500, "The expected context root of metrics is "
@@ -177,18 +175,22 @@ public class MetricsRequestHandler {
     /**
      * Determine which exporter we want.
      *
-     * @param method http method (GET, POST, etc)
+     * @param method        http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
-     *
-     * @return An exporter instance or null in case no matching exporter existed.
+     * @param responder     the responder to use if an error occurs
+     * @return An exporter instance. If an exporter cannot be obtained for some reason, this method will use the responder
+     * to inform the user and will return null.
      */
-    private Exporter obtainExporter(String method, Stream<String> acceptHeaders) {
-        Exporter exporter = null;
-
-        if (acceptHeaders == null) {
+    private Exporter obtainExporter(String method, Stream<String> acceptHeaders, Responder responder) throws IOException {
+        if(!method.equals("GET") && !method.equals("OPTIONS")) {
+            responder.respondWith(405, "Only GET and OPTIONS methods are accepted.", Collections.emptyMap());
+            return null;
+        } else if (acceptHeaders == null) {
+            // use OpenMetrics exporter
             if (method.equals("GET")) {
-                exporter = new OpenMetricsExporter();
+                return new OpenMetricsExporter();
             } else {
+                responder.respondWith(405, "OPTIONS method is only allowed with application/json media type.", Collections.emptyMap());
                 return null;
             }
         } else {
@@ -200,23 +202,24 @@ public class MetricsRequestHandler {
                 if (mediaType.startsWith(APPLICATION_JSON)) {
 
                     if (method.equals("GET")) {
-                        exporter = new JsonExporter();
-                    } else if (method.equals("OPTIONS")) {
-                        exporter = new JsonMetadataExporter();
+                        return new JsonExporter();
                     } else {
-                        return null;
+                        return new JsonMetadataExporter();
                     }
                 } else {
                     // This is the fallback, but only for GET, as OpenMetrics does not support OPTIONS
                     if (method.equals("GET")) {
-                        exporter = new OpenMetricsExporter();
+                        return new OpenMetricsExporter();
                     } else {
+                        responder.respondWith(406, "OPTIONS method is only allowed with application/json media type.", Collections.emptyMap());
                         return null;
                     }
                 }
+            } else {
+                responder.respondWith(406, "Couldn't determine a suitable media type for the given Accept header.", Collections.emptyMap());
+                return null;
             }
         }
-        return exporter;
     }
 
     /**
