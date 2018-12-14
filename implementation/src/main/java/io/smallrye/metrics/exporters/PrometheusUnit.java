@@ -36,6 +36,13 @@ public class PrometheusUnit {
     }
 
 
+    /**
+     * Determines the basic unit to be used by Prometheus exporter based on the input unit from parameter.
+     * That is:
+     * - for memory size units, returns "bytes"
+     * - for time units, returns "seconds"
+     * - for any other unit, returns the input unit itself
+     */
     public static String getBaseUnitAsPrometheusString(String unit) {
 
         String out;
@@ -88,11 +95,18 @@ public class PrometheusUnit {
         return out;
     }
 
-    public static Double scaleToBase(String unit, Double value) {
+    /**
+     * Scales the value (time or memory size) interpreted using inputUnit to the base unit for Prometheus exporter
+     * That means:
+     * - values for memory size units are scaled to bytes
+     * - values for time units are scaled to seconds
+     * - values for other units are returned unchanged
+     */
+    public static Double scaleToBase(String inputUnit, Double value) {
 
         Double out;
 
-        switch (unit) {
+        switch (inputUnit) {
 
             case MetricUnits.BITS:
                 out = value / 8;
