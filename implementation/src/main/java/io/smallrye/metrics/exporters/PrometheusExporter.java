@@ -176,14 +176,14 @@ public class PrometheusExporter implements Exporter {
 
         writeMeterRateValues(sb, scope, timer.getMeter(), md);
         Snapshot snapshot = timer.getSnapshot();
-        writeSnapshotBasics(sb, scope, md, snapshot, theUnit);
+        writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true);
 
         String suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
         writeHelpLine(sb, scope, md.getName(), md, suffix);
         writeTypeLine(sb,scope,md.getName(),md, suffix,SUMMARY);
         writeValueLine(sb,scope,suffix + "_count",timer.getCount(),md, null, false);
 
-        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit);
+        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true);
     }
 
     private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, HistogramImpl histogram, Metadata md) {
@@ -195,47 +195,47 @@ public class PrometheusExporter implements Exporter {
         String theUnit = unit.equals("none") ? "" : USCORE + unit;
 
         writeHelpLine(sb, scope, md.getName(), md, SUMMARY);
-        writeSnapshotBasics(sb, scope, md, snapshot, theUnit);
+        writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true);
         writeTypeLine(sb,scope,md.getName(),md, theUnit,SUMMARY);
         writeValueLine(sb,scope,theUnit + "_count",histogram.getCount(),md, null, false);
-        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit);
+        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true);
     }
 
 
-    private void writeSnapshotBasics(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit) {
+    private void writeSnapshotBasics(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling) {
 
-        writeTypeAndValue(sb, scope, "_min" + unit, snapshot.getMin(), GAUGE, md);
-        writeTypeAndValue(sb, scope, "_max" + unit, snapshot.getMax(), GAUGE, md);
-        writeTypeAndValue(sb, scope, "_mean" + unit, snapshot.getMean(), GAUGE, md);
-        writeTypeAndValue(sb, scope, "_stddev" + unit, snapshot.getStdDev(), GAUGE, md);
+        writeTypeAndValue(sb, scope, "_min" + unit, snapshot.getMin(), GAUGE, md, performScaling);
+        writeTypeAndValue(sb, scope, "_max" + unit, snapshot.getMax(), GAUGE, md, performScaling);
+        writeTypeAndValue(sb, scope, "_mean" + unit, snapshot.getMean(), GAUGE, md, performScaling);
+        writeTypeAndValue(sb, scope, "_stddev" + unit, snapshot.getStdDev(), GAUGE, md, performScaling);
     }
 
-    private void writeSnapshotQuantiles(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit) {
-        writeValueLine(sb, scope, unit, snapshot.getMedian(), md, new Tag(QUANTILE, "0.5"));
-        writeValueLine(sb, scope, unit, snapshot.get75thPercentile(), md, new Tag(QUANTILE, "0.75"));
-        writeValueLine(sb, scope, unit, snapshot.get95thPercentile(), md, new Tag(QUANTILE, "0.95"));
-        writeValueLine(sb, scope, unit, snapshot.get98thPercentile(), md, new Tag(QUANTILE, "0.98"));
-        writeValueLine(sb, scope, unit, snapshot.get99thPercentile(), md, new Tag(QUANTILE, "0.99"));
-        writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, new Tag(QUANTILE, "0.999"));
+    private void writeSnapshotQuantiles(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling) {
+        writeValueLine(sb, scope, unit, snapshot.getMedian(), md, new Tag(QUANTILE, "0.5"), performScaling);
+        writeValueLine(sb, scope, unit, snapshot.get75thPercentile(), md, new Tag(QUANTILE, "0.75"), performScaling);
+        writeValueLine(sb, scope, unit, snapshot.get95thPercentile(), md, new Tag(QUANTILE, "0.95"), performScaling);
+        writeValueLine(sb, scope, unit, snapshot.get98thPercentile(), md, new Tag(QUANTILE, "0.98"), performScaling);
+        writeValueLine(sb, scope, unit, snapshot.get99thPercentile(), md, new Tag(QUANTILE, "0.99"), performScaling);
+        writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, new Tag(QUANTILE, "0.999"), performScaling);
     }
 
     private void writeMeterValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md) {
         writeHelpLine(sb, scope, md.getName(), md, "_total");
-        writeTypeAndValue(sb, scope, "_total", metric.getCount(), COUNTER, md);
+        writeTypeAndValue(sb, scope, "_total", metric.getCount(), COUNTER, md, false);
         writeMeterRateValues(sb, scope, metric, md);
     }
 
     private void writeMeterRateValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md) {
-        writeTypeAndValue(sb, scope, "_rate_per_second", metric.getMeanRate(), GAUGE, md);
-        writeTypeAndValue(sb, scope, "_one_min_rate_per_second", metric.getOneMinuteRate(), GAUGE, md);
-        writeTypeAndValue(sb, scope, "_five_min_rate_per_second", metric.getFiveMinuteRate(), GAUGE, md);
-        writeTypeAndValue(sb, scope, "_fifteen_min_rate_per_second", metric.getFifteenMinuteRate(), GAUGE, md);
+        writeTypeAndValue(sb, scope, "_rate_per_second", metric.getMeanRate(), GAUGE, md, false);
+        writeTypeAndValue(sb, scope, "_one_min_rate_per_second", metric.getOneMinuteRate(), GAUGE, md, false);
+        writeTypeAndValue(sb, scope, "_five_min_rate_per_second", metric.getFiveMinuteRate(), GAUGE, md, false);
+        writeTypeAndValue(sb, scope, "_fifteen_min_rate_per_second", metric.getFifteenMinuteRate(), GAUGE, md, false);
     }
 
-    private void writeTypeAndValue(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, String type, Metadata md) {
+    private void writeTypeAndValue(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, String type, Metadata md, boolean performScaling) {
         String key = md.getName();
         writeTypeLine(sb, scope, key, md, suffix, type);
-        writeValueLine(sb, scope, suffix, valueRaw, md);
+        writeValueLine(sb, scope, suffix, valueRaw, md, null, performScaling);
     }
 
     private void writeValueLine(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md) {
@@ -252,7 +252,7 @@ public class PrometheusExporter implements Exporter {
                                 double valueRaw,
                                 Metadata md,
                                 Tag extraTag,
-                                boolean scaled) {
+                                boolean performScaling) {
         String name = md.getName();
         name = getPrometheusMetricName(name);
         fillBaseName(sb, scope, name);
@@ -270,9 +270,18 @@ public class PrometheusExporter implements Exporter {
         }
 
         sb.append(SPACE);
-        Double value = scaled ? PrometheusUnit.scaleToBase(md.getUnit(), valueRaw) : valueRaw;
-        sb.append(value).append(LF);
 
+        Double value;
+        if(performScaling) {
+            String scaleFrom = "nanoseconds";
+            if(md.getTypeRaw() == MetricType.HISTOGRAM)
+                // for histograms, internally the data is stored using the metric's unit
+                scaleFrom = md.getUnit();
+            value = PrometheusUnit.scaleToBase(scaleFrom, valueRaw);
+        } else {
+            value = valueRaw;
+        }
+        sb.append(value).append(LF);
     }
 
     private void addTags(StringBuffer sb, Map<String, String> tags) {
