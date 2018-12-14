@@ -41,7 +41,7 @@
     <version.arquillian>1.4.0.Final</version.arquillian>
     <version.arquillian-weld-embedded>2.0.0.Final</version.arquillian-weld-embedded>
     <version.arquillian.wildfly>2.1.0.Final</version.arquillian.wildfly>
-    <version.assertj>3.10.0</version.assertj>
+    <version.assertj>3.11.1</version.assertj>
     <version.cdi>1.2</version.cdi>
     <version.javax.json>1.1.2</version.javax.json>
     <version.glassfish.javax.json>1.1.2</version.glassfish.javax.json>
