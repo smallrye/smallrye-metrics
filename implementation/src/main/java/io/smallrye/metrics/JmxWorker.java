@@ -25,9 +25,13 @@ import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 /**
  * @author hrupp
@@ -106,7 +110,7 @@ public class JmxWorker {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         for (ExtendedMetadata entry : entries) {
             if (entry.isMulti()) {
-                String name = entry.getMbean().replace(PLACEHOLDER, "*");
+                String name = entry.getMbean();
                 String attName;
                 String queryableName;
                 int slashIndex = name.indexOf('/');
@@ -121,23 +125,33 @@ public class JmxWorker {
                 attName = name.substring(slashIndex + 1);
 
                 try {
-                    ObjectName objectName = new ObjectName(queryableName);
+                	ObjectName objectNameWithPlaceholders = new ObjectName(queryableName);
+                    final Map<String,String> keyHolders = findKeyForValueToBeReplaced(objectNameWithPlaceholders);
 
-                    String keyHolder = findKeyForValueToBeReplaced(objectName);
+                    ObjectName objectName = new ObjectName(queryableName.replaceAll(PLACEHOLDER + "(\\d)?+", "*"));
 
                     Set<ObjectName> objNames = mbs.queryNames(objectName, null);
                     for (ObjectName oName : objNames) {
-                        String keyValue = oName.getKeyPropertyList().get(keyHolder);
                         String newName = entry.getName();
-                        if (!newName.contains(PLACEHOLDER)) {
-                            log.warn("Name [" + newName + "] did not contain a %s, no replacement will be done, check" +
+                        if (!newName.contains(PLACEHOLDER) && entry.getTags().isEmpty()) {
+                            log.warn("Name [" + newName + "] did not contain a %s or any tags, no replacement will be done, check" +
                                     " the configuration");
                         }
-                        newName = newName.replace(PLACEHOLDER, keyValue);
-                        String newDisplayName = entry.getDisplayName().replace(PLACEHOLDER, keyValue);
-                        String newDescription = entry.getDescription().replace(PLACEHOLDER, keyValue);
+                        String newDisplayName = entry.getDisplayName();
+                        String newDescription = entry.getDescription();
+                        final Map<String, String> tags = entry.getTags();
+                    	for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
+                            String keyValue = oName.getKeyPropertyList().get(keyHolder.getValue());
+                            newName = newName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
+                            newDisplayName = newDisplayName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
+                            newDescription = newDescription.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
+                            for (final Entry<String, String> tag : tags.entrySet()) {
+                            	tag.setValue(tag.getValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue));
+                            }
+                    	}
                         ExtendedMetadata newEntry = new ExtendedMetadata(newName, newDisplayName, newDescription,
                                 entry.getTypeRaw(), entry.getUnit());
+                        newEntry.getTags().putAll(tags);
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
                         newEntry.setMbean(newObjectName);
                         result.add(newEntry);
@@ -153,12 +167,12 @@ public class JmxWorker {
         log.info("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
     }
 
-    private String findKeyForValueToBeReplaced(ObjectName objectName) {
-        String keyHolder = null;
-        Hashtable<String, String> keyPropList = objectName.getKeyPropertyList();
-        for (String key : keyPropList.keySet()) {
-            if (keyPropList.get(key).equals("*")) {
-                keyHolder = key;
+    private Map<String,String> findKeyForValueToBeReplaced(ObjectName objectName) {
+    	final Map<String,String> keyHolder = new HashMap<>();
+        final Hashtable<String, String> keyPropList = objectName.getKeyPropertyList();
+        for (final String key : keyPropList.keySet()) {
+            if (keyPropList.get(key).matches(PLACEHOLDER + "(\\d)?+")) {
+            	keyHolder.put(keyPropList.get(key), key);
             }
         }
         return keyHolder;
