@@ -16,22 +16,23 @@
  */
 package io.smallrye.metrics;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.jboss.logging.Logger;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
+
+import org.eclipse.microprofile.metrics.Metadata;
+import org.jboss.logging.Logger;
 
 /**
  * @author hrupp
@@ -139,19 +140,20 @@ public class JmxWorker {
                         }
                         String newDisplayName = entry.getDisplayName();
                         String newDescription = entry.getDescription();
-                        final Map<String, String> tags = entry.getTags();
+                        Map<String, String> newTags = new HashMap<>(entry.getTags());
                     	for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
                             String keyValue = oName.getKeyPropertyList().get(keyHolder.getValue());
                             newName = newName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDisplayName = newDisplayName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDescription = newDescription.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
-                            for (final Entry<String, String> tag : tags.entrySet()) {
-                            	tag.setValue(tag.getValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue));
-                            }
+                            newTags = newTags.entrySet().stream().collect(Collectors.toMap(
+                                    tag -> tag.getKey(),
+                                    tag -> tag.getValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue)
+                                ));
                     	}
                         ExtendedMetadata newEntry = new ExtendedMetadata(newName, newDisplayName, newDescription,
                                 entry.getTypeRaw(), entry.getUnit());
-                        newEntry.getTags().putAll(tags);
+                        newEntry.getTags().putAll(newTags);
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
                         newEntry.setMbean(newObjectName);
                         result.add(newEntry);
@@ -168,13 +170,11 @@ public class JmxWorker {
     }
 
     private Map<String,String> findKeyForValueToBeReplaced(ObjectName objectName) {
-    	final Map<String,String> keyHolder = new HashMap<>();
-        final Hashtable<String, String> keyPropList = objectName.getKeyPropertyList();
-        for (final String key : keyPropList.keySet()) {
-            if (keyPropList.get(key).matches(PLACEHOLDER + "(\\d)?+")) {
-            	keyHolder.put(keyPropList.get(key), key);
-            }
-        }
-        return keyHolder;
+    	return objectName.getKeyPropertyList().entrySet().stream()
+        	.filter((entry) -> entry.getValue().matches(PLACEHOLDER + "(\\d)?+"))
+        	.collect(Collectors.toMap(
+                    e -> e.getValue(),
+                    e -> e.getKey()
+                ));
     }
 }
