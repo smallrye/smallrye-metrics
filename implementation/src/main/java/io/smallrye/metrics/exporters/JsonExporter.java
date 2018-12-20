@@ -19,7 +19,6 @@ package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -99,7 +98,7 @@ public class JsonExporter implements Exporter {
                         metricBuffer.append("  ").append('"').append(key).append('"').append(" : ").append(val);
                         break;
                     case METERED:
-                        MeterImpl meter = (MeterImpl) value;
+                        Metered meter = (Metered) value;
                         writeStartLine(metricBuffer, key);
                         writeMeterValues(metricBuffer, meter);
                         writeEndLine(metricBuffer);

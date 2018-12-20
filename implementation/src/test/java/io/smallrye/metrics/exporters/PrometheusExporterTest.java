@@ -6,17 +6,21 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.management.ManagementFactory;
+import java.util.Arrays;
+import java.util.List;
+
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.junit.Test;
 
 import io.smallrye.metrics.ExtendedMetadata;
 import io.smallrye.metrics.JmxWorker;
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.mbean.MGaugeImpl;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class PrometheusExporterTest {
 
@@ -53,5 +57,29 @@ public class PrometheusExporterTest {
         assertEquals("foo_bar", getPrometheusMetricName("FOO-BAR"));
         assertEquals("foo_bar", getPrometheusMetricName("FooBAR"));
         assertEquals("foo_bar", getPrometheusMetricName("FooBar"));
+    }
+
+    @Test
+    public void exportOneMetric_metered() {
+
+        // maybe this should be System.getProperty("line.separator") ?
+        // but PrometheusExporter just uses "\n"
+        final String LINE_SEPARATOR = "\n";
+
+        PrometheusExporter exporter = new PrometheusExporter();
+        MetricRegistry applicationRegistry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        // the export should behave identical for any class derived from Meter
+        Meter[] meters = { new MeterImpl(), new SomeMeter() };
+        int idx = 0;
+        for (Meter m : meters) {
+            String name = "prome_meter_" + idx++;
+            applicationRegistry.register(name, m);
+            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
+            assertNotNull(out);
+            List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
+            String expectedLine = "application:" + name + "_total 0.0";
+            assertEquals(1, lines.stream().filter(line -> line.equals(expectedLine)).count());
+        }
     }
 }

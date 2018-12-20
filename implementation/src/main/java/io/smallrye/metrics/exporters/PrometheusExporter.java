@@ -20,7 +20,6 @@ package io.smallrye.metrics.exporters;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.Tag;
 import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -146,7 +145,7 @@ public class PrometheusExporter implements Exporter {
                         createSimpleValueLine(metricBuf, scope, key, md, metric);
                         break;
                     case METERED:
-                        MeterImpl meter = (MeterImpl) metric;
+                        Metered meter = (Metered) metric;
                         writeMeterValues(metricBuf, scope, meter, md);
                         break;
                     case TIMER:
