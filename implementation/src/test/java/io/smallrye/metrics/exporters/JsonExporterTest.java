@@ -16,10 +16,8 @@ import io.smallrye.metrics.app.MeterImpl;
 public class JsonExporterTest {
 
     @Test
-    public void exportOneMetric_metered() {
+    public void testExportOfDifferentMeterImplementations() {
 
-        // maybe this should be System.getProperty("line.separator") ?
-        // but JsonExporter just uses "\n"
         final String LINE_SEPARATOR = "\n";
 
         JsonExporter exporter = new JsonExporter();
@@ -37,4 +35,5 @@ public class JsonExporterTest {
             assertEquals(1, lines.stream().filter(line -> line.contains("\"" + name + "\"")).count());
             assertEquals(1, lines.stream().filter(line -> line.contains("\"count\": 0")).count());
         }
-    }}
+    }
+}
