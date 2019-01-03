@@ -24,6 +24,8 @@ import io.smallrye.metrics.mbean.MGaugeImpl;
 
 public class PrometheusExporterTest {
 
+    private static final String LINE_SEPARATOR = "\n";
+
     @Test
     public void testUptimeGaugeUnitConversion() {
         PrometheusExporter exporter = new PrometheusExporter();
@@ -40,7 +42,7 @@ public class PrometheusExporterTest {
         assertNotNull(out);
 
         double valueFromPrometheus = -1;
-        for (String line : out.toString().split(System.getProperty("line.separator"))) {
+        for (String line : out.toString().split(LINE_SEPARATOR)) {
             if (line.startsWith("base:jvm_uptime_seconds")) {
                 valueFromPrometheus /* in seconds */ = Double.valueOf(line.substring("base:jvm_uptime_seconds".length()).trim());
             }
@@ -60,11 +62,7 @@ public class PrometheusExporterTest {
     }
 
     @Test
-    public void exportOneMetric_metered() {
-
-        // maybe this should be System.getProperty("line.separator") ?
-        // but PrometheusExporter just uses "\n"
-        final String LINE_SEPARATOR = "\n";
+    public void testExportOfDifferentMeterImplementations() {
 
         PrometheusExporter exporter = new PrometheusExporter();
         MetricRegistry applicationRegistry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
