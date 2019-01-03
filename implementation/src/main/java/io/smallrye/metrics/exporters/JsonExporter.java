@@ -18,15 +18,15 @@
 package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
-import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.TimerImpl;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metered;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
@@ -104,13 +104,13 @@ public class JsonExporter implements Exporter {
                         writeEndLine(metricBuffer);
                         break;
                     case TIMER:
-                        TimerImpl timer = (TimerImpl) value;
+                        Timer timer = (Timer) value;
                         writeStartLine(metricBuffer, key);
                         writeTimerValues(metricBuffer, timer, metadata.getUnit());
                         writeEndLine(metricBuffer);
                         break;
                     case HISTOGRAM:
-                        HistogramImpl hist = (HistogramImpl) value;
+                        Histogram hist = (Histogram) value;
                         writeStartLine(metricBuffer, key);
                         metricBuffer.append("    \"count\": ").append(hist.getCount()).append(COMMA_LF);
                         writeSnapshotValues(metricBuffer, hist.getSnapshot());
@@ -143,12 +143,12 @@ public class JsonExporter implements Exporter {
         sb.append("    \"fifteenMinRate\": ").append(meter.getFifteenMinuteRate()).append(LF);
     }
 
-    private void writeTimerValues(StringBuffer sb, TimerImpl timer, String unit) {
+    private void writeTimerValues(StringBuffer sb, Timer timer, String unit) {
         writeSnapshotValues(sb, timer.getSnapshot(), unit);
         // Backup and write COMMA_LF
         sb.setLength(sb.length() - 1);
         sb.append(COMMA_LF);
-        writeMeterValues(sb, timer.getMeter());
+        writeMeterValues(sb, timer);
     }
 
     private void writeSnapshotValues(StringBuffer sb, Snapshot snapshot) {
