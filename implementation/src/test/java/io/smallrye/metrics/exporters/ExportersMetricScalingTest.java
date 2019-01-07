@@ -1,6 +1,8 @@
 package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.setup.MetricMetadataSupplier;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -38,7 +40,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void timer_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES));
         Timer metric = registry.timer(metadata);
         metric.update(1, TimeUnit.HOURS);
         metric.update(2, TimeUnit.HOURS);
@@ -60,7 +62,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void timer_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES));
         Timer metric = registry.timer(metadata);
         metric.update(1, TimeUnit.HOURS);
         metric.update(2, TimeUnit.HOURS);
@@ -83,7 +85,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void histogram_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("histogram1", MetricType.HISTOGRAM, MetricUnits.MINUTES);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("histogram1", MetricType.HISTOGRAM, MetricUnits.MINUTES));
         Histogram metric = registry.histogram(metadata);
         metric.update(30);
         metric.update(40);
@@ -105,7 +107,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void histogram_customunit_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("histogram1", MetricType.HISTOGRAM, "dollars");
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("histogram1", MetricType.HISTOGRAM, "dollars"));
         Histogram metric = registry.histogram(metadata);
         metric.update(30);
         metric.update(40);
@@ -127,7 +129,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void histogram_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES));
         Timer metric = registry.timer(metadata);
         metric.update(1, TimeUnit.HOURS);
         metric.update(2, TimeUnit.HOURS);
@@ -151,7 +153,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void counter_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("counter1", MetricType.COUNTER);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("counter1", MetricType.COUNTER));
         Counter metric = registry.counter(metadata);
         metric.inc(30);
         metric.inc(40);
@@ -170,7 +172,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void counter_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("counter1", MetricType.COUNTER);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("counter1", MetricType.COUNTER));
         Counter metric = registry.counter(metadata);
         metric.inc(10);
         metric.inc(20);
@@ -190,7 +192,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void meter_prometheus() throws InterruptedException {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("meter1", MetricType.METERED);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("meter1", MetricType.METERED)));
         Meter metric = registry.meter(metadata);
         metric.mark(10);
         TimeUnit.SECONDS.sleep(1);
@@ -238,7 +240,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void gauge_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("gauge1", MetricType.GAUGE, MetricUnits.MINUTES);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("gauge1", MetricType.GAUGE, MetricUnits.MINUTES));
         Gauge<Long> gaugeInstance = () -> 3L;
         registry.register("gauge1", gaugeInstance, metadata);
 
@@ -255,7 +257,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void gauge_customUnit_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("gauge1", MetricType.GAUGE, "dollars");
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("gauge1", MetricType.GAUGE, "dollars"));
         Gauge<Long> gaugeInstance = () -> 3L;
         registry.register("gauge1", gaugeInstance, metadata);
 
@@ -272,7 +274,7 @@ public class ExportersMetricScalingTest {
     @Test
     public void gauge_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("gauge1", MetricType.GAUGE, MetricUnits.MINUTES);
+        Metadata metadata = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata("gauge1", MetricType.GAUGE, MetricUnits.MINUTES));
         Gauge<Long> gaugeInstance = () -> 3L;
         registry.register("gauge1", gaugeInstance, metadata);
 

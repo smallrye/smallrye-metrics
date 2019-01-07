@@ -21,6 +21,8 @@ import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
+import io.smallrye.metrics.setup.MetricMetadataSupplier;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -78,7 +80,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
             }
         }
 
-        Metadata m = new Metadata(name, type);
+        Metadata m = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata(name, type));
         metricMap.put(name, metric);
 
         metadataMap.put(name, m);
@@ -130,9 +132,9 @@ public class MetricsRegistryImpl extends MetricRegistry {
     protected Metadata duplicate(Metadata meta) {
         Metadata copy = null;
         if (meta instanceof OriginTrackedMetadata) {
-            copy = new OriginTrackedMetadata(((OriginTrackedMetadata) meta).getOrigin(), meta.getName(), meta.getTypeRaw());
+            copy = MetricMetadataSupplier.S_OriginTrackedMetadata.initiateMetadata(() -> new OriginTrackedMetadata(((OriginTrackedMetadata) meta).getOrigin(), meta.getName(), meta.getTypeRaw()));
         } else {
-            copy = new Metadata(meta.getName(), meta.getTypeRaw());
+            copy = MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata(meta.getName(), meta.getTypeRaw()));
         }
         copy.setDescription(meta.getDescription());
         copy.setUnit(meta.getUnit());
@@ -147,7 +149,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Counter counter(String name) {
-        return counter(new Metadata(name, MetricType.COUNTER));
+        return counter(MetricMetadataSupplier.S_Metadata.initiateMetadata(() ->new Metadata(name, MetricType.COUNTER)));
     }
 
     @Override
@@ -157,7 +159,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Histogram histogram(String name) {
-        return histogram(new Metadata(name, MetricType.HISTOGRAM));
+        return histogram(MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata(name, MetricType.HISTOGRAM)));
     }
 
     @Override
@@ -167,7 +169,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Meter meter(String s) {
-        return meter(new Metadata(s, MetricType.METERED));
+        return meter(MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata(s, MetricType.METERED)));
     }
 
     @Override
@@ -243,7 +245,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Timer timer(String s) {
-        return timer(new Metadata(s, MetricType.TIMER));
+        return timer(MetricMetadataSupplier.S_Metadata.initiateMetadata(() -> new Metadata(s, MetricType.TIMER)));
     }
 
     @Override

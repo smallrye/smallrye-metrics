@@ -19,6 +19,8 @@ package io.smallrye.metrics;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.jboss.logging.Logger;
 
+import io.smallrye.metrics.setup.MetricMetadataSupplier;
+
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -128,16 +130,16 @@ public class JmxWorker {
                     Set<ObjectName> objNames = mbs.queryNames(objectName, null);
                     for (ObjectName oName : objNames) {
                         String keyValue = oName.getKeyPropertyList().get(keyHolder);
-                        String newName = entry.getName();
-                        if (!newName.contains(PLACEHOLDER)) {
-                            log.warn("Name [" + newName + "] did not contain a %s, no replacement will be done, check" +
+                        String oldName = entry.getName();
+                        if (!oldName.contains(PLACEHOLDER)) {
+                            log.warn("Name [" + oldName + "] did not contain a %s, no replacement will be done, check" +
                                     " the configuration");
                         }
-                        newName = newName.replace(PLACEHOLDER, keyValue);
+                        final String newName = oldName.replace(PLACEHOLDER, keyValue);
                         String newDisplayName = entry.getDisplayName().replace(PLACEHOLDER, keyValue);
                         String newDescription = entry.getDescription().replace(PLACEHOLDER, keyValue);
-                        ExtendedMetadata newEntry = new ExtendedMetadata(newName, newDisplayName, newDescription,
-                                entry.getTypeRaw(), entry.getUnit());
+                        ExtendedMetadata newEntry = MetricMetadataSupplier.S_ExtendedMetadata.initiateMetadata(() -> new ExtendedMetadata(newName, newDisplayName, newDescription,
+                                entry.getTypeRaw(), entry.getUnit()));
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
                         newEntry.setMbean(newObjectName);
                         result.add(newEntry);

@@ -18,6 +18,8 @@
 package io.smallrye.metrics;
 
 import io.smallrye.metrics.interceptors.MetricName;
+import io.smallrye.metrics.setup.MetricMetadataSupplier;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -80,7 +82,7 @@ public class MetricProducer {
     }
 
     private Metadata getMetadata(InjectionPoint ip, MetricType type) {
-        Metadata metadata = new OriginTrackedMetadata(ip, metricName.of(ip), type);
+        Metadata metadata = MetricMetadataSupplier.S_OriginTrackedMetadata.initiateMetadata( () -> new OriginTrackedMetadata(ip, metricName.of(ip), type));
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         if (metric != null) {
             if (!metric.unit().isEmpty()) {

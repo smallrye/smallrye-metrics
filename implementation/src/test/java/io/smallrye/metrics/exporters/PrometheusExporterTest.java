@@ -11,6 +11,8 @@ import io.smallrye.metrics.ExtendedMetadata;
 import io.smallrye.metrics.JmxWorker;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.mbean.MGaugeImpl;
+import io.smallrye.metrics.setup.MetricMetadataSupplier;
+
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -26,7 +28,7 @@ public class PrometheusExporterTest {
         MetricRegistry baseRegistry = MetricRegistries.get(MetricRegistry.Type.BASE);
 
         Gauge gauge = new MGaugeImpl(JmxWorker.instance(), "java.lang:type=Runtime/Uptime");
-        Metadata metadata = new ExtendedMetadata("jvm.uptime", "display name", "description", MetricType.GAUGE, "milliseconds");
+        Metadata metadata = MetricMetadataSupplier.S_ExtendedMetadata.initiateMetadata(() -> new ExtendedMetadata("jvm.uptime", "display name", "description", MetricType.GAUGE, "milliseconds"));
         baseRegistry.register(metadata, gauge);
 
         long actualUptime /* in ms */ = ManagementFactory.getRuntimeMXBean().getUptime();

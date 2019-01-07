@@ -102,7 +102,7 @@ public class JmxRegistrar {
                 .forEach(
                         prop -> entryProperties.put(prop.propertyKey, prop.propertyValue)
                 );
-        ExtendedMetadata meta = new ExtendedMetadata(name, metricTypeOf(entryProperties.get("type")));
+        ExtendedMetadata meta = MetricMetadataSupplier.S_ExtendedMetadata.initiateMetadata(() -> new ExtendedMetadata(name, metricTypeOf(entryProperties.get("type"))));
         meta.setMbean(entryProperties.get("mbean"));
         meta.setDisplayName(entryProperties.get("displayName"));
         meta.setDescription(entryProperties.get("description"));
