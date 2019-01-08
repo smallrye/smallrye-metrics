@@ -63,9 +63,8 @@ public class MetricsRequestHandler {
                               String method,
                               Stream<String> acceptHeaders,
                               Responder responder) throws IOException {
-        Exporter exporter = obtainExporter(method, acceptHeaders);
+        Exporter exporter = obtainExporter(method, acceptHeaders, responder);
         if (exporter == null) {
-            responder.respondWith(406, "No exporter found for method " + method + " and media type", Collections.emptyMap());
             return;
         }
 
@@ -144,42 +143,32 @@ public class MetricsRequestHandler {
     /**
      * Determine which exporter we want.
      *
-     * @param method http method (GET, POST, etc)
+     * @param method        http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
-     *
-     * @return An exporter instance or null in case no matching exporter existed.
+     * @param responder     the responder to use if an error occurs
+     * @return An exporter instance. If an exporter cannot be obtained for some reason, this method will use the responder
+     * to inform the user and will return null.
      */
-    private Exporter obtainExporter(String method, Stream<String> acceptHeaders) {
-        Exporter exporter;
-
-        if (acceptHeaders == null) {
+    private Exporter obtainExporter(String method, Stream<String> acceptHeaders, Responder responder) throws IOException {
+        if (!method.equals("GET") && !method.equals("OPTIONS")) {
+            responder.respondWith(405, "Only GET and OPTIONS methods are accepted.", Collections.emptyMap());
+            return null;
+        } else if (acceptHeaders != null && acceptHeaders.findFirst().map(e -> e.startsWith("application/json")).orElse(false)) {
+            // use JSON exporter
             if (method.equals("GET")) {
-                exporter = new PrometheusExporter();
+                return new JsonExporter();
             } else {
-                return null;
+                return new JsonMetadataExporter();
             }
         } else {
-            // Header can look like "application/json, text/plain, */*"
-            if (acceptHeaders.findFirst().map(e -> e.startsWith("application/json")).orElse(false)) {
-
-
-                if (method.equals("GET")) {
-                    exporter = new JsonExporter();
-                } else if (method.equals("OPTIONS")) {
-                    exporter = new JsonMetadataExporter();
-                } else {
-                    return null;
-                }
+            // use Prometheus exporter
+            if (method.equals("GET")) {
+                return new PrometheusExporter();
             } else {
-                // This is the fallback, but only for GET, as Prometheus does not support OPTIONS
-                if (method.equals("GET")) {
-                    exporter = new PrometheusExporter();
-                } else {
-                    return null;
-                }
+                responder.respondWith(406, "OPTIONS method is only allowed with application/json media type.", Collections.emptyMap());
+                return null;
             }
-        };
-        return exporter;
+        }
     }
 
 
