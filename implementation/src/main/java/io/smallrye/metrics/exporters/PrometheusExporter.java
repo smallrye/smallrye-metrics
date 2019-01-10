@@ -19,13 +19,11 @@ package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.Tag;
-import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.MeterImpl;
-import io.smallrye.metrics.app.TimerImpl;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metered;
 import org.eclipse.microprofile.metrics.Metric;
@@ -33,6 +31,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
@@ -146,15 +145,15 @@ public class PrometheusExporter implements Exporter {
                         createSimpleValueLine(metricBuf, scope, key, md, metric);
                         break;
                     case METERED:
-                        MeterImpl meter = (MeterImpl) metric;
+                        Metered meter = (Metered) metric;
                         writeMeterValues(metricBuf, scope, meter, md);
                         break;
                     case TIMER:
-                        TimerImpl timer = (TimerImpl) metric;
+                        Timer timer = (Timer) metric;
                         writeTimerValues(metricBuf, scope, timer, md);
                         break;
                     case HISTOGRAM:
-                        HistogramImpl histogram = (HistogramImpl) metric;
+                        Histogram histogram = (Histogram) metric;
                         writeHistogramValues(metricBuf, scope, histogram, md);
                         break;
                     default:
@@ -167,14 +166,14 @@ public class PrometheusExporter implements Exporter {
         }
     }
 
-    private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, TimerImpl timer, Metadata md) {
+    private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md) {
 
         String unit = md.getUnit();
         unit = PrometheusUnit.getBaseUnitAsPrometheusString(unit);
 
         String theUnit = unit.equals("none") ? "" : USCORE + unit;
 
-        writeMeterRateValues(sb, scope, timer.getMeter(), md);
+        writeMeterRateValues(sb, scope, timer, md);
         Snapshot snapshot = timer.getSnapshot();
         writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true);
 
@@ -186,7 +185,7 @@ public class PrometheusExporter implements Exporter {
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true);
     }
 
-    private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, HistogramImpl histogram, Metadata md) {
+    private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, Histogram histogram, Metadata md) {
 
         Snapshot snapshot = histogram.getSnapshot();
         String unit = md.getUnit();
