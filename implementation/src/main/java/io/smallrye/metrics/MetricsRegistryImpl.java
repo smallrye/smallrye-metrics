@@ -16,13 +16,18 @@
  */
 package io.smallrye.metrics;
 
+import io.smallrye.metrics.app.ConcurrentGaugeImpl;
 import io.smallrye.metrics.app.CounterImpl;
 import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
-import java.util.Optional;
+
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -31,6 +36,7 @@ import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
@@ -41,6 +47,7 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,7 +62,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     private static final String NONE = "NONE";
 
     private Map<String, Metadata> metadataMap = new HashMap<>();
-    private Map<String, Metric> metricMap = new ConcurrentHashMap<>();
+    private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
 
     Optional<String> globalTags;
 
@@ -102,7 +109,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
             addGlobalTags(mb);
         }
         Metadata m = mb.build();
-        metricMap.put(name, metric);
+        metricMap.put(new MetricID(name), metric);
 
         metadataMap.put(name, m);
         return metric;
@@ -115,7 +122,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
         String[] tagsArray=globalTags.get().split(",");
         for (String aTag : tagsArray) {
-            mb.addTag(aTag);
+            // mb.addTag(aTag); TODO
         }
     }
 
@@ -147,16 +154,18 @@ public class MetricsRegistryImpl extends MetricRegistry {
             throw new IllegalArgumentException("Reusable flag differs from previous usage");
         }
 
-        metricMap.put(name, metric);
+        metricMap.put(new MetricID(name), metric);
         metadataMap.put(name, duplicate(metadata));
 
         return metric;
     }
 
+
+
     protected Metadata duplicate(Metadata meta) {
         Metadata copy = null;
         Map<String, String> tagsCopy = new HashMap<>();
-        tagsCopy.putAll(meta.getTags());
+//        tagsCopy.putAll(meta.getTags());  // TODO
         if (globalTags.isPresent()) {
             String[] tagsArray = globalTags.get().split(",");
             for (String aTag : tagsArray) {
@@ -185,7 +194,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
             builder.withDescription(meta.getDescription().orElse(""));
 
             for (Map.Entry<String,String> tag : tagsCopy.entrySet()) {
-                builder.addTag(tag.getKey()+"="+tag.getValue());
+                // builder.addTag(tag.getKey()+"="+tag.getValue());  TODO
             }
             addGlobalTags(builder);
             copy = builder.build();
@@ -202,6 +211,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public org.eclipse.microprofile.metrics.Counter counter(Metadata metadata) {
         return get(metadata, MetricType.COUNTER);
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name) {
+        return concurrentGauge(Metadata.builder().withName(name).withType(MetricType.CONCURRENT_GAUGE).build());
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata) {
+        return get(metadata, MetricType.CONCURRENT_GAUGE);
     }
 
     @Override
@@ -250,6 +269,9 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     break;
                 case TIMER:
                     m = new TimerImpl(new ExponentiallyDecayingReservoir());
+                    break;
+                case CONCURRENT_GAUGE:
+                    m = new ConcurrentGaugeImpl();
                     break;
                 case INVALID:
                 default:
@@ -313,9 +335,9 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public void removeMatching(MetricFilter metricFilter) {
-        Iterator<Map.Entry<String, Metric>> iterator = metricMap.entrySet().iterator();
+        Iterator<Map.Entry<MetricID, Metric>> iterator = metricMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, Metric> entry = iterator.next();
+            Map.Entry<MetricID, Metric> entry = iterator.next();
             if (metricFilter.matches(entry.getKey(), entry.getValue())) {
                 remove(entry.getKey());
             }
@@ -324,70 +346,84 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public java.util.SortedSet<String> getNames() {
-        return new java.util.TreeSet<>(metricMap.keySet());
-    }
+        SortedSet<String> out = new TreeSet<>();
+        for (MetricID id : metricMap.keySet()) {
+            out.add(id.getName());
+        }
+        return out;
+}
 
     @Override
-    public SortedMap<String, Gauge> getGauges() {
+    public SortedMap<MetricID, Gauge> getGauges() {
         return getGauges(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Gauge> getGauges(MetricFilter metricFilter) {
+    public SortedMap<MetricID, Gauge> getGauges(MetricFilter metricFilter) {
         return getMetrics(MetricType.GAUGE, metricFilter);
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters() {
+    public SortedMap<MetricID, Counter> getCounters() {
         return getCounters(MetricFilter.ALL);
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters(MetricFilter metricFilter) {
+    public SortedMap<MetricID, Counter> getCounters(MetricFilter metricFilter) {
         return getMetrics(MetricType.COUNTER, metricFilter);
     }
 
     @Override
-    public java.util.SortedMap<String, Histogram> getHistograms() {
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
+        return getConcurrentGauges(MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter metricFilter) {
+        return getMetrics(MetricType.CONCURRENT_GAUGE, metricFilter);
+    }
+
+    @Override
+    public java.util.SortedMap<MetricID, Histogram> getHistograms() {
         return getHistograms(MetricFilter.ALL);
     }
 
     @Override
-    public java.util.SortedMap<String, Histogram> getHistograms(MetricFilter metricFilter) {
+    public java.util.SortedMap<MetricID, Histogram> getHistograms(MetricFilter metricFilter) {
         return getMetrics(MetricType.HISTOGRAM, metricFilter);
     }
 
     @Override
-    public java.util.SortedMap<String, Meter> getMeters() {
+    public java.util.SortedMap<MetricID, Meter> getMeters() {
         return getMeters(MetricFilter.ALL);
     }
 
     @Override
-    public java.util.SortedMap<String, Meter> getMeters(MetricFilter metricFilter) {
+    public java.util.SortedMap<MetricID, Meter> getMeters(MetricFilter metricFilter) {
         return getMetrics(MetricType.METERED, metricFilter);
     }
 
     @Override
-    public java.util.SortedMap<String, Timer> getTimers() {
+    public java.util.SortedMap<MetricID, Timer> getTimers() {
         return getTimers(MetricFilter.ALL);
     }
 
     @Override
-    public java.util.SortedMap<String, Timer> getTimers(MetricFilter metricFilter) {
+    public java.util.SortedMap<MetricID, Timer> getTimers(MetricFilter metricFilter) {
         return getMetrics(MetricType.TIMER, metricFilter);
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
+    public Map<MetricID, Metric> getMetrics() {
 
         return new HashMap<>(metricMap);
     }
 
-    private <T extends Metric> SortedMap<String, T> getMetrics(MetricType type, MetricFilter filter) {
-        SortedMap<String, T> out = new TreeMap<>();
+    private <T extends Metric> SortedMap<MetricID, T> getMetrics(MetricType type, MetricFilter filter) {
+        SortedMap<MetricID, T> out = new TreeMap<>();
 
-        for (Map.Entry<String, Metric> entry : metricMap.entrySet()) {
-            Metadata metadata = metadataMap.get(entry.getKey());
+        for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
+            Metadata metadata = metadataMap.get(entry.getKey().getName());
             if (metadata.getTypeRaw() == type) {
                 if (filter.matches(entry.getKey(), entry.getValue())) {
                     out.put(entry.getKey(), (T) entry.getValue());
