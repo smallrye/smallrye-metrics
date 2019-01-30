@@ -54,12 +54,12 @@ public class PrometheusExporterTest {
         assertNotNull(out);
 
         double valueFromPrometheus = -1;
-        for (String line : out.toString().split(LINE_SEPARATOR)) {
-            if (line.startsWith("base:jvm_uptime_seconds")) {
+        for (String line : out.toString().split(System.getProperty("line.separator"))) {
+            if (line.startsWith("base_jvm_uptime_seconds")) {
                 valueFromPrometheus /* in seconds */ = Double.valueOf(line.substring("base:jvm_uptime_seconds".length()).trim());
             }
         }
-        assertTrue(valueFromPrometheus != -1);
+        assertTrue("Value should not be -1", valueFromPrometheus != -1) ;
         assertTrue(valueFromPrometheus >= actualUptimeInSeconds);
     }
 

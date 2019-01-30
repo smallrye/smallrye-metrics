@@ -17,10 +17,7 @@
 package io.smallrye.metrics.interceptors;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.enterprise.inject.Vetoed;
 import java.lang.annotation.Annotation;
@@ -39,6 +36,10 @@ public class MetricResolver {
 
     public <E extends Member & AnnotatedElement> Of<Counted> counted(Class<?> topClass, E element) {
         return resolverOf(topClass, element, Counted.class);
+    }
+
+    public <E extends Member & AnnotatedElement> Of<ConcurrentGauge> concurrentGauge(Class<?> topClass, E element) {
+        return resolverOf(topClass, element, ConcurrentGauge.class);
     }
 
     public Of<Gauge> gauge(Class<?> topClass, Method method) {
@@ -109,6 +110,8 @@ public class MetricResolver {
     private String metricName(Annotation annotation) {
         if (Counted.class.isInstance(annotation)) {
             return ((Counted) annotation).name();
+        } else if (ConcurrentGauge.class.isInstance(annotation)) {
+            return ((ConcurrentGauge) annotation).name();
         } else if (Gauge.class.isInstance(annotation)) {
             return ((Gauge) annotation).name();
         } else if (Metered.class.isInstance(annotation)) {
@@ -129,6 +132,8 @@ public class MetricResolver {
 
         if (Counted.class.isInstance(annotation)) {
             return ((Counted) annotation).absolute();
+        } else if (ConcurrentGauge.class.isInstance(annotation)) {
+            return ((ConcurrentGauge) annotation).absolute();
         } else if (Gauge.class.isInstance(annotation)) {
             return ((Gauge) annotation).absolute();
         } else if (Metered.class.isInstance(annotation)) {

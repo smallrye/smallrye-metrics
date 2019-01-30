@@ -116,14 +116,14 @@ public class JsonMetadataExporter implements Exporter {
     private JsonObject metricJSON(Metadata metadata) {
         JsonObjectBuilder obj = Json.createObjectBuilder();
 
-        if (metadata.getUnit() != null) {
-            obj.add("unit", metadata.getUnit());
+        if (metadata.getUnit().isPresent()) {
+            obj.add("unit", metadata.getUnit().get());
         }
         if (metadata.getType() != null) {
             obj.add("type", metadata.getType());
         }
-        if (metadata.getDescription() != null) {
-            obj.add("description", metadata.getDescription());
+        if (metadata.getDescription().isPresent()) {
+            obj.add("description", metadata.getDescription().get());
         }
         if (metadata.getDisplayName() != null) {
             obj.add("displayName", metadata.getDisplayName());

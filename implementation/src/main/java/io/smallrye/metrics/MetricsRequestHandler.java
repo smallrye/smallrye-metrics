@@ -20,6 +20,9 @@ import io.smallrye.metrics.exporters.Exporter;
 import io.smallrye.metrics.exporters.JsonExporter;
 import io.smallrye.metrics.exporters.JsonMetadataExporter;
 import io.smallrye.metrics.exporters.PrometheusExporter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
@@ -39,6 +42,9 @@ import java.util.stream.Stream;
 public class MetricsRequestHandler {
 
     private static final Map<String, String> corsHeaders;
+    private static final String TEXT_PLAIN = "text/plain";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String STAR_STAR = "*/*";
 
     static {
         corsHeaders = new HashMap<>();
@@ -150,7 +156,7 @@ public class MetricsRequestHandler {
      * @return An exporter instance or null in case no matching exporter existed.
      */
     private Exporter obtainExporter(String method, Stream<String> acceptHeaders) {
-        Exporter exporter;
+        Exporter exporter = null;
 
         if (acceptHeaders == null) {
             if (method.equals("GET")) {
@@ -160,26 +166,91 @@ public class MetricsRequestHandler {
             }
         } else {
             // Header can look like "application/json, text/plain, */*"
-            if (acceptHeaders.findFirst().map(e -> e.startsWith("application/json")).orElse(false)) {
+            Optional<String> mt = getBestMatchingMediaType(acceptHeaders);
+            if (mt.isPresent()) {
+                String mediaType = mt.get();
 
+                if (mediaType.startsWith(APPLICATION_JSON)) {
 
-                if (method.equals("GET")) {
-                    exporter = new JsonExporter();
-                } else if (method.equals("OPTIONS")) {
-                    exporter = new JsonMetadataExporter();
+                    if (method.equals("GET")) {
+                        exporter = new JsonExporter();
+                    } else if (method.equals("OPTIONS")) {
+                        exporter = new JsonMetadataExporter();
+                    } else {
+                        return null;
+                    }
                 } else {
-                    return null;
-                }
-            } else {
-                // This is the fallback, but only for GET, as Prometheus does not support OPTIONS
-                if (method.equals("GET")) {
-                    exporter = new PrometheusExporter();
-                } else {
-                    return null;
+                    // This is the fallback, but only for GET, as Prometheus does not support OPTIONS
+                    if (method.equals("GET")) {
+                        exporter = new PrometheusExporter();
+                    } else {
+                        return null;
+                    }
                 }
             }
-        };
+        }
         return exporter;
+    }
+
+    /**
+     * Find the best matching media type (i.e. the one with highest prio.
+     * If two have the same prio, and one is text/plain, then use this.
+     * Return empty if no match can be found
+     * @param acceptHeaders A steam of Accept: headers
+     * @return best media type as string or null if no match
+     */
+    // This should be available somewhere in http handling world
+    Optional<String> getBestMatchingMediaType(Stream<String> acceptHeaders) {
+
+        List<WTTuple> tupleList = new ArrayList<>();
+
+        // Dissect the heades into type and prio and put them in a list
+        acceptHeaders.forEach(h -> {
+            String[] headers = h.split(",");
+            for (String header : headers) {
+                String[] parts = header.split(";");
+                float prio = 0;
+                if (parts.length == 1) {
+                    prio = 1.0f;
+                } else {
+                    for (String x : parts) {
+                        if (x.startsWith("q=")) {
+                            prio = Float.parseFloat(x.substring(2));
+                        }
+                    }
+                }
+                WTTuple t = new WTTuple(prio,parts[0]);
+                tupleList.add(t);
+            }
+        });
+
+        WTTuple bestMatchTuple = new WTTuple(-1,null);
+
+        // Iterate over the list and find the best match
+        for (WTTuple tuple : tupleList) {
+            if (!isKnownMediaType(tuple)) {
+                continue;
+            }
+            if (tuple.weight > bestMatchTuple.weight) {
+                bestMatchTuple = tuple;
+            } else if (tuple.weight == bestMatchTuple.weight) {
+                if (!bestMatchTuple.type.equals(TEXT_PLAIN) && tuple.type.equals(TEXT_PLAIN)) {
+                    bestMatchTuple = tuple;
+                }
+            }
+        }
+
+        // We found a match. Now if this is */* return text/plain. Otherwise return the type found
+        if (bestMatchTuple.weight >0 ) {
+            return bestMatchTuple.type.equals(STAR_STAR) ? Optional.of(TEXT_PLAIN) : Optional.of(bestMatchTuple.type);
+        }
+
+        // No match
+        return Optional.empty();
+    }
+
+    private boolean isKnownMediaType(WTTuple tuple) {
+        return tuple.type.equals(TEXT_PLAIN) || tuple.type.equals(APPLICATION_JSON) || tuple.type.equals(STAR_STAR);
     }
 
 
@@ -197,4 +268,18 @@ public class MetricsRequestHandler {
          */
         void respondWith(int status, String message, Map<String, String> headers) throws IOException;
     }
+
+    /**
+     * Helper object for media type matching
+     */
+    private static class WTTuple {
+        float weight;
+        String type;
+
+        WTTuple(float weight, String type) {
+            this.weight = weight;
+            this.type = type;
+        }
+    }
+
 }
