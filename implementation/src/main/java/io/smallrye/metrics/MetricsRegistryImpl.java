@@ -23,7 +23,6 @@ import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
 
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import org.eclipse.microprofile.config.Config;
@@ -160,7 +159,10 @@ public class MetricsRegistryImpl extends MetricRegistry {
         return metric;
     }
 
-
+    @Override
+    public <T extends Metric> T register(Metadata metadata, T metric, org.eclipse.microprofile.metrics.Tag... tags) throws IllegalArgumentException {
+        return null;  // TODO: Customise this generated block
+    }
 
     protected Metadata duplicate(Metadata meta) {
         Metadata copy = null;
@@ -209,6 +211,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public Counter counter(String name, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
+    public Counter counter(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
     public org.eclipse.microprofile.metrics.Counter counter(Metadata metadata) {
         return get(metadata, MetricType.COUNTER);
     }
@@ -224,6 +236,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public ConcurrentGauge concurrentGauge(String name, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
     public Histogram histogram(String name) {
         return histogram(Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build());
     }
@@ -234,6 +256,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public Histogram histogram(String name, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
+    public Histogram histogram(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
     public Meter meter(String s) {
         return meter(Metadata.builder().withName(s).withType(MetricType.METERED).build());
     }
@@ -241,6 +273,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Meter meter(Metadata metadata) {
         return get(metadata, MetricType.METERED);
+    }
+
+    @Override
+    public Meter meter(String name, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
+    public Meter meter(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
     }
 
     private <T extends Metric> T get(Metadata metadata, MetricType type) {
@@ -323,11 +365,33 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public Timer timer(String name, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
+    public Timer timer(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    @Override
     public boolean remove(String metricName) {
-        if (metricMap.containsKey(metricName)) {
+        MetricID idToRemove = new MetricID(metricName);
+        if (metricMap.containsKey(idToRemove)) {
             log.debugf("Remove metric [name: %s]", metricName);
-            metricMap.remove(metricName);
+            metricMap.remove(idToRemove);
             metadataMap.remove(metricName);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean remove(MetricID metricID) {
+        if (metricMap.containsKey(metricID)) {
+            log.debugf("Remove metric [id: %s]", metricID);
+            metricMap.remove(metricID);
+            metadataMap.remove(metricID.getName());
             return true;
         }
         return false;
@@ -351,7 +415,12 @@ public class MetricsRegistryImpl extends MetricRegistry {
             out.add(id.getName());
         }
         return out;
-}
+    }
+
+    @Override
+    public SortedSet<MetricID> getMetricIDs() {
+        return new TreeSet<>(metricMap.keySet());
+    }
 
     @Override
     public SortedMap<MetricID, Gauge> getGauges() {
