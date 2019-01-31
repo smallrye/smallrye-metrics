@@ -108,6 +108,15 @@ public class JmxRegistrar {
                                                          "unit"));
         meta.setMbean(entryProperties.get("mbean"));
         meta.setMulti("true".equalsIgnoreCase(entryProperties.get("multi")));
+        if(entryProperties.containsKey("tags")) {
+
+        	final String labelDefs[] = entryProperties.get("tags").split(";");
+        	for (final String labelDef : labelDefs) {
+        		final String label[] = labelDef.split("=", 2);
+				meta.getTags().put(label[0], label[1]);
+			}
+        	
+        }
         return meta;
     }
 

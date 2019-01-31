@@ -16,17 +16,20 @@
  */
 package io.smallrye.metrics.setup;
 
-import io.smallrye.metrics.ExtendedMetadata;
-import org.junit.Before;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.assertj.core.util.Lists;
+import org.junit.Before;
+import org.junit.Test;
 
+import io.smallrye.metrics.ExtendedMetadata;
+import io.smallrye.metrics.JmxWorker;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
@@ -77,6 +80,38 @@ public class JmxRegistrarTest {
 
     }
 
+    @Test
+    public void shouldReplaceMultipleWildcards() {
+    	assertThat(getMetadataCalled("test_key")).hasSize(1);
+    	
+    	final ExtendedMetadata extendedMetadata = getSingleMatch("test_key");
+        assertThat(extendedMetadata.getName()).isEqualTo("test_key");
+        assertThat(extendedMetadata.getDescription()).isEqualTo("Description %s1-%s2");
+        assertThat(extendedMetadata.getDisplayName()).isEqualTo("Display Name %s1-%s2");
+        assertThat(extendedMetadata.getMbean()).isEqualTo("java.nio:name=%s2,type=%s1/ObjectName");
+        assertThat(extendedMetadata.getTags()).contains(entry("type", "%s1"), entry("name", "%s2"));
+        assertThat(extendedMetadata.getType()).isEqualTo("counter");
+        assertThat(extendedMetadata.getUnit()).isEqualTo("none");
+        
+        final List<ExtendedMetadata> metadataList = Lists.list(extendedMetadata);
+        
+        JmxWorker.instance().expandMultiValueEntries(metadataList);
+        
+        assertThat(metadataList.size() == 2);
+
+        final ExtendedMetadata extendedMetadata1 = metadataList.get(0);
+        assertThat(extendedMetadata1.getDescription()).isEqualTo("Description BufferPool-mapped");
+        assertThat(extendedMetadata1.getDisplayName()).isEqualTo("Display Name BufferPool-mapped");
+        assertThat(extendedMetadata1.getMbean()).isEqualTo("java.nio:name=mapped,type=BufferPool/ObjectName");
+        assertThat(extendedMetadata1.getTags()).contains(entry("type", "BufferPool"), entry("name", "mapped"));
+        
+        final ExtendedMetadata extendedMetadata2 = metadataList.get(1);
+        assertThat(extendedMetadata2.getDescription()).isEqualTo("Description BufferPool-direct");
+        assertThat(extendedMetadata2.getDisplayName()).isEqualTo("Display Name BufferPool-direct");
+        assertThat(extendedMetadata2.getMbean()).isEqualTo("java.nio:name=direct,type=BufferPool/ObjectName");
+        assertThat(extendedMetadata2.getTags()).contains(entry("type", "BufferPool"), entry("name", "direct"));      
+    }
+    
     private ExtendedMetadata getSingleMatch(String namePattern) {
         List<ExtendedMetadata> gcList = getMetadataCalled(namePattern);
         assertThat(gcList).hasSize(1);
