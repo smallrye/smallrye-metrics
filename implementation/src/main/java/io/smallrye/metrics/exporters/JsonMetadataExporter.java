@@ -19,6 +19,7 @@ package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.json.Json;
@@ -30,7 +31,6 @@ import java.io.StringWriter;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Created by bob on 1/22/18.
@@ -60,21 +60,28 @@ public class JsonMetadataExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
+    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
+        throw new UnsupportedOperationException("Exporting metadata of one metricID is currently not implemented because it is not possible to perform such export according to specification.");
+    }
+
+    @Override
+    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
         MetricRegistry registry = MetricRegistries.get(scope);
         if (registry == null) {
             return null;
         }
 
-        Metadata metric = registry.getMetadata().get(metricName);
+        Metadata metadata = registry.getMetadata().get(name);
 
-        if (metric == null) {
+        if (metadata == null) {
             return null;
         }
 
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        metricJSON(builder, metricName, metric);
+        // TODO find a way to append the set of known sets of tags for this metricName
+        metricJSON(builder, name, metadata);
         return stringify(builder.build());
+
     }
 
     private static final Map<String, ?> JSON_CONFIG = new HashMap<String, Object>() {{
@@ -128,13 +135,14 @@ public class JsonMetadataExporter implements Exporter {
         if (metadata.getDisplayName() != null) {
             obj.add("displayName", metadata.getDisplayName());
         }
-        if (metadata.getTagsAsString() != null) {
+        // TODO what with this?
+/*        if (metadata.getTagsAsString() != null) {
             //obj.add("tags", metadata.getTagsAsString());
             String str = metadata.getTags().entrySet().stream()
                     .map(e -> e.getKey() + "=" + e.getValue())
                     .collect(Collectors.joining(","));
             obj.add("tags", str);
-        }
+        }*/
 
         return obj.build();
     }

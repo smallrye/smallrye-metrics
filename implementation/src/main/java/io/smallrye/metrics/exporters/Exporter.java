@@ -17,6 +17,7 @@
 
 package io.smallrye.metrics.exporters;
 
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
@@ -30,5 +31,13 @@ public interface Exporter {
 
     String getContentType();
 
-    StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName);
+    /**
+     * Exports just one metric obtained from a scope using its MetricID.
+     */
+    StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID);
+
+    /**
+     * Exports all metrics with the given name inside the given scope.
+     */
+    StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name);
 }

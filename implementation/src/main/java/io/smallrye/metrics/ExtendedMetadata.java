@@ -18,11 +18,15 @@ package io.smallrye.metrics;
 
 import java.util.HashMap;
 import org.eclipse.microprofile.metrics.DefaultMetadata;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author hrupp
@@ -31,52 +35,63 @@ public class ExtendedMetadata extends DefaultMetadata {
 
     private String mbean;
     boolean multi;
+//    private List<Tag> tags;
 
     public ExtendedMetadata(String name, MetricType type) {
-        this(name,null,null,type,null);
+        this(name,null,null,type,null, null, false);
     }
 
-    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) {
-        super(name, displayName, description, typeRaw, unit,false,new HashMap<>());
+    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) { // TODO
+        this(name, displayName, description, typeRaw, unit, null, false);
+    }
+
+    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean, boolean multi) { // TODO
+        super(name, displayName, description, typeRaw, unit, false);
+        this.mbean = mbean;
+        this.multi = multi;
     }
 
     public String getMbean() {
         return mbean;
     }
 
-    public void setMbean(String mbean) {
-        this.mbean = mbean;
-    }
-
     public boolean isMulti() {
         return multi;
     }
 
-    public void setMulti(boolean multi) {
-        this.multi = multi;
-    }
+/*    public List<Tag> getTags() {
+        return tags;
+    }*/
 
-//    public void setLabels(List<Tag> in) {
-//        for (Tag tag : in) {
-//            addTag(tag.toKVString());
-//        }
-//    }
+/*    public class Builder extends MetadataBuilder {
 
-    public List<Tag> getLabels() {
-        List<Tag> out = new ArrayList<>(getTags().size());
-        for (Map.Entry<String, String> entity : getTags().entrySet()) {
-            Tag t = new Tag(entity.getKey(), entity.getValue());
-            out.add(t);
+        private final Metadata metadata;
+
+        private List<Tag> tags;
+
+        private boolean multi;
+
+        private String mbean;
+
+        public Builder(Metadata metadata) {
+            this.metadata = metadata;
         }
-        return out;
-    }
 
-    public void processTags(List<Tag> globalTags) {
-
-        List<Tag> tags = new ArrayList<>(globalTags);
-        tags.addAll(getLabels());
-        for (Tag tag : tags) {
-            getTags().put(tag.key, tag.value);
+        public Builder mbean(String mbean) {
+            this.mbean = mbean;
         }
-    }
+
+        @Override
+        public ExtendedMetadata build() {
+            return new ExtendedMetadata(metadata.getName(),
+                    metadata.getDisplayName(),
+                    metadata.getDescription().orElse(null),
+                    metadata.getTypeRaw(),
+                    metadata.getUnit().orElse("none"),
+                    tags);
+        }
+
+
+    }*/
+
 }

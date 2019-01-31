@@ -17,6 +17,7 @@ package org.wildfly.swarm.microprofile.metrics.registry;
 
 import org.eclipse.microprofile.metrics.Counting;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -57,7 +58,7 @@ public class MetricRegistryInjectionTest {
         hello.hello();
         assertNotNull(summary.getBaseMetrics().getMetrics().containsKey("memory.usedHeap"));
         assertNotNull(summary.getVendorMetrics().getMetrics().containsKey("loadedModules"));
-        Metric helloCountMetric = summary.getAppMetrics().getMetrics().get("hello-count");
+        Metric helloCountMetric = summary.getAppMetrics().getMetrics().get(new MetricID("hello-count"));
         assertNotNull(helloCountMetric);
         assertTrue(helloCountMetric instanceof Counting);
         Counting helloCount = (Counting) helloCountMetric;

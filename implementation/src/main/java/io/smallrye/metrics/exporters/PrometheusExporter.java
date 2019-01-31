@@ -18,7 +18,6 @@
 package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
-import io.smallrye.metrics.Tag;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -33,6 +32,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
  *
  * @author Heiko W. Rupp
  */
+// TODO export multiple metrics by one name with different tags
 public class PrometheusExporter implements Exporter {
 
     private static final Logger log = Logger.getLogger("io.smallrye.metrics");
@@ -94,19 +95,25 @@ public class PrometheusExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
+    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
 
-        Metric m = metricMap.get(metricName);
+        Metric m = metricMap.get(metricID);
 
         Map<MetricID, Metric> outMap = new HashMap<>(1);
-        MetricID outName = new MetricID(metricName);
-        outMap.put(outName, m);
+        outMap.put(metricID, m);
 
         StringBuffer sb = new StringBuffer();
         exposeEntries(scope, sb, registry, outMap);
         return sb;
+    }
+
+    @Override
+    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
+        // TODO method PrometheusExporter.exportMetricsByName
+        throw new UnsupportedOperationException("PrometheusExporter.exportMetricsByName not implemented yet");
+
     }
 
 
@@ -138,16 +145,19 @@ public class PrometheusExporter implements Exporter {
 
             try {
                 switch (md.getTypeRaw()) {
-                    case GAUGE:
-                    case COUNTER:
+                    case GAUGE: {
                         key = getPrometheusMetricName(key);
-                        String suffix = null;
-                        if (!md.getUnit().equals(MetricUnits.NONE)) {
-                            suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
-                        }
+                        writeHelpLine(metricBuf, scope, key, md, null);
+                        writeTypeLine(metricBuf, scope, key, md, null, null);
+                        createSimpleValueLine(metricBuf, scope, key, md, metric, null);
+                        break;
+                    }
+                    case COUNTER:
+                        String suffix = md.getName().endsWith("_total") ? null : "_total";
+                        key = getPrometheusMetricName(key);
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
-                        createSimpleValueLine(metricBuf, scope, key, md, metric);
+                        createSimpleValueLine(metricBuf, scope, key, md, metric, suffix);
                         break;
                     case CONCURRENT_GAUGE:
                         ConcurrentGauge concurrentGauge = (ConcurrentGauge) metric;
@@ -270,15 +280,13 @@ public class PrometheusExporter implements Exporter {
                                 boolean performScaling) {
         String name = md.getName();
         name = getPrometheusMetricName(name);
-        fillBaseName(sb, scope, name);
-        if (suffix != null) {
-            sb.append(suffix);
-        }
+        fillBaseName(sb, scope, name, suffix);
+
         // add tags
 
         Map<String, String> tags = new HashMap<>(); // TODO new HashMap<>(md.getTags());
         if (extraTag != null) {
-            tags.put(extraTag.getKey(), extraTag.getValue());
+            tags.put(extraTag.getTagName(), extraTag.getTagValue());
         }
         if (!tags.isEmpty()) {
             addTags(sb, tags);
@@ -313,8 +321,10 @@ public class PrometheusExporter implements Exporter {
         sb.append("}");
     }
 
-    private void fillBaseName(StringBuffer sb, MetricRegistry.Type scope, String key) {
+    private void fillBaseName(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {
         sb.append(scope.getName().toLowerCase()).append("_").append(key);
+        if(suffix != null)
+            sb.append(suffix);
     }
 
     private void writeHelpLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
@@ -352,16 +362,16 @@ public class PrometheusExporter implements Exporter {
         sb.append(SPACE);
     }
 
-    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric) {
+    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric, String suffix) {
 
         // value line
-        fillBaseName(sb, scope, key);
+        fillBaseName(sb, scope, key, suffix);
         String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
-        if (!unit.equals(NONE)) {
+        if (!unit.equals(NONE)) { // TODO will this not cause counters to append units? the unit should be part of the suffix two lines earlier
             sb.append(USCORE).append(unit);
         }
         String tags = null; // TODO md.getTagsAsString();
-        if (tags != null && !tags.isEmpty()) {
+        if (tags != null && !tags.isEmpty()) {            // TODO what with this?
             sb.append('{').append(tags).append('}');
         }
 

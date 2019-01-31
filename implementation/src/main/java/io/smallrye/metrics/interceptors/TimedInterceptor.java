@@ -18,8 +18,11 @@
 package io.smallrye.metrics.interceptors;
 
 
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.annotation.Priority;
@@ -69,8 +72,11 @@ public class TimedInterceptor {
     }
 
     private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext context, E element) throws Exception {
-        String name = resolver.timed(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element).metricName();
-        Timer timer = (Timer) registry.getMetrics().get(name);
+        MetricResolver.Of<Timed> meterResolver = resolver.timed(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
+        String name = meterResolver.metricName();
+        Tag[] tags = meterResolver.tags();
+        MetricID metricID = new MetricID(name, tags);
+        Timer timer = (Timer) registry.getMetrics().get(metricID);
         if (timer == null) {
             throw new IllegalStateException("No timer with name [" + name + "] found in registry [" + registry + "]");
         }

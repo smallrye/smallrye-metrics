@@ -18,10 +18,7 @@
 package io.smallrye.metrics.setup;
 
 import io.smallrye.metrics.OriginTrackedMetadata;
-import io.smallrye.metrics.Tag;
 import io.smallrye.metrics.interceptors.MetricResolver;
-import java.util.HashMap;
-import java.util.Map;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -33,6 +30,8 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 
+import static io.smallrye.metrics.TagsUtils.parseTagsAsArray;
+
 public class MetricsMetadata {
 
     private MetricsMetadata() {
@@ -42,41 +41,31 @@ public class MetricsMetadata {
         MetricResolver.Of<Counted> counted = resolver.counted(bean, element);
         if (counted.isPresent()) {
             Counted t = counted.metricAnnotation();
-            Metadata metadata = getMetadata(t, counted.metricName(), t.unit(), t.description(), t.displayName(), MetricType.COUNTER, t.reusable(), t.tags());
-            registry.counter(metadata);
+            Metadata metadata = getMetadata(t, counted.metricName(), t.unit(), t.description(), t.displayName(), MetricType.COUNTER, t.reusable());
+            registry.counter(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<ConcurrentGauge> concurrentGauge = resolver.concurrentGauge(bean, element);
         if (concurrentGauge.isPresent()) {
             ConcurrentGauge t = concurrentGauge.metricAnnotation();
-            Metadata metadata = getMetadata(t, concurrentGauge.metricName(), t.unit(), t.description(), t.displayName(), MetricType.CONCURRENT_GAUGE, t.reusable(), t.tags());
-            registry.concurrentGauge(metadata);
+            Metadata metadata = getMetadata(t, concurrentGauge.metricName(), t.unit(), t.description(), t.displayName(), MetricType.CONCURRENT_GAUGE, t.reusable());
+            registry.concurrentGauge(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<Metered> metered = resolver.metered(bean, element);
         if (metered.isPresent()) {
             Metered t = metered.metricAnnotation();
-            Metadata metadata = getMetadata(t, metered.metricName(), t.unit(), t.description(), t.displayName(), MetricType.METERED, t.reusable(), t.tags());
-            registry.meter(metadata);
+            Metadata metadata = getMetadata(t, metered.metricName(), t.unit(), t.description(), t.displayName(), MetricType.METERED, t.reusable());
+            registry.meter(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
         if (timed.isPresent()) {
             Timed t = timed.metricAnnotation();
-            Metadata metadata = getMetadata(t, timed.metricName(), t.unit(), t.description(), t.displayName(), MetricType.TIMER, t.reusable(), t.tags());
-            registry.timer(metadata);
+            Metadata metadata = getMetadata(t, timed.metricName(), t.unit(), t.description(), t.displayName(), MetricType.TIMER, t.reusable());
+            registry.timer(metadata, parseTagsAsArray(t.tags()));
         }
     }
 
-    public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName, MetricType type, boolean reusable, String... tags) {
-        Map<String,String> tagMap = new HashMap<>();
-        if (tags != null && tags.length > 0) {
-            for (String tag : tags) {
-                Tag t = new Tag(tag);
-                tagMap.put(t.getKey(),t.getValue());
-            }
-        }
-
-        Metadata metadata = new OriginTrackedMetadata(origin, name, type, unit, description, displayName, reusable,
-                                                      tagMap);
-        return metadata;
+    public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName, MetricType type, boolean reusable) {
+        return new OriginTrackedMetadata(origin, name, type, unit, description, displayName, reusable);
     }
 
 }

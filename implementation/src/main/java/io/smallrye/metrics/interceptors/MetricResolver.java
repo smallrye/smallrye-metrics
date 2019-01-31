@@ -16,7 +16,9 @@
 
 package io.smallrye.metrics.interceptors;
 
+import io.smallrye.metrics.TagsUtils;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.*;
 
 import javax.enterprise.inject.Vetoed;
@@ -25,7 +27,9 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 @Vetoed
 public class MetricResolver {
@@ -65,14 +69,16 @@ public class MetricResolver {
     private <E extends Member & AnnotatedElement, T extends Annotation> Of<T> elementResolverOf(E element, Class<T> metric) {
         T annotation = element.getAnnotation(metric);
         String name = metricName(element, metric, metricName(annotation), isMetricAbsolute(annotation));
-        return new DoesHaveMetric<>(annotation, name);
+        Tag[] tags = metricTags(annotation);
+        return new DoesHaveMetric<>(annotation, name, tags);
     }
 
     private <E extends Member & AnnotatedElement, T extends Annotation> Of<T> beanResolverOf(E element, Class<T> metric, Class<?> bean) {
         if (bean.isAnnotationPresent(metric)) {
             T annotation = bean.getAnnotation(metric);
             String name = metricName(bean, element, metric, metricName(annotation), isMetricAbsolute(annotation));
-            return new DoesHaveMetric<>(annotation, name);
+            Tag[] tags = metricTags(annotation);
+            return new DoesHaveMetric<>(annotation, name, tags);
         } else if (bean.getSuperclass() != null) {
             return beanResolverOf(element, metric, bean.getSuperclass());
         }
@@ -104,6 +110,22 @@ public class MetricResolver {
             return member.getDeclaringClass().getSimpleName();
         } else {
             return member.getName();
+        }
+    }
+
+    private Tag[] metricTags(Annotation annotation) {
+        if (Counted.class.isInstance(annotation)) {
+            return TagsUtils.parseTagsAsArray(((Counted) annotation).tags());
+        } else if (ConcurrentGauge.class.isInstance(annotation)) {
+            return TagsUtils.parseTagsAsArray(((ConcurrentGauge) annotation).tags());
+        } else if (Gauge.class.isInstance(annotation)) {
+            return TagsUtils.parseTagsAsArray(((Gauge) annotation).tags());
+        } else if (Metered.class.isInstance(annotation)) {
+            return TagsUtils.parseTagsAsArray(((Metered) annotation).tags());
+        } else if (Timed.class.isInstance(annotation)) {
+            return TagsUtils.parseTagsAsArray(((Timed) annotation).tags());
+        } else {
+            throw new IllegalArgumentException("Unsupported Metrics forMethod [" + annotation.getClass().getName() + "]");
         }
     }
 
@@ -151,6 +173,8 @@ public class MetricResolver {
 
         String metricName();
 
+        Tag[] tags();
+
         T metricAnnotation();
     }
 
@@ -160,9 +184,12 @@ public class MetricResolver {
 
         private final String name;
 
-        private DoesHaveMetric(T annotation, String name) {
+        private final Tag[] tags;
+
+        private DoesHaveMetric(T annotation, String name, Tag[] tags) {
             this.annotation = annotation;
             this.name = name;
+            this.tags = tags;
         }
 
         @Override
@@ -173,6 +200,11 @@ public class MetricResolver {
         @Override
         public String metricName() {
             return name;
+        }
+
+        @Override
+        public Tag[] tags() {
+            return tags;
         }
 
         @Override
@@ -194,6 +226,11 @@ public class MetricResolver {
 
         @Override
         public String metricName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Tag[] tags() {
             throw new UnsupportedOperationException();
         }
 

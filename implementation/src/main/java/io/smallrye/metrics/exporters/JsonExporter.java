@@ -238,17 +238,16 @@ public class JsonExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
+    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
 
-        Metric m = metricMap.get(metricName);
+        Metric m = metricMap.get(metricID);
 
         Map<MetricID, Metric> outMap = new HashMap<>(1);
-        MetricID outId = new MetricID(metricName);
-        outMap.put(outId, m);
+        outMap.put(metricID, m);
 
         StringBuffer sb = new StringBuffer();
         sb.append("{");
@@ -257,6 +256,12 @@ public class JsonExporter implements Exporter {
         sb.append(JsonExporter.LF);
 
         return sb;
+    }
+
+    @Override
+    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
+        // TODO method JsonExporter.exportMetricsByName
+        throw new UnsupportedOperationException("JsonExporter.exportMetricsByName not implemented yet");
     }
 
     @Override

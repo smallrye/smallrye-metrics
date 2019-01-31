@@ -15,7 +15,9 @@
  */
 package io.smallrye.metrics.interceptors;
 
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.jboss.logging.Logger;
 
@@ -26,6 +28,7 @@ import javax.inject.Inject;
 import javax.interceptor.*;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
+import java.util.Arrays;
 
 @SuppressWarnings("unused")
 @ConcurrentGauge
@@ -66,16 +69,18 @@ public class ConcurrentGaugeInterceptor {
     private <E extends Member & AnnotatedElement> Object concurrentCallable(InvocationContext context, E element) throws Exception {
         MetricResolver.Of<ConcurrentGauge> concurrentGaugeResolver = resolver.concurrentGauge(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
         String name = concurrentGaugeResolver.metricName();
-        org.eclipse.microprofile.metrics.ConcurrentGauge concurrentGauge = registry.getConcurrentGauges().get(name);
+        Tag[] tags = concurrentGaugeResolver.tags();
+        MetricID metricID = new MetricID(name, tags);
+        org.eclipse.microprofile.metrics.ConcurrentGauge concurrentGauge = registry.getConcurrentGauges().get(metricID);
         if (concurrentGauge == null) {
-            throw new IllegalStateException("No concurrent gauge with name [" + name + "] found in registry [" + registry + "]");
+            throw new IllegalStateException("No concurrent gauge with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
-        log.debugf("Increment concurrent gauge [metricName: %s]", name);
+        log.debugf("Increment concurrent gauge [metricId: %s]", metricID);
         concurrentGauge.inc();
         try {
             return context.proceed();
         } finally {
-            log.debugf("Decrement concurrent gauge [metricName: %s]", name);
+            log.debugf("Decrement concurrent gauge [metricID: %s]", metricID);
             concurrentGauge.dec();
         }
     }

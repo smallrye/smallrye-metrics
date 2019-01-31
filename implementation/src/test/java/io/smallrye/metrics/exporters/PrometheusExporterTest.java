@@ -1,25 +1,5 @@
 package io.smallrye.metrics.exporters;
 
-import static io.smallrye.metrics.exporters.PrometheusExporter.getPrometheusMetricName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.lang.management.ManagementFactory;
-import java.util.Arrays;
-import java.util.List;
-
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricFilter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.Timer;
-import org.junit.After;
-import org.junit.Test;
-
 import io.smallrye.metrics.ExtendedMetadata;
 import io.smallrye.metrics.JmxWorker;
 import io.smallrye.metrics.MetricRegistries;
@@ -28,6 +8,24 @@ import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
 import io.smallrye.metrics.mbean.MGaugeImpl;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Timer;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.lang.management.ManagementFactory;
+
+import static io.smallrye.metrics.exporters.PrometheusExporter.getPrometheusMetricName;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.*;
 
 public class PrometheusExporterTest {
 
@@ -50,7 +48,7 @@ public class PrometheusExporterTest {
         long actualUptime /* in ms */ = ManagementFactory.getRuntimeMXBean().getUptime();
         double actualUptimeInSeconds = actualUptime / 1000.0;
 
-        StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.BASE, "jvm.uptime");
+        StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.BASE, new MetricID("jvm.uptime"));
         assertNotNull(out);
 
         double valueFromPrometheus = -1;
@@ -85,11 +83,9 @@ public class PrometheusExporterTest {
         for (Meter m : meters) {
             String name = "meter_" + idx++;
             applicationRegistry.register(name, m);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
-            assertNotNull(out);
-            List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
-            String expectedLine = "application:" + name + "_total 0.0";
-            assertEquals(1, lines.stream().filter(line -> line.equals(expectedLine)).count());
+            String out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name)).toString();
+            String expectedLine = "application_" + name + "_total 0.0";
+            Assert.assertThat(out, containsString(expectedLine));
         }
     }
 
@@ -105,11 +101,9 @@ public class PrometheusExporterTest {
         for (Histogram h : histograms) {
             String name = "histo_" + idx++;
             applicationRegistry.register(name, h);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
-            assertNotNull(out);
-            List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
-            String expectedLine = "application:" + name + "_mean 0.0";
-            assertEquals(1, lines.stream().filter(line -> line.equals(expectedLine)).count());
+            String out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name)).toString();
+            String expectedLine = "application_" + name + "_mean 0.0";
+            Assert.assertThat(out, containsString(expectedLine));
         }
     }
 
@@ -125,11 +119,9 @@ public class PrometheusExporterTest {
         for (Timer t : timers) {
             String name = "json_timer_" + idx++;
             applicationRegistry.register(name, t);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
-            assertNotNull(out);
-            List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
-            String expectedLine = "application:" + name + "_rate_per_second 0.0";
-            assertEquals(1, lines.stream().filter(line -> line.equals(expectedLine)).count());
+            String out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name)).toString();
+            String expectedLine = "application_" + name + "_rate_per_second 0.0";
+            Assert.assertThat(out, containsString(expectedLine));
         }
     }
 }

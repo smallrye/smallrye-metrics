@@ -9,6 +9,7 @@ import java.util.List;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.After;
@@ -41,7 +42,7 @@ public class JsonExporterTest {
         for (Meter m : meters) {
             String name = "meter_" + idx++;
             applicationRegistry.register(name, m);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
+            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
             assertNotNull(out);
             List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
             assertEquals(1, lines.stream().filter(line -> line.contains("\"" + name + "\"")).count());
@@ -61,7 +62,7 @@ public class JsonExporterTest {
         for (Histogram h : histograms) {
             String name = "histo_" + idx++;
             applicationRegistry.register(name, h);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
+            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
             assertNotNull(out);
             List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
             assertEquals(1, lines.stream().filter(line -> line.contains("\"" + name + "\"")).count());
@@ -81,7 +82,7 @@ public class JsonExporterTest {
         for (Timer t : timers) {
             String name = "json_timer_" + idx++;
             applicationRegistry.register(name, t);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, name);
+            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
             assertNotNull(out);
             List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
             assertEquals(1, lines.stream().filter(line -> line.contains("\"" + name + "\"")).count());

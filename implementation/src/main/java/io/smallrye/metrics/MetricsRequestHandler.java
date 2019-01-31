@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -89,9 +90,9 @@ public class MetricsRequestHandler {
             sb = exporter.exportAllScopes();
 
         } else if (scopePath.contains("/")) {
-            // One metric in a scope
+            // One metric name in a scope
 
-            String attribute = scopePath.substring(scopePath.indexOf('/') + 1);
+            String metricName = scopePath.substring(scopePath.indexOf('/') + 1);
 
             MetricRegistry.Type scope = getScopeFromPath(responder, scopePath.substring(0, scopePath.indexOf('/')));
             if (scope == null) {
@@ -100,10 +101,10 @@ public class MetricsRequestHandler {
             }
 
             MetricRegistry registry = MetricRegistries.get(scope);
-            Map<String, Metric> metricValuesMap = registry.getMetrics();
+            Map<MetricID, Metric> metricValuesMap = registry.getMetrics();
 
-            if (metricValuesMap.containsKey(attribute)) {
-                sb = exporter.exportOneMetric(scope, attribute);
+            if (metricValuesMap.keySet().stream().anyMatch(id -> id.getName().equals(metricName))) {
+                sb = exporter.exportMetricsByName(scope, metricName);
             } else {
                 responder.respondWith( 404, "Metric " + scopePath + " not found", Collections.emptyMap());
                 return;

@@ -7,6 +7,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -38,19 +39,23 @@ public class ExportersMetricScalingTest {
     @Test
     public void timer_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES);
+        Metadata metadata = Metadata.builder()
+                .withName("timer1")
+                .withType(MetricType.TIMER)
+                .withUnit(MetricUnits.MINUTES)
+                .build();
         Timer metric = registry.timer(metadata);
         metric.update(1, TimeUnit.HOURS);
         metric.update(2, TimeUnit.HOURS);
         metric.update(3, TimeUnit.HOURS);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "timer1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
 
-        Assert.assertThat(exported, containsString("application:timer1_seconds{quantile=\"0.5\"} 7200.0"));
-        Assert.assertThat(exported, containsString("application:timer1_mean_seconds 7200.0"));
-        Assert.assertThat(exported, containsString("application:timer1_min_seconds 3600.0"));
-        Assert.assertThat(exported, containsString("application:timer1_max_seconds 10800.0"));
+        Assert.assertThat(exported, containsString("application_timer1_seconds{quantile=\"0.5\"} 7200.0"));
+        Assert.assertThat(exported, containsString("application_timer1_mean_seconds 7200.0"));
+        Assert.assertThat(exported, containsString("application_timer1_min_seconds 3600.0"));
+        Assert.assertThat(exported, containsString("application_timer1_max_seconds 10800.0"));
     }
 
     /**
@@ -60,14 +65,18 @@ public class ExportersMetricScalingTest {
     @Test
     public void timer_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES);
+        Metadata metadata = Metadata.builder()
+                .withName("timer1")
+                .withType(MetricType.TIMER)
+                .withUnit(MetricUnits.MINUTES)
+                .build();
         Timer metric = registry.timer(metadata);
         metric.update(1, TimeUnit.HOURS);
         metric.update(2, TimeUnit.HOURS);
         metric.update(3, TimeUnit.HOURS);
 
         JsonExporter exporter = new JsonExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "timer1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
 
         JsonObject json = Json.createReader(new StringReader(exported)).read().asJsonObject().getJsonObject("timer1");
         assertEquals(120.0, json.getJsonNumber("p50").doubleValue(), 0.001);
@@ -83,19 +92,23 @@ public class ExportersMetricScalingTest {
     @Test
     public void histogram_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("histogram1", MetricType.HISTOGRAM, MetricUnits.MINUTES);
+        Metadata metadata = Metadata.builder()
+                .withName("histogram1")
+                .withType(MetricType.HISTOGRAM)
+                .withUnit(MetricUnits.MINUTES)
+                .build();
         Histogram metric = registry.histogram(metadata);
         metric.update(30);
         metric.update(40);
         metric.update(50);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "histogram1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("histogram1")).toString();
 
-        Assert.assertThat(exported, containsString("application:histogram1_min_seconds 1800.0"));
-        Assert.assertThat(exported, containsString("application:histogram1_max_seconds 3000.0"));
-        Assert.assertThat(exported, containsString("application:histogram1_mean_seconds 2400.0"));
-        Assert.assertThat(exported, containsString("application:histogram1_seconds{quantile=\"0.5\"} 2400.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_min_seconds 1800.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_max_seconds 3000.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_mean_seconds 2400.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_seconds{quantile=\"0.5\"} 2400.0"));
     }
 
     /**
@@ -105,19 +118,23 @@ public class ExportersMetricScalingTest {
     @Test
     public void histogram_customunit_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("histogram1", MetricType.HISTOGRAM, "dollars");
+        Metadata metadata = Metadata.builder()
+                .withName("histogram1")
+                .withType(MetricType.HISTOGRAM)
+                .withUnit("dollars")
+                .build();
         Histogram metric = registry.histogram(metadata);
         metric.update(30);
         metric.update(40);
         metric.update(50);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "histogram1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("histogram1")).toString();
 
-        Assert.assertThat(exported, containsString("application:histogram1_min_dollars 30.0"));
-        Assert.assertThat(exported, containsString("application:histogram1_max_dollars 50.0"));
-        Assert.assertThat(exported, containsString("application:histogram1_mean_dollars 40.0"));
-        Assert.assertThat(exported, containsString("application:histogram1_dollars{quantile=\"0.5\"} 40.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_min_dollars 30.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_max_dollars 50.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_mean_dollars 40.0"));
+        Assert.assertThat(exported, containsString("application_histogram1_dollars{quantile=\"0.5\"} 40.0"));
     }
 
     /**
@@ -127,14 +144,18 @@ public class ExportersMetricScalingTest {
     @Test
     public void histogram_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("timer1", MetricType.TIMER, MetricUnits.MINUTES);
+        Metadata metadata = Metadata.builder()
+                .withName("timer1")
+                .withType(MetricType.TIMER)
+                .withUnit(MetricUnits.MINUTES)
+                .build();
         Timer metric = registry.timer(metadata);
         metric.update(1, TimeUnit.HOURS);
         metric.update(2, TimeUnit.HOURS);
         metric.update(3, TimeUnit.HOURS);
 
         JsonExporter exporter = new JsonExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "timer1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
 
 
         JsonObject json = Json.createReader(new StringReader(exported)).read().asJsonObject().getJsonObject("timer1");
@@ -151,16 +172,19 @@ public class ExportersMetricScalingTest {
     @Test
     public void counter_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("counter1", MetricType.COUNTER);
+        Metadata metadata = Metadata.builder()
+                .withName("counter1")
+                .withType(MetricType.COUNTER)
+                .build();
         Counter metric = registry.counter(metadata);
         metric.inc(30);
         metric.inc(40);
         metric.inc(50);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "counter1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter1")).toString();
 
-        Assert.assertThat(exported, containsString("application:counter1 120.0"));
+        Assert.assertThat(exported, containsString("application_counter1_total 120.0"));
     }
 
     /**
@@ -170,14 +194,17 @@ public class ExportersMetricScalingTest {
     @Test
     public void counter_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("counter1", MetricType.COUNTER);
+        Metadata metadata = Metadata.builder()
+                .withName("counter1")
+                .withType(MetricType.COUNTER)
+                .build();
         Counter metric = registry.counter(metadata);
         metric.inc(10);
         metric.inc(20);
         metric.inc(30);
 
         JsonExporter exporter = new JsonExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "counter1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter1")).toString();
 
         JsonObject json = Json.createReader(new StringReader(exported)).read().asJsonObject();
         assertEquals(60, json.getInt("counter1"));
@@ -190,17 +217,20 @@ public class ExportersMetricScalingTest {
     @Test
     public void meter_prometheus() throws InterruptedException {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("meter1", MetricType.METERED);
+        Metadata metadata = Metadata.builder()
+                .withName("meter1")
+                .withType(MetricType.METERED)
+                .build();
         Meter metric = registry.meter(metadata);
         metric.mark(10);
         TimeUnit.SECONDS.sleep(1);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "meter1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("meter1")).toString();
 
-        Assert.assertThat(exported, containsString("application:meter1_total 10.0"));
+        Assert.assertThat(exported, containsString("application_meter1_total 10.0"));
         double ratePerSecond = Double.parseDouble(Arrays.stream(exported.split("\\n"))
-                .filter(line -> line.contains("application:meter1_rate_per_second"))
+                .filter(line -> line.contains("application_meter1_rate_per_second"))
                 .filter(line -> !line.contains("TYPE") && !line.contains("HELP"))
                 .findFirst()
                 .get()
@@ -216,13 +246,16 @@ public class ExportersMetricScalingTest {
     @Test
     public void meter_json() throws InterruptedException {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("meter1", MetricType.METERED);
+        Metadata metadata = Metadata.builder()
+                .withName("meter1")
+                .withType(MetricType.METERED)
+                .build();
         Meter metric = registry.meter(metadata);
         metric.mark(10);
         TimeUnit.SECONDS.sleep(1);
 
         JsonExporter exporter = new JsonExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "meter1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("meter1")).toString();
 
         JsonObject json = Json.createReader(new StringReader(exported)).read().asJsonObject().getJsonObject("meter1");
         assertEquals(10, json.getInt("count"));
@@ -238,14 +271,18 @@ public class ExportersMetricScalingTest {
     @Test
     public void gauge_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("gauge1", MetricType.GAUGE, MetricUnits.MINUTES);
+        Metadata metadata = Metadata.builder()
+                .withName("gauge1")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.MINUTES)
+                .build();
         Gauge<Long> gaugeInstance = () -> 3L;
-        registry.register("gauge1", gaugeInstance, metadata);
+        registry.register(metadata, gaugeInstance);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "gauge1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("gauge1")).toString();
 
-        Assert.assertThat(exported, containsString("application:gauge1_seconds 180.0"));
+        Assert.assertThat(exported, containsString("application_gauge1_seconds 180.0"));
     }
 
     /**
@@ -255,14 +292,18 @@ public class ExportersMetricScalingTest {
     @Test
     public void gauge_customUnit_prometheus() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("gauge1", MetricType.GAUGE, "dollars");
+        Metadata metadata = Metadata.builder()
+                .withName("gauge1")
+                .withType(MetricType.GAUGE)
+                .withUnit("dollars")
+                .build();
         Gauge<Long> gaugeInstance = () -> 3L;
-        registry.register("gauge1", gaugeInstance, metadata);
+        registry.register(metadata, gaugeInstance);
 
         PrometheusExporter exporter = new PrometheusExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "gauge1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("gauge1")).toString();
 
-        Assert.assertThat(exported, containsString("application:gauge1_dollars 3.0"));
+        Assert.assertThat(exported, containsString("application_gauge1_dollars 3.0"));
     }
 
     /**
@@ -272,12 +313,16 @@ public class ExportersMetricScalingTest {
     @Test
     public void gauge_json() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = new Metadata("gauge1", MetricType.GAUGE, MetricUnits.MINUTES);
+        Metadata metadata = Metadata.builder()
+                .withName("gauge1")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.MINUTES)
+                .build();
         Gauge<Long> gaugeInstance = () -> 3L;
-        registry.register("gauge1", gaugeInstance, metadata);
+        registry.register(metadata, gaugeInstance);
 
         JsonExporter exporter = new JsonExporter();
-        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, "gauge1").toString();
+        String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("gauge1")).toString();
 
         JsonObject json = Json.createReader(new StringReader(exported)).read().asJsonObject();
         assertEquals(3, json.getInt("gauge1"));
