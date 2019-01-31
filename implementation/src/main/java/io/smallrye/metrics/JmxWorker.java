@@ -26,6 +26,10 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.jboss.logging.Logger;
+
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -141,7 +145,7 @@ public class JmxWorker {
                         String newDisplayName = entry.getDisplayName();
                         String newDescription = entry.getDescription();
                         Map<String, String> newTags = new HashMap<>(entry.getTags());
-                    	for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
+                       	for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
                             String keyValue = oName.getKeyPropertyList().get(keyHolder.getValue());
                             newName = newName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDisplayName = newDisplayName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
@@ -150,10 +154,11 @@ public class JmxWorker {
                                     tag -> tag.getKey(),
                                     tag -> tag.getValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue)
                                 ));
-                    	}
+                      	}
                         ExtendedMetadata newEntry = new ExtendedMetadata(newName, newDisplayName, newDescription,
                                 entry.getTypeRaw(), entry.getUnit());
                         newEntry.getTags().putAll(newTags);
+                      
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
                         newEntry.setMbean(newObjectName);
                         result.add(newEntry);

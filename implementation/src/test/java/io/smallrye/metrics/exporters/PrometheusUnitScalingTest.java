@@ -16,6 +16,7 @@
  */
 package io.smallrye.metrics.exporters;
 
+import java.util.Optional;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.Test;
 
@@ -62,32 +63,32 @@ public class PrometheusUnitScalingTest {
     @Test
     public void testFindBaseUnit1() {
         String foo = MetricUnits.HOURS;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(foo);
+        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.SECONDS);
-        String promUnit = PrometheusUnit.getBaseUnitAsPrometheusString(out);
+        String promUnit = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(out));
         assert promUnit.equals("seconds");
     }
 
     @Test
     public void testFindBaseUnit2() {
         String foo = MetricUnits.MILLISECONDS;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(foo);
+        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.SECONDS);
-        String promUnit = PrometheusUnit.getBaseUnitAsPrometheusString(out);
+        String promUnit = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(out));
         assert promUnit.equals("seconds");
     }
 
     @Test
     public void testFindBaseUnit3() {
         String foo = MetricUnits.PERCENT;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(foo);
+        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.PERCENT);
     }
 
     @Test
     public void testFindBaseUnit4() {
         String foo = MetricUnits.NONE;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(foo);
+        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.NONE);
     }
 }

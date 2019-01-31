@@ -57,16 +57,6 @@ public class CounterImpl implements Counter {
     }
 
     @Override
-    public void dec() {
-        count.decrement();
-    }
-
-    @Override
-    public void dec(long n) {
-        count.add(-n);
-    }
-
-    @Override
     public long getCount() {
         return count.sum();
     }

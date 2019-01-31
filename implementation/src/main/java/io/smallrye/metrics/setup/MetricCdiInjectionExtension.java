@@ -20,6 +20,7 @@ package io.smallrye.metrics.setup;
 import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRequestHandler;
+import io.smallrye.metrics.interceptors.ConcurrentGaugeInterceptor;
 import io.smallrye.metrics.interceptors.CountedInterceptor;
 import io.smallrye.metrics.interceptors.MeteredInterceptor;
 import io.smallrye.metrics.interceptors.MetricName;
@@ -30,6 +31,7 @@ import io.smallrye.metrics.interceptors.MetricsInterceptor;
 import io.smallrye.metrics.interceptors.TimedInterceptor;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -96,6 +98,7 @@ public class MetricCdiInjectionExtension implements Extension {
 
                 MeteredInterceptor.class,
                 CountedInterceptor.class,
+                ConcurrentGaugeInterceptor.class,
                 TimedInterceptor.class,
                 MetricsRequestHandler.class
         }) {
@@ -103,7 +106,7 @@ public class MetricCdiInjectionExtension implements Extension {
         }
     }
 
-    private <X> void metricsAnnotations(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class, Timed.class }) ProcessAnnotatedType<X> pat) {
+    private <X> void metricsAnnotations(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class, Timed.class, ConcurrentGauge.class}) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
         if (pack != null && pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {

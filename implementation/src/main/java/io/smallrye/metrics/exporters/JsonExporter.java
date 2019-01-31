@@ -18,16 +18,17 @@
 package io.smallrye.metrics.exporters;
 
 import io.smallrye.metrics.MetricRegistries;
-import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.MeterImpl;
-import io.smallrye.metrics.app.TimerImpl;
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metered;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class JsonExporter implements Exporter {
     private void getMetricsForAScope(StringBuffer sb, MetricRegistry.Type scope) {
 
         MetricRegistry registry = MetricRegistries.get(scope);
-        Map<String, Metric> metricMap = registry.getMetrics();
+        Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
         sb.append("{\n");
@@ -67,13 +68,13 @@ public class JsonExporter implements Exporter {
         sb.append(LF).append("}");
     }
 
-    private void writeMetricsForMap(StringBuffer sb, Map<String, Metric> metricMap, Map<String, Metadata> metadataMap) {
+    private void writeMetricsForMap(StringBuffer sb, Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
 
         boolean first = true;
 
-        for (Iterator<Map.Entry<String, Metric>> iterator = metricMap.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<String, Metric> entry = iterator.next();
-            String key = entry.getKey();
+        for (Iterator<Map.Entry<MetricID, Metric>> iterator = metricMap.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<MetricID, Metric> entry = iterator.next();
+            String key = entry.getKey().getName();
 
             Metric value = entry.getValue();
             Metadata metadata = metadataMap.get(key);
@@ -81,9 +82,7 @@ public class JsonExporter implements Exporter {
             if (metadata == null) {
                 throw new IllegalArgumentException("MD is null for " + key);
             }
-
             StringBuffer metricBuffer = new StringBuffer();
-
 
             if (first) {
                 first = false;
@@ -99,19 +98,25 @@ public class JsonExporter implements Exporter {
                         metricBuffer.append("  ").append('"').append(key).append('"').append(" : ").append(val);
                         break;
                     case METERED:
-                        MeterImpl meter = (MeterImpl) value;
+                        Metered meter = (Metered) value;
                         writeStartLine(metricBuffer, key);
                         writeMeterValues(metricBuffer, meter);
                         writeEndLine(metricBuffer);
                         break;
+                    case CONCURRENT_GAUGE:
+                        ConcurrentGauge gauge = (ConcurrentGauge) value;
+                        writeStartLine(sb, key);
+                        writeConcurrentGaugeValues(sb, gauge);
+                        writeEndLine(sb);
+                        break;
                     case TIMER:
-                        TimerImpl timer = (TimerImpl) value;
+                        Timer timer = (Timer) value;
                         writeStartLine(metricBuffer, key);
-                        writeTimerValues(metricBuffer, timer, metadata.getUnit());
+                        writeTimerValues(metricBuffer, timer, metadata.getUnit().get());
                         writeEndLine(metricBuffer);
                         break;
                     case HISTOGRAM:
-                        HistogramImpl hist = (HistogramImpl) value;
+                        Histogram hist = (Histogram) value;
                         writeStartLine(metricBuffer, key);
                         metricBuffer.append("    \"count\": ").append(hist.getCount()).append(COMMA_LF);
                         writeSnapshotValues(metricBuffer, hist.getSnapshot());
@@ -136,6 +141,12 @@ public class JsonExporter implements Exporter {
         sb.append("  ").append('"').append(key).append('"').append(" : ").append("{\n");
     }
 
+    private void writeConcurrentGaugeValues(StringBuffer sb, ConcurrentGauge concurrentGauge) {
+        sb.append("    \"callCount\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
+        sb.append("    \"max\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
+        sb.append("    \"min\": ").append(concurrentGauge.getMin()).append(LF);
+    }
+
     private void writeMeterValues(StringBuffer sb, Metered meter) {
         sb.append("    \"count\": ").append(meter.getCount()).append(COMMA_LF);
         sb.append("    \"meanRate\": ").append(meter.getMeanRate()).append(COMMA_LF);
@@ -144,12 +155,12 @@ public class JsonExporter implements Exporter {
         sb.append("    \"fifteenMinRate\": ").append(meter.getFifteenMinuteRate()).append(LF);
     }
 
-    private void writeTimerValues(StringBuffer sb, TimerImpl timer, String unit) {
+    private void writeTimerValues(StringBuffer sb, Timer timer, String unit) {
         writeSnapshotValues(sb, timer.getSnapshot(), unit);
         // Backup and write COMMA_LF
         sb.setLength(sb.length() - 1);
         sb.append(COMMA_LF);
-        writeMeterValues(sb, timer.getMeter());
+        writeMeterValues(sb, timer);
     }
 
     private void writeSnapshotValues(StringBuffer sb, Snapshot snapshot) {
@@ -229,14 +240,15 @@ public class JsonExporter implements Exporter {
     @Override
     public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
         MetricRegistry registry = MetricRegistries.get(scope);
-        Map<String, Metric> metricMap = registry.getMetrics();
+        Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
 
         Metric m = metricMap.get(metricName);
 
-        Map<String, Metric> outMap = new HashMap<>(1);
-        outMap.put(metricName, m);
+        Map<MetricID, Metric> outMap = new HashMap<>(1);
+        MetricID outId = new MetricID(metricName);
+        outMap.put(outId, m);
 
         StringBuffer sb = new StringBuffer();
         sb.append("{");
