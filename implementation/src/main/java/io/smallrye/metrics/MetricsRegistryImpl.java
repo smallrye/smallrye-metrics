@@ -137,11 +137,12 @@ public class MetricsRegistryImpl extends MetricRegistry {
             throw new IllegalArgumentException("A metric with metricID " + metricID + " already exists");
         }
 
-            /* if metadata for this name already exists:
-               - if no metadata was specified for this registration, reuse the previous ones
         /* if metadata for this name already exists:
                - if no metadata was specified for this registration, check that this metric has the same type, then reuse the existing metadata instance
                - if metadata was specified for this registration, verify that it's the same as the existing one
+           if no metadata for this name exists:
+               - if no metadata was specified for this registration, create a reasonable default
+               - if metadata was specified for this registration, use it
              */
         if(existingMetadata != null) {
             if(metadata instanceof UnspecifiedMetadata) {
@@ -199,13 +200,13 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Counter counter(String name) {
         return get(new MetricID(name),
-                Metadata.builder().withName(name).withType(MetricType.COUNTER).build());
+                new UnspecifiedMetadata(name, MetricType.COUNTER));
     }
 
     @Override
     public Counter counter(String name, Tag... tags) {
         return get(new MetricID(name, tags),
-                Metadata.builder().withName(name).withType(MetricType.COUNTER).build());
+                new UnspecifiedMetadata(name, MetricType.COUNTER));
     }
 
     @Override
@@ -221,7 +222,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public ConcurrentGauge concurrentGauge(String name) {
         return get(new MetricID(name),
-                Metadata.builder().withName(name).withType(MetricType.CONCURRENT_GAUGE).build());
+                new UnspecifiedMetadata(name, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
@@ -232,7 +233,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
         return get(new MetricID(name, tags),
-                Metadata.builder().withName(name).withType(MetricType.CONCURRENT_GAUGE).build());
+                new UnspecifiedMetadata(name, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
@@ -243,7 +244,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Histogram histogram(String name) {
         return get(new MetricID(name),
-                Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build());
+                new UnspecifiedMetadata(name, MetricType.HISTOGRAM));
     }
 
     @Override
@@ -254,7 +255,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Histogram histogram(String name, Tag... tags) {
         return get(new MetricID(name, tags),
-                Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build());
+                new UnspecifiedMetadata(name, MetricType.HISTOGRAM));
     }
 
     @Override
@@ -265,7 +266,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Meter meter(String name) {
         return get(new MetricID(name),
-                Metadata.builder().withName(name).withType(MetricType.METERED).build());
+                new UnspecifiedMetadata(name, MetricType.METERED));
     }
 
     @Override
@@ -276,7 +277,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Meter meter(String name, Tag... tags) {
         return get(new MetricID(name, tags),
-                Metadata.builder().withName(name).withType(MetricType.METERED).build());
+                new UnspecifiedMetadata(name, MetricType.METERED));
     }
 
     @Override
@@ -287,7 +288,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Timer timer(String name) {
         return get(new MetricID(name),
-                Metadata.builder().withName(name).withType(MetricType.TIMER).build());
+                new UnspecifiedMetadata(name, MetricType.TIMER));
     }
 
     @Override
@@ -298,7 +299,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Timer timer(String name, Tag... tags) {
         return get(new MetricID(name, tags),
-                Metadata.builder().withName(name).withType(MetricType.TIMER).build());
+                new UnspecifiedMetadata(name, MetricType.TIMER));
     }
 
     @Override
@@ -320,7 +321,6 @@ public class MetricsRegistryImpl extends MetricRegistry {
         Metric previousMetric = metricMap.get(metricID);
 
         if (previousMetric == null) {
-            // TODO check that no metric of the same name but different metadata exists
             Metric m;
             switch (type) {
 
