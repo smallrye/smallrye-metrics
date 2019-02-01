@@ -173,27 +173,27 @@ public class MetricsRegistryImpl extends MetricRegistry {
             throw a more user-friendly error if the metadata objects are not equal
          */
         if (!existingMetadata.getTypeRaw().equals(newMetadata.getTypeRaw())) {
-            throw new IllegalArgumentException("Passed metric type does not match existing type");
+            throw new IllegalStateException("Passed metric type does not match existing type");
         }
 
         if (existingMetadata.isReusable() != newMetadata.isReusable()) {
-            throw new IllegalArgumentException("Reusable flag differs from previous usage");
+            throw new IllegalStateException("Reusable flag differs from previous usage");
         }
 
         String existingUnit = existingMetadata.getUnit().orElse("none");
         String newUnit = newMetadata.getUnit().orElse("none");
         if (!existingUnit.equals(newUnit)) {
-            throw new IllegalArgumentException("Unit is different from the unit in previous usage (" + existingUnit +")");
+            throw new IllegalStateException("Unit is different from the unit in previous usage (" + existingUnit +")");
         }
 
-        String existingDescription = existingMetadata.getUnit().orElse("none");
-        String newDescription = newMetadata.getUnit().orElse("none");
+        String existingDescription = existingMetadata.getDescription().orElse("none");
+        String newDescription = newMetadata.getDescription().orElse("none");
         if (!existingDescription.equals(newDescription)) {
-            throw new IllegalArgumentException("Description differs from previous usage");
+            throw new IllegalStateException("Description differs from previous usage");
         }
 
         if(!existingMetadata.getDisplayName().equals(newMetadata.getDisplayName())) {
-            throw new IllegalArgumentException("Display name differs from previous usage");
+            throw new IllegalStateException("Display name differs from previous usage");
         }
     }
 
@@ -211,12 +211,12 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata, Tag... tags) {
-        return get(new MetricID(metadata.getName(), tags), metadata);
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.COUNTER));
     }
 
     @Override
     public Counter counter(Metadata metadata) {
-        return get(new MetricID(metadata.getName()), metadata);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.COUNTER));
     }
 
     @Override
@@ -227,7 +227,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return get(new MetricID(metadata.getName()), metadata);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
@@ -238,7 +238,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
-        return get(new MetricID(metadata.getName(), tags), metadata);
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
@@ -249,7 +249,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata) {
-        return get(new MetricID(metadata.getName()), metadata);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.HISTOGRAM));
     }
 
     @Override
@@ -260,7 +260,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata, Tag... tags) {
-        return get(new MetricID(metadata.getName(), tags), metadata);
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.HISTOGRAM));
     }
 
     @Override
@@ -271,7 +271,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata) {
-        return get(new MetricID(metadata.getName()), metadata);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.METERED));
     }
 
     @Override
@@ -282,7 +282,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata, Tag... tags) {
-        return get(new MetricID(metadata.getName(), tags), metadata);
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.METERED));
     }
 
     @Override
@@ -293,7 +293,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata) {
-        return get(new MetricID(metadata.getName()), metadata);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.TIMER));
     }
 
     @Override
@@ -304,7 +304,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata, Tag... tags) {
-        return get(new MetricID(metadata.getName(), tags), metadata);
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.TIMER));
     }
 
     // TODO all above methods where applicable, should assert that the type (in the method name) is the same as the type in the metadata
@@ -356,6 +356,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
             throw new IllegalArgumentException("Previously registered metric " + name + " was flagged as reusable, while current request is not.");
         } else if (!previousMetadata.isReusable()) {
             throw new IllegalArgumentException("Previously registered metric " + name + " was not flagged as reusable");
+        } else {
+            verifyMetadataEquality(metadata, previousMetadata);
         }
 
         return (T) metricMap.get(metricID);
@@ -497,6 +499,22 @@ public class MetricsRegistryImpl extends MetricRegistry {
     public Map<MetricID, Metric> getMetrics() {
 
         return new HashMap<>(metricMap);
+    }
+
+    private Metadata sanitizeMetadata(Metadata metadata, MetricType metricType) {
+        // if the metadata does not specify a type, we add it here
+        // if the metadata specifies a type, we check that it's the correct one
+        // (for example, someone might have called registry.counter(metadata) where metadata.type="gauge")
+        if(metadata.getTypeRaw() == null || metadata.getTypeRaw() == MetricType.INVALID)  {
+            return Metadata.builder(metadata).withType(metricType).build();
+        } else {
+            if(metadata.getTypeRaw() != metricType) {
+                throw new IllegalArgumentException("Attempting to register a " + metricType + ", but the passed metadata" +
+                        " contains type=" + metadata.getType());
+            } else {
+                return metadata;
+            }
+        }
     }
 
     private <T extends Metric> SortedMap<MetricID, T> getMetrics(MetricType type, MetricFilter filter) {
