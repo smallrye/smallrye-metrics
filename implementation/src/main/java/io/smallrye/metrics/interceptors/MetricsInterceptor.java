@@ -54,7 +54,7 @@ public class MetricsInterceptor {
     }
 
     @AroundConstruct
-    private Object metrics(InvocationContext context) throws Exception {  // TODO registration needs to take tags into account
+    private Object metrics(InvocationContext context) throws Exception {
         Class<?> bean = context.getConstructor().getDeclaringClass();
         log.debugf("MetricsInterceptor, bean=%s\n", bean);
         // Registers the bean constructor metrics

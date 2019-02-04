@@ -38,9 +38,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.SortedMap;
 
 /**
@@ -107,10 +104,23 @@ public class MetricProducer {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         Metadata metadata;
         if (metric!= null) {
-            metadata = new OriginTrackedMetadata(ip, metricName.of(ip), type, metric.unit(), metric.description(),
-                                                 metric.displayName(), false);
+            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip))
+                    .withType(type)
+                    .withUnit(metric.unit())
+                    .withDescription(metric.description())
+                    .withDisplayName(metric.displayName())
+                    .notReusable()
+                    .build();
+            metadata = new OriginAndMetadata(ip, actualMetadata);
         } else {
-            metadata = new OriginTrackedMetadata(ip, metricName.of(ip), type, MetricUnits.NONE, "", "", false);
+            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip))
+                    .withType(type)
+                    .withUnit(MetricUnits.NONE)
+                    .withDescription("")
+                    .withDisplayName("")
+                    .notReusable()
+                    .build();
+            metadata = new OriginAndMetadata(ip, actualMetadata);
         }
 
         return metadata;

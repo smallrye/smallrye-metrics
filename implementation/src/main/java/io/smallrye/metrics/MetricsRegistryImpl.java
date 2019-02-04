@@ -22,16 +22,12 @@ import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
-
-import java.util.SortedSet;
-import java.util.TreeSet;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -49,7 +45,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -58,11 +56,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @Vetoed
 public class MetricsRegistryImpl extends MetricRegistry {
 
-    private static final Logger log = Logger.getLogger(MetricsRegistryImpl.class);
-    private static final String NONE = "NONE";
+    private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
+    private static String NONE = "NONE";
 
     private Map<String, Metadata> metadataMap = new HashMap<>();
+
     private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
+
+    /* this is for storing origins. until 2.0, origins were stored using OriginTrackedMetadata instead of regular metadata, but
+        since 2.0 we have to keep track of the origin per each MetricID separately, while Metadata itself
+        is only tracked per Metric Name, that's why we need two maps for that now.
+     */
+    private Map<MetricID, Object> originMap = new ConcurrentHashMap<>();
 
     Optional<String> globalTags;
 
@@ -153,6 +158,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
             } else {
                 verifyMetadataEquality(metadata, existingMetadata);
                 metricMap.put(metricID, metric);
+                if(metadata instanceof OriginAndMetadata)
+                    originMap.put(metricID, ((OriginAndMetadata)metadata).getOrigin());
             }
         } else {
             if(metadata instanceof UnspecifiedMetadata) {
@@ -160,7 +167,12 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 metadataMap.put(name, realMetadata);
                 metricMap.put(metricID, metric);
             } else {
-                metadataMap.put(name, metadata);
+                if(metadata instanceof OriginAndMetadata) {
+                    originMap.put(metricID, ((OriginAndMetadata)metadata).getOrigin());
+                    metadataMap.put(name, ((OriginAndMetadata)metadata).getMetadata());
+                } else {
+                    metadataMap.put(name, metadata);
+                }
                 metricMap.put(metricID, metric);
             }
         }
@@ -176,24 +188,27 @@ public class MetricsRegistryImpl extends MetricRegistry {
             throw new IllegalStateException("Passed metric type does not match existing type");
         }
 
-        if (existingMetadata.isReusable() != newMetadata.isReusable()) {
-            throw new IllegalStateException("Reusable flag differs from previous usage");
-        }
+        // unspecified means that someone is programmatically obtaining a metric instance without specifying the metadata, so we check only the name and type
+        if(!(newMetadata instanceof UnspecifiedMetadata)) {
+            if (existingMetadata.isReusable() != newMetadata.isReusable()) {
+                throw new IllegalStateException("Reusable flag differs from previous usage");
+            }
 
-        String existingUnit = existingMetadata.getUnit().orElse("none");
-        String newUnit = newMetadata.getUnit().orElse("none");
-        if (!existingUnit.equals(newUnit)) {
-            throw new IllegalStateException("Unit is different from the unit in previous usage (" + existingUnit +")");
-        }
+            String existingUnit = existingMetadata.getUnit().orElse("none");
+            String newUnit = newMetadata.getUnit().orElse("none");
+            if (!existingUnit.equals(newUnit)) {
+                throw new IllegalStateException("Unit is different from the unit in previous usage (" + existingUnit + ")");
+            }
 
-        String existingDescription = existingMetadata.getDescription().orElse("none");
-        String newDescription = newMetadata.getDescription().orElse("none");
-        if (!existingDescription.equals(newDescription)) {
-            throw new IllegalStateException("Description differs from previous usage");
-        }
+            String existingDescription = existingMetadata.getDescription().orElse("none");
+            String newDescription = newMetadata.getDescription().orElse("none");
+            if (!existingDescription.equals(newDescription)) {
+                throw new IllegalStateException("Description differs from previous usage");
+            }
 
-        if(!existingMetadata.getDisplayName().equals(newMetadata.getDisplayName())) {
-            throw new IllegalStateException("Display name differs from previous usage");
+            if (!existingMetadata.getDisplayName().equals(newMetadata.getDisplayName())) {
+                throw new IllegalStateException("Display name differs from previous usage");
+            }
         }
     }
 
@@ -345,14 +360,21 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 default:
                     throw new IllegalStateException("Must not happen");
             }
-            log.infof("Register metric [metricId: %s, type: %s]", metricID, type);
+            if(metadata instanceof OriginAndMetadata) {
+                log.infof("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata)metadata).getOrigin());
+            } else {
+                log.infof("Register metric [metricId: %s, type: %s]", metricID, type);
+            }
+
             register(metadata, m, metricID.getTagsAsList().toArray(new Tag[]{}));
         } else if (!previousMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " is of type "
                     + previousMetadata.getType() + ", expected " + metadata.getType());
-        } else if ( haveCompatibleOrigins(previousMetadata, metadata)) {
+        } else if ( metadata instanceof OriginAndMetadata &&
+                originMap.get(metricID) != null &&
+                areCompatibleOrigins(originMap.get(metricID), ((OriginAndMetadata) metadata).getOrigin())) {
             // stop caring, same thing.
-        } else if (previousMetadata.isReusable() && !metadata.isReusable()) {
+        } else if (previousMetadata.isReusable() && (!(metadata instanceof UnspecifiedMetadata) && !metadata.isReusable())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " was flagged as reusable, while current request is not.");
         } else if (!previousMetadata.isReusable()) {
             throw new IllegalArgumentException("Previously registered metric " + name + " was not flagged as reusable");
@@ -363,23 +385,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
         return (T) metricMap.get(metricID);
     }
 
-    private boolean haveCompatibleOrigins(Metadata left, Metadata right) {
-        if ( left instanceof OriginTrackedMetadata && right instanceof OriginTrackedMetadata ) {
-            OriginTrackedMetadata leftOrigin = (OriginTrackedMetadata) left;
-            OriginTrackedMetadata rightOrigin = (OriginTrackedMetadata) right;
+    private boolean areCompatibleOrigins(Object left, Object right) {
+        if (left.equals(right)) {
+            return true;
+        }
 
-            if ( leftOrigin.getOrigin().equals(rightOrigin.getOrigin())) {
-                return true;
-            }
-
-            if ( leftOrigin.getOrigin() instanceof InjectionPoint || ((OriginTrackedMetadata) right).getOrigin() instanceof InjectionPoint ) {
-                return true;
-            }
-
+        if (left instanceof InjectionPoint || right instanceof InjectionPoint) {
+            return true;
         }
 
         return false;
-
     }
 
     @Override
