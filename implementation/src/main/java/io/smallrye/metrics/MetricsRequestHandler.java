@@ -19,7 +19,7 @@ package io.smallrye.metrics;
 import io.smallrye.metrics.exporters.Exporter;
 import io.smallrye.metrics.exporters.JsonExporter;
 import io.smallrye.metrics.exporters.JsonMetadataExporter;
-import io.smallrye.metrics.exporters.PrometheusExporter;
+import io.smallrye.metrics.exporters.OpenMetricsExporter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -161,7 +161,7 @@ public class MetricsRequestHandler {
 
         if (acceptHeaders == null) {
             if (method.equals("GET")) {
-                exporter = new PrometheusExporter();
+                exporter = new OpenMetricsExporter();
             } else {
                 return null;
             }
@@ -181,9 +181,9 @@ public class MetricsRequestHandler {
                         return null;
                     }
                 } else {
-                    // This is the fallback, but only for GET, as Prometheus does not support OPTIONS
+                    // This is the fallback, but only for GET, as OpenMetrics does not support OPTIONS
                     if (method.equals("GET")) {
-                        exporter = new PrometheusExporter();
+                        exporter = new OpenMetricsExporter();
                     } else {
                         return null;
                     }

@@ -24,11 +24,11 @@ import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
 
-import static io.smallrye.metrics.exporters.PrometheusExporter.getPrometheusMetricName;
+import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMetricName;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
-public class PrometheusExporterTest {
+public class OpenMetricsExporterTest {
 
     private static final String LINE_SEPARATOR = "\n";
 
@@ -39,7 +39,7 @@ public class PrometheusExporterTest {
 
     @Test
     public void testUptimeGaugeUnitConversion() {
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         MetricRegistry baseRegistry = MetricRegistries.get(MetricRegistry.Type.BASE);
 
         Gauge gauge = new MGaugeImpl(JmxWorker.instance(), "java.lang:type=Runtime/Uptime");
@@ -52,30 +52,30 @@ public class PrometheusExporterTest {
         StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.BASE, new MetricID("jvm.uptime"));
         assertNotNull(out);
 
-        double valueFromPrometheus = -1;
+        double valueFromOpenMetrics = -1;
         for (String line : out.toString().split(System.getProperty("line.separator"))) {
             if (line.startsWith("base_jvm_uptime_seconds")) {
-                valueFromPrometheus /* in seconds */ = Double.valueOf(line.substring("base:jvm_uptime_seconds".length()).trim());
+                valueFromOpenMetrics /* in seconds */ = Double.valueOf(line.substring("base:jvm_uptime_seconds".length()).trim());
             }
         }
-        assertTrue("Value should not be -1", valueFromPrometheus != -1) ;
-        assertTrue(valueFromPrometheus >= actualUptimeInSeconds);
+        assertTrue("Value should not be -1", valueFromOpenMetrics != -1) ;
+        assertTrue(valueFromOpenMetrics >= actualUptimeInSeconds);
     }
 
     @Test
     public void metricNameConversion() {
-        assertEquals("frag3", getPrometheusMetricName("FRAG3"));
-        assertEquals("unicast3", getPrometheusMetricName("UNICAST3"));
+        assertEquals("frag3", getOpenMetricsMetricName("FRAG3"));
+        assertEquals("unicast3", getOpenMetricsMetricName("UNICAST3"));
 
-        assertEquals("foo_bar", getPrometheusMetricName("FOO-BAR"));
-        assertEquals("foo_bar", getPrometheusMetricName("FooBAR"));
-        assertEquals("foo_bar", getPrometheusMetricName("FooBar"));
+        assertEquals("foo_bar", getOpenMetricsMetricName("FOO-BAR"));
+        assertEquals("foo_bar", getOpenMetricsMetricName("FooBAR"));
+        assertEquals("foo_bar", getOpenMetricsMetricName("FooBar"));
     }
 
     @Test
     public void testExportOfDifferentMeterImplementations() {
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         MetricRegistry applicationRegistry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
 
         // the export should behave identical for any class derived from Meter
@@ -93,7 +93,7 @@ public class PrometheusExporterTest {
     @Test
     public void testExportOfDifferentHistogramImplementations() {
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         MetricRegistry applicationRegistry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
 
         // the export should behave identical for any class derived from Histogram
@@ -111,7 +111,7 @@ public class PrometheusExporterTest {
     @Test
     public void testExportOfDifferentTimerImplementations() {
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         MetricRegistry applicationRegistry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
 
         // the export should behave identical for any class derived from Timer
@@ -133,7 +133,7 @@ public class PrometheusExporterTest {
      */
     @Test
     public void testAppendingOfTotal() {
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Tag tag = new Tag("a", "b");
 

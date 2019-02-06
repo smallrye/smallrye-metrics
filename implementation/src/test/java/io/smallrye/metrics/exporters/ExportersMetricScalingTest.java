@@ -34,10 +34,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Timer with unit=MINUTES,
-     * check that the statistics from PrometheusExporter will be correctly converted to SECONDS.
+     * check that the statistics from OpenMetricsExporter will be correctly converted to SECONDS.
      */
     @Test
-    public void timer_prometheus() {
+    public void timer_openMetrics() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("timer1")
@@ -49,7 +49,7 @@ public class ExportersMetricScalingTest {
         metric.update(2, TimeUnit.HOURS);
         metric.update(3, TimeUnit.HOURS);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
 
         Assert.assertThat(exported, containsString("application_timer1_seconds{quantile=\"0.5\"} 7200.0"));
@@ -87,10 +87,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Histogram with unit=MINUTES,
-     * check that the statistics from PrometheusExporter will be presented in SECONDS.
+     * check that the statistics from OpenMetricsExporter will be presented in SECONDS.
      */
     @Test
-    public void histogram_prometheus() {
+    public void histogram_openMetrics() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("histogram1")
@@ -102,7 +102,7 @@ public class ExportersMetricScalingTest {
         metric.update(40);
         metric.update(50);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("histogram1")).toString();
 
         Assert.assertThat(exported, containsString("application_histogram1_min_seconds 1800.0"));
@@ -113,10 +113,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Histogram with unit=dollars (custom unit),
-     * check that the statistics from PrometheusExporter will be presented in dollars.
+     * check that the statistics from OpenMetricsExporter will be presented in dollars.
      */
     @Test
-    public void histogram_customunit_prometheus() {
+    public void histogram_customunit_openMetrics() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("histogram1")
@@ -128,7 +128,7 @@ public class ExportersMetricScalingTest {
         metric.update(40);
         metric.update(50);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("histogram1")).toString();
 
         Assert.assertThat(exported, containsString("application_histogram1_min_dollars 30.0"));
@@ -167,10 +167,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Counter,
-     * check that the statistics from PrometheusExporter will not be scaled in any way.
+     * check that the statistics from OpenMetricsExporter will not be scaled in any way.
      */
     @Test
-    public void counter_prometheus() {
+    public void counter_openMetrics() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("counter1")
@@ -181,7 +181,7 @@ public class ExportersMetricScalingTest {
         metric.inc(40);
         metric.inc(50);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter1")).toString();
 
         Assert.assertThat(exported, containsString("application_counter1_total 120.0"));
@@ -212,10 +212,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Meter,
-     * check that the statistics from PrometheusExporter will be presented as per_second.
+     * check that the statistics from OpenMetrics will be presented as per_second.
      */
     @Test
-    public void meter_prometheus() throws InterruptedException {
+    public void meter_openMetrics() throws InterruptedException {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("meter1")
@@ -225,7 +225,7 @@ public class ExportersMetricScalingTest {
         metric.mark(10);
         TimeUnit.SECONDS.sleep(1);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("meter1")).toString();
 
         Assert.assertThat(exported, containsString("application_meter1_total 10.0"));
@@ -266,10 +266,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Gauge with unit=MINUTES,
-     * check that the statistics from PrometheusExporter will be presented in SECONDS.
+     * check that the statistics from OpenMetricsExporter will be presented in SECONDS.
      */
     @Test
-    public void gauge_prometheus() {
+    public void gauge_openMetrics() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("gauge1")
@@ -279,7 +279,7 @@ public class ExportersMetricScalingTest {
         Gauge<Long> gaugeInstance = () -> 3L;
         registry.register(metadata, gaugeInstance);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("gauge1")).toString();
 
         Assert.assertThat(exported, containsString("application_gauge1_seconds 180.0"));
@@ -287,10 +287,10 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Gauge with unit=dollars (custom unit),
-     * check that the statistics from PrometheusExporter will be presented in dollars.
+     * check that the statistics from OpenMetricsExporter will be presented in dollars.
      */
     @Test
-    public void gauge_customUnit_prometheus() {
+    public void gauge_customUnit_openMetrics() {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         Metadata metadata = Metadata.builder()
                 .withName("gauge1")
@@ -300,7 +300,7 @@ public class ExportersMetricScalingTest {
         Gauge<Long> gaugeInstance = () -> 3L;
         registry.register(metadata, gaugeInstance);
 
-        PrometheusExporter exporter = new PrometheusExporter();
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("gauge1")).toString();
 
         Assert.assertThat(exported, containsString("application_gauge1_dollars 3.0"));
@@ -308,7 +308,7 @@ public class ExportersMetricScalingTest {
 
     /**
      * Given a Gauge with unit=MINUTES,
-     * check that the statistics from PrometheusExporter will be presented in MINUTES.
+     * check that the statistics from OpenMetricsExporter will be presented in MINUTES.
      */
     @Test
     public void gauge_json() {

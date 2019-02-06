@@ -23,72 +23,72 @@ import org.junit.Test;
 /**
  * @author hrupp
  */
-public class PrometheusUnitScalingTest {
+public class OpenMetricsUnitScalingTest {
 
     @Test
     public void testScaleToSecondsForNanos() {
         String foo = MetricUnits.NANOSECONDS;
-        double out = PrometheusUnit.scaleToBase(foo, 3.0);
+        double out = OpenMetricsUnit.scaleToBase(foo, 3.0);
         assert out == 0.000_000_003 : "Out was " + out;
     }
 
     @Test
     public void testScaleToSeconds() {
         String foo = MetricUnits.SECONDS;
-        double out = PrometheusUnit.scaleToBase(foo, 3.0);
+        double out = OpenMetricsUnit.scaleToBase(foo, 3.0);
         assert out == 3 : "Out was " + out;
     }
 
     @Test
     public void testScaleToSecondsForDays() {
         String foo = MetricUnits.DAYS;
-        double out = PrometheusUnit.scaleToBase(foo, 3.0);
+        double out = OpenMetricsUnit.scaleToBase(foo, 3.0);
         assert out == 3 * 24 * 60 * 60 : "Out was " + out;
     }
 
     @Test
     public void testScaleMegabyteToByte() {
         String foo = MetricUnits.MEGABYTES;
-        double out = PrometheusUnit.scaleToBase(foo, 1.0);
+        double out = OpenMetricsUnit.scaleToBase(foo, 1.0);
         assert out == 1000 * 1000 : out;
     }
 
     @Test
     public void testScaleBitsToByte() {
         String foo = MetricUnits.BITS;
-        double out = PrometheusUnit.scaleToBase(foo, 13.0);
+        double out = OpenMetricsUnit.scaleToBase(foo, 13.0);
         assert out == 13.0 / 8.0 : out;
     }
 
     @Test
     public void testFindBaseUnit1() {
         String foo = MetricUnits.HOURS;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
+        String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.SECONDS);
-        String promUnit = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(out));
+        String promUnit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(out));
         assert promUnit.equals("seconds");
     }
 
     @Test
     public void testFindBaseUnit2() {
         String foo = MetricUnits.MILLISECONDS;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
+        String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.SECONDS);
-        String promUnit = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(out));
+        String promUnit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(out));
         assert promUnit.equals("seconds");
     }
 
     @Test
     public void testFindBaseUnit3() {
         String foo = MetricUnits.PERCENT;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
+        String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.PERCENT);
     }
 
     @Test
     public void testFindBaseUnit4() {
         String foo = MetricUnits.NONE;
-        String out = PrometheusUnit.getBaseUnitAsPrometheusString(Optional.ofNullable(foo));
+        String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
         assert out.equals(MetricUnits.NONE);
     }
 }

@@ -30,21 +30,21 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 /**
  * @author hrupp
  */
-public class PrometheusUnit {
+public class OpenMetricsUnit {
 
 
-    private PrometheusUnit() {
+    private OpenMetricsUnit() {
     }
 
 
     /**
-     * Determines the basic unit to be used by Prometheus exporter based on the input unit from parameter.
+     * Determines the basic unit to be used by OpenMetrics exporter based on the input unit from parameter.
      * That is:
      * - for memory size units, returns "bytes"
      * - for time units, returns "seconds"
      * - for any other unit, returns the input unit itself
      */
-    public static String getBaseUnitAsPrometheusString(Optional<String> optUnit) {
+    public static String getBaseUnitAsOpenMetricsString(Optional<String> optUnit) {
 
         if (!optUnit.isPresent()) {
             return "NONE";
@@ -103,7 +103,7 @@ public class PrometheusUnit {
     }
 
     /**
-     * Scales the value (time or memory size) interpreted using inputUnit to the base unit for Prometheus exporter
+     * Scales the value (time or memory size) interpreted using inputUnit to the base unit for OpenMetrics exporter
      * That means:
      * - values for memory size units are scaled to bytes
      * - values for time units are scaled to seconds

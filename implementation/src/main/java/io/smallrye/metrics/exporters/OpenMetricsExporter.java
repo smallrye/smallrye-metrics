@@ -30,15 +30,12 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -46,12 +43,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Export data in Prometheus text format
+ * Export data in OpenMetrics text format
  *
  * @author Heiko W. Rupp
  */
 // TODO export multiple metrics by one name with different tags
-public class PrometheusExporter implements Exporter {
+public class OpenMetricsExporter implements Exporter {
 
     private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
@@ -71,7 +68,7 @@ public class PrometheusExporter implements Exporter {
 
     private boolean writeHelpLine;
 
-    public PrometheusExporter() {
+    public OpenMetricsExporter() {
         Config config = ConfigProvider.getConfig();
         Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
         writeHelpLine = !tmp.isPresent() || !tmp.get();
@@ -113,8 +110,8 @@ public class PrometheusExporter implements Exporter {
 
     @Override
     public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
-        // TODO method PrometheusExporter.exportMetricsByName
-        throw new UnsupportedOperationException("PrometheusExporter.exportMetricsByName not implemented yet");
+        // TODO method OpenMetricsExporter.exportMetricsByName
+        throw new UnsupportedOperationException("OpenMetricsExporter.exportMetricsByName not implemented yet");
 
     }
 
@@ -148,9 +145,9 @@ public class PrometheusExporter implements Exporter {
             try {
                 switch (md.getTypeRaw()) {
                     case GAUGE: {
-                        key = getPrometheusMetricName(key);
+                        key = getOpenMetricsMetricName(key);
                         String unitSuffix = null;
-                        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+                        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
                         if (!unit.equals(NONE)) {
                             unitSuffix = "_" + unit;
                         }
@@ -161,7 +158,7 @@ public class PrometheusExporter implements Exporter {
                     }
                     case COUNTER:
                         String suffix = md.getName().endsWith("_total") ? null : "_total";
-                        key = getPrometheusMetricName(key);
+                        key = getOpenMetricsMetricName(key);
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
                         createSimpleValueLine(metricBuf, scope, key, md, metric, suffix, tagsMap);
@@ -194,7 +191,7 @@ public class PrometheusExporter implements Exporter {
 
     private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md, Map<String, String> tags) {
 
-        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
 
         String theUnit = unit.equals(NONE) ? "" : USCORE + unit;
 
@@ -202,7 +199,7 @@ public class PrometheusExporter implements Exporter {
         Snapshot snapshot = timer.getSnapshot();
         writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true, tags);
 
-        String suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+        String suffix = USCORE + OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
         writeHelpLine(sb, scope, md.getName(), md, suffix);
         writeTypeLine(sb,scope,md.getName(),md, suffix,SUMMARY);
         writeValueLine(sb,scope,suffix + "_count",timer.getCount(),md, null, false);
@@ -211,7 +208,7 @@ public class PrometheusExporter implements Exporter {
     }
 
     private void writeConcurrentGaugeValues(StringBuffer sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge, Metadata md, String key, Map<String, String> tags) {
-        key = getPrometheusMetricName(key);
+        key = getOpenMetricsMetricName(key);
         writeHelpLine(sb, scope, key, md, "");
         writeTypeAndValue(sb, scope, "", concurrentGauge.getCount(), GAUGE, md, false, tags);
         writeTypeAndValue(sb, scope, "_max", concurrentGauge.getMax(), GAUGE, md, false, tags);
@@ -222,7 +219,7 @@ public class PrometheusExporter implements Exporter {
 
         Snapshot snapshot = histogram.getSnapshot();
         Optional<String> optUnit = md.getUnit();
-        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(optUnit);
+        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(optUnit);
 
         String theUnit = unit.equals("none") ? "" : USCORE + unit;
 
@@ -298,7 +295,7 @@ public class PrometheusExporter implements Exporter {
                                 Map<String, String> tags,
                                 boolean performScaling) {
         String name = md.getName();
-        name = getPrometheusMetricName(name);
+        name = getOpenMetricsMetricName(name);
         fillBaseName(sb, scope, name, suffix);
 
         // add tags
@@ -315,7 +312,7 @@ public class PrometheusExporter implements Exporter {
             if(md.getTypeRaw() == MetricType.HISTOGRAM)
                 // for histograms, internally the data is stored using the metric's unit
                 scaleFrom = md.getUnit().orElse(NONE);
-            value = PrometheusUnit.scaleToBase(scaleFrom, valueRaw);
+            value = OpenMetricsUnit.scaleToBase(scaleFrom, valueRaw);
         } else {
             value = valueRaw;
         }
@@ -378,7 +375,7 @@ public class PrometheusExporter implements Exporter {
 
     private void getNameWithScopeAndSuffix(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {
         sb.append(scope.getName().toLowerCase());
-        sb.append('_').append(getPrometheusMetricName(key));
+        sb.append('_').append(getOpenMetricsMetricName(key));
         if (suffix != null) {
             sb.append(suffix);
         }
@@ -389,7 +386,7 @@ public class PrometheusExporter implements Exporter {
 
         // value line
         fillBaseName(sb, scope, key, suffix);
-        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
         if (!unit.equals(NONE)) {
             sb.append(USCORE).append(unit);
         }
@@ -409,13 +406,13 @@ public class PrometheusExporter implements Exporter {
             valIn = (double) ((Counter) metric).getCount();
         }
 
-        Double value = PrometheusUnit.scaleToBase(md.getUnit().orElse(NONE), valIn);
+        Double value = OpenMetricsUnit.scaleToBase(md.getUnit().orElse(NONE), valIn);
         sb.append(SPACE).append(value).append(LF);
 
     }
 
 
-    static String getPrometheusMetricName(String name) {
+    static String getOpenMetricsMetricName(String name) {
         String out = name.replaceAll("[^\\w]+",USCORE);
         out = decamelize(out);
         out = out.replace("__", USCORE);
