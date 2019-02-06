@@ -38,10 +38,12 @@ import org.jboss.logging.Logger;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Export data in Prometheus text format
@@ -140,16 +142,21 @@ public class PrometheusExporter implements Exporter {
             }
 
             Metric metric = entry.getValue();
-
+            final Map<String, String> tagsMap = entry.getKey().getTags();
             StringBuffer metricBuf = new StringBuffer();
 
             try {
                 switch (md.getTypeRaw()) {
                     case GAUGE: {
                         key = getPrometheusMetricName(key);
-                        writeHelpLine(metricBuf, scope, key, md, null);
-                        writeTypeLine(metricBuf, scope, key, md, null, null);
-                        createSimpleValueLine(metricBuf, scope, key, md, metric, null);
+                        String unitSuffix = null;
+                        String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
+                        if (!unit.equals(NONE)) {
+                            unitSuffix = "_" + unit;
+                        }
+                        writeHelpLine(metricBuf, scope, key, md, unitSuffix);
+                        writeTypeLine(metricBuf, scope, key, md, unitSuffix, null);
+                        createSimpleValueLine(metricBuf, scope, key, md, metric, null, tagsMap);
                         break;
                     }
                     case COUNTER:
@@ -157,23 +164,23 @@ public class PrometheusExporter implements Exporter {
                         key = getPrometheusMetricName(key);
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
-                        createSimpleValueLine(metricBuf, scope, key, md, metric, suffix);
+                        createSimpleValueLine(metricBuf, scope, key, md, metric, suffix, tagsMap);
                         break;
                     case CONCURRENT_GAUGE:
                         ConcurrentGauge concurrentGauge = (ConcurrentGauge) metric;
-                        writeConcurrentGaugeValues(sb, scope, concurrentGauge, md, key);
+                        writeConcurrentGaugeValues(sb, scope, concurrentGauge, md, key, tagsMap);
                         break;
                     case METERED:
                         Metered meter = (Metered) metric;
-                        writeMeterValues(metricBuf, scope, meter, md);
+                        writeMeterValues(metricBuf, scope, meter, md, tagsMap);
                         break;
                     case TIMER:
                         Timer timer = (Timer) metric;
-                        writeTimerValues(metricBuf, scope, timer, md);
+                        writeTimerValues(metricBuf, scope, timer, md, tagsMap);
                         break;
                     case HISTOGRAM:
                         Histogram histogram = (Histogram) metric;
-                        writeHistogramValues(metricBuf, scope, histogram, md);
+                        writeHistogramValues(metricBuf, scope, histogram, md, tagsMap);
                         break;
                     default:
                         throw new IllegalArgumentException("Not supported: " + key);
@@ -185,33 +192,33 @@ public class PrometheusExporter implements Exporter {
         }
     }
 
-    private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md) {
+    private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md, Map<String, String> tags) {
 
         String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
 
         String theUnit = unit.equals(NONE) ? "" : USCORE + unit;
 
-        writeMeterRateValues(sb, scope, timer, md);
+        writeMeterRateValues(sb, scope, timer, md, tags);
         Snapshot snapshot = timer.getSnapshot();
-        writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true);
+        writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true, tags);
 
         String suffix = USCORE + PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
         writeHelpLine(sb, scope, md.getName(), md, suffix);
         writeTypeLine(sb,scope,md.getName(),md, suffix,SUMMARY);
         writeValueLine(sb,scope,suffix + "_count",timer.getCount(),md, null, false);
 
-        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true);
+        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
 
-    private void writeConcurrentGaugeValues(StringBuffer sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge, Metadata md, String key) {
+    private void writeConcurrentGaugeValues(StringBuffer sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge, Metadata md, String key, Map<String, String> tags) {
         key = getPrometheusMetricName(key);
-        writeHelpLine(sb, scope, key, md, "_current");
-        writeTypeAndValue(sb, scope, "_current", concurrentGauge.getCount(), GAUGE, md, false);
-        writeTypeAndValue(sb, scope, "_max", concurrentGauge.getMax(), GAUGE, md, false);
-        writeTypeAndValue(sb, scope, "_min", concurrentGauge.getMin(), GAUGE, md, false);
+        writeHelpLine(sb, scope, key, md, "");
+        writeTypeAndValue(sb, scope, "", concurrentGauge.getCount(), GAUGE, md, false, tags);
+        writeTypeAndValue(sb, scope, "_max", concurrentGauge.getMax(), GAUGE, md, false, tags);
+        writeTypeAndValue(sb, scope, "_min", concurrentGauge.getMin(), GAUGE, md, false, tags);
     }
 
-    private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, Histogram histogram, Metadata md) {
+    private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, Histogram histogram, Metadata md, Map<String, String> tags) {
 
         Snapshot snapshot = histogram.getSnapshot();
         Optional<String> optUnit = md.getUnit();
@@ -220,55 +227,67 @@ public class PrometheusExporter implements Exporter {
         String theUnit = unit.equals("none") ? "" : USCORE + unit;
 
         writeHelpLine(sb, scope, md.getName(), md, SUMMARY);
-        writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true);
+        writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true, tags);
         writeTypeLine(sb,scope,md.getName(),md, theUnit,SUMMARY);
         writeValueLine(sb,scope,theUnit + "_count",histogram.getCount(),md, null, false);
-        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true);
+        writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
 
 
-    private void writeSnapshotBasics(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling) {
+    private void writeSnapshotBasics(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling, Map<String, String> tags) {
 
-        writeTypeAndValue(sb, scope, "_min" + unit, snapshot.getMin(), GAUGE, md, performScaling);
-        writeTypeAndValue(sb, scope, "_max" + unit, snapshot.getMax(), GAUGE, md, performScaling);
-        writeTypeAndValue(sb, scope, "_mean" + unit, snapshot.getMean(), GAUGE, md, performScaling);
-        writeTypeAndValue(sb, scope, "_stddev" + unit, snapshot.getStdDev(), GAUGE, md, performScaling);
+        writeTypeAndValue(sb, scope, "_min" + unit, snapshot.getMin(), GAUGE, md, performScaling, tags);
+        writeTypeAndValue(sb, scope, "_max" + unit, snapshot.getMax(), GAUGE, md, performScaling, tags);
+        writeTypeAndValue(sb, scope, "_mean" + unit, snapshot.getMean(), GAUGE, md, performScaling, tags);
+        writeTypeAndValue(sb, scope, "_stddev" + unit, snapshot.getStdDev(), GAUGE, md, performScaling, tags);
     }
 
-    private void writeSnapshotQuantiles(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling) {
-        writeValueLine(sb, scope, unit, snapshot.getMedian(), md, new Tag(QUANTILE, "0.5"), performScaling);
-        writeValueLine(sb, scope, unit, snapshot.get75thPercentile(), md, new Tag(QUANTILE, "0.75"), performScaling);
-        writeValueLine(sb, scope, unit, snapshot.get95thPercentile(), md, new Tag(QUANTILE, "0.95"), performScaling);
-        writeValueLine(sb, scope, unit, snapshot.get98thPercentile(), md, new Tag(QUANTILE, "0.98"), performScaling);
-        writeValueLine(sb, scope, unit, snapshot.get99thPercentile(), md, new Tag(QUANTILE, "0.99"), performScaling);
-        writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, new Tag(QUANTILE, "0.999"), performScaling);
+    private void writeSnapshotQuantiles(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling, Map<String, String> tags) {
+        Map<String, String> mapMedian = copyMap(tags);
+        mapMedian.put(QUANTILE, "0.5");
+        writeValueLine(sb, scope, unit, snapshot.getMedian(), md, mapMedian, performScaling);
+        Map<String, String> map75 = copyMap(tags);
+        mapMedian.put(QUANTILE, "0.75");
+        writeValueLine(sb, scope, unit, snapshot.get75thPercentile(), md, map75, performScaling);
+        Map<String, String> map95 = copyMap(tags);
+        mapMedian.put(QUANTILE, "0.95");
+        writeValueLine(sb, scope, unit, snapshot.get95thPercentile(), md, map95, performScaling);
+        Map<String, String> map98 = copyMap(tags);
+        mapMedian.put(QUANTILE, "0.98");
+        writeValueLine(sb, scope, unit, snapshot.get98thPercentile(), md, map98, performScaling);
+        Map<String, String> map99 = copyMap(tags);
+        mapMedian.put(QUANTILE, "0.99");
+        writeValueLine(sb, scope, unit, snapshot.get99thPercentile(), md, map99, performScaling);
+        Map<String, String> map999 = copyMap(tags);
+        mapMedian.put(QUANTILE, "0.999");
+        writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, map999, performScaling);
     }
 
-    private void writeMeterValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md) {
+    private void writeMeterValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md, Map<String, String> tags) {
         writeHelpLine(sb, scope, md.getName(), md, "_total");
-        writeTypeAndValue(sb, scope, "_total", metric.getCount(), COUNTER, md, false);
-        writeMeterRateValues(sb, scope, metric, md);
+        writeTypeAndValue(sb, scope, "_total", metric.getCount(), COUNTER, md, false, tags);
+        writeMeterRateValues(sb, scope, metric, md, tags);
     }
 
-    private void writeMeterRateValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md) {
-        writeTypeAndValue(sb, scope, "_rate_per_second", metric.getMeanRate(), GAUGE, md, false);
-        writeTypeAndValue(sb, scope, "_one_min_rate_per_second", metric.getOneMinuteRate(), GAUGE, md, false);
-        writeTypeAndValue(sb, scope, "_five_min_rate_per_second", metric.getFiveMinuteRate(), GAUGE, md, false);
-        writeTypeAndValue(sb, scope, "_fifteen_min_rate_per_second", metric.getFifteenMinuteRate(), GAUGE, md, false);
+    private void writeMeterRateValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md, Map<String, String> tags) {
+        writeTypeAndValue(sb, scope, "_rate_per_second", metric.getMeanRate(), GAUGE, md, false, tags);
+        writeTypeAndValue(sb, scope, "_one_min_rate_per_second", metric.getOneMinuteRate(), GAUGE, md, false, tags);
+        writeTypeAndValue(sb, scope, "_five_min_rate_per_second", metric.getFiveMinuteRate(), GAUGE, md, false, tags);
+        writeTypeAndValue(sb, scope, "_fifteen_min_rate_per_second", metric.getFifteenMinuteRate(), GAUGE, md, false, tags);
     }
 
-    private void writeTypeAndValue(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, String type, Metadata md, boolean performScaling) {
+    private void writeTypeAndValue(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, String type, Metadata md, boolean performScaling, Map<String, String> tags) {
         String key = md.getName();
         writeTypeLine(sb, scope, key, md, suffix, type);
-        writeValueLine(sb, scope, suffix, valueRaw, md, null, performScaling);
+        writeValueLine(sb, scope, suffix, valueRaw, md, tags, performScaling);
     }
 
     private void writeValueLine(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md) {
         writeValueLine(sb, scope, suffix, valueRaw, md, null);
     }
 
-    private void writeValueLine(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md, Tag extraTag) {
-        writeValueLine(sb, scope, suffix, valueRaw, md, extraTag, true);
+    private void writeValueLine(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md, Map<String, String> tags) {
+        writeValueLine(sb, scope, suffix, valueRaw, md, tags, true);
     }
 
     private void writeValueLine(StringBuffer sb,
@@ -276,7 +295,7 @@ public class PrometheusExporter implements Exporter {
                                 String suffix,
                                 double valueRaw,
                                 Metadata md,
-                                Tag extraTag,
+                                Map<String, String> tags,
                                 boolean performScaling) {
         String name = md.getName();
         name = getPrometheusMetricName(name);
@@ -284,11 +303,7 @@ public class PrometheusExporter implements Exporter {
 
         // add tags
 
-        Map<String, String> tags = new HashMap<>(); // TODO new HashMap<>(md.getTags());
-        if (extraTag != null) {
-            tags.put(extraTag.getTagName(), extraTag.getTagValue());
-        }
-        if (!tags.isEmpty()) {
+        if (tags != null) {
             addTags(sb, tags);
         }
 
@@ -309,16 +324,24 @@ public class PrometheusExporter implements Exporter {
     }
 
     private void addTags(StringBuffer sb, Map<String, String> tags) {
-        Iterator<Map.Entry<String, String>> iter = tags.entrySet().iterator();
-        sb.append("{");
-        while (iter.hasNext()) {
-            Map.Entry<String, String> tag = iter.next();
-            sb.append(tag.getKey()).append("=\"").append(tag.getValue()).append("\"");
-            if (iter.hasNext()) {
-                sb.append(",");
+        if(tags == null || tags.isEmpty()) {
+            return;
+        } else {
+            Iterator<Map.Entry<String, String>> iter = tags.entrySet().iterator();
+            sb.append("{");
+            while (iter.hasNext()) {
+                Map.Entry<String, String> tag = iter.next();
+                sb.append(tag.getKey()).append("=\"").append(tag.getValue()).append("\"");
+                if (iter.hasNext()) {
+                    sb.append(",");
+                }
             }
+            sb.append("}");
         }
-        sb.append("}");
+    }
+
+    private <K, V> Map<K, V> copyMap(Map<K, V> map) {
+        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private void fillBaseName(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {
@@ -362,18 +385,16 @@ public class PrometheusExporter implements Exporter {
         sb.append(SPACE);
     }
 
-    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric, String suffix) {
+    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric, String suffix, Map<String, String> tags) {
 
         // value line
         fillBaseName(sb, scope, key, suffix);
         String unit = PrometheusUnit.getBaseUnitAsPrometheusString(md.getUnit());
-        if (!unit.equals(NONE)) { // TODO will this not cause counters to append units? the unit should be part of the suffix two lines earlier
+        if (!unit.equals(NONE)) {
             sb.append(USCORE).append(unit);
         }
-        String tags = null; // TODO md.getTagsAsString();
-        if (tags != null && !tags.isEmpty()) {            // TODO what with this?
-            sb.append('{').append(tags).append('}');
-        }
+
+        addTags(sb, tags);
 
         double valIn;
         if (md.getTypeRaw().equals(MetricType.GAUGE)) {
@@ -412,4 +433,5 @@ public class PrometheusExporter implements Exporter {
         m.appendTail(sb);
         return sb.toString().toLowerCase();
     }
+
 }

@@ -28,12 +28,15 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author hrupp
@@ -75,6 +78,7 @@ public class JsonExporter implements Exporter {
         for (Iterator<Map.Entry<MetricID, Metric>> iterator = metricMap.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<MetricID, Metric> entry = iterator.next();
             String key = entry.getKey().getName();
+            String tags = createTagsString(entry.getKey().getTagsAsList());
 
             Metric value = entry.getValue();
             Metadata metadata = metadataMap.get(key);
@@ -95,7 +99,7 @@ public class JsonExporter implements Exporter {
                     case GAUGE:
                     case COUNTER:
                         Number val = getValueFromMetric(value, key);
-                        metricBuffer.append("  ").append('"').append(key).append('"').append(" : ").append(val);
+                        metricBuffer.append("  ").append('"').append(key).append(tags).append('"').append(" : ").append(val);
                         break;
                     case METERED:
                         Metered meter = (Metered) value;
@@ -130,6 +134,21 @@ public class JsonExporter implements Exporter {
             } catch (Exception e) {
                 log.warn("Unable to export metric " + key, e);
             }
+        }
+    }
+
+    /**
+     * Converts a list of tags to the string that will be appended to the metric name in JSON output.
+     * If there are no tags, this returns an empty string.
+     */
+    private String createTagsString(List<Tag> tagsAsList) {
+        if(tagsAsList == null || tagsAsList.isEmpty())
+            return "";
+        else {
+            String tags = tagsAsList.stream()
+                    .map(tag -> tag.getTagName() + "=" + tag.getTagValue()) // TODO JSON escaping
+                    .collect(Collectors.joining(","));
+            return "{" + tags + "}";
         }
     }
 
