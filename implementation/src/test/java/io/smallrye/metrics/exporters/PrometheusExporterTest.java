@@ -16,6 +16,7 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.After;
 import org.junit.Assert;
@@ -123,5 +124,28 @@ public class PrometheusExporterTest {
             String expectedLine = "application_" + name + "_rate_per_second 0.0";
             Assert.assertThat(out, containsString(expectedLine));
         }
+    }
+
+
+    /**
+     * In OpenMetrics exporter, if the metric name does not end with _total, then _total should be appended automatically.
+     * If it ends with _total, nothing extra will be appended.
+     */
+    @Test
+    public void testAppendingOfTotal() {
+        PrometheusExporter exporter = new PrometheusExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+        Tag tag = new Tag("a", "b");
+
+        // in this case _total should be appended
+        registry.counter("counter1", tag);
+        String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter1", tag)).toString();
+        Assert.assertThat(export, containsString("application_counter1_total{a=\"b\"}"));
+
+        // in this case _total should NOT be appended
+        registry.counter("counter2_total", tag);
+        export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter2_total", tag)).toString();
+        Assert.assertThat(export, containsString("application_counter2_total{a=\"b\"}"));
+
     }
 }
