@@ -22,7 +22,6 @@ import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -43,7 +42,6 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -69,19 +67,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
      */
     private Map<MetricID, Object> originMap = new ConcurrentHashMap<>();
 
-    Optional<String> globalTags;
-
     public MetricsRegistryImpl() {
-
-        Config c  = org.eclipse.microprofile.config.ConfigProvider.getConfig();
-
-        // TODO
-        // TODO find out if this dance is still needed in newer versions of config
-        globalTags = c.getOptionalValue("mp.metrics.tags", String.class);
-        if (globalTags.isPresent()) {
-            return;
-        }
-        globalTags = c.getOptionalValue("MP_METRICS_TAGS",String.class);
 
     }
 
@@ -322,8 +308,6 @@ public class MetricsRegistryImpl extends MetricRegistry {
         return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.TIMER));
     }
 
-    // TODO all above methods where applicable, should assert that the type (in the method name) is the same as the type in the metadata
-    // TODO -- not only type, but also name
     private <T extends Metric> T get(MetricID metricID, Metadata metadata) {
         String name = metadata.getName();
         MetricType type = metadata.getTypeRaw();

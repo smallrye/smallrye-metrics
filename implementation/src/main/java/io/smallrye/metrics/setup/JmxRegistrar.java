@@ -54,7 +54,7 @@ public class JmxRegistrar {
         }
 
         if (metric != null) {
-            registry.register(config, metric, tags.toArray(new Tag[]{})); // TODO this initializer is wrong I guess?
+            registry.register(config, metric, tags.toArray(new Tag[]{}));
         }
     }
 
