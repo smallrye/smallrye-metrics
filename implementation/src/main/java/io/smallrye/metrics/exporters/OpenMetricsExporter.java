@@ -345,7 +345,7 @@ public class OpenMetricsExporter implements Exporter {
             sb.append("{");
             while (iter.hasNext()) {
                 Map.Entry<String, String> tag = iter.next();
-                sb.append(tag.getKey()).append("=\"").append(tag.getValue()).append("\"");
+                sb.append(tag.getKey()).append("=\"").append(quoteValue(tag.getValue())).append("\"");
                 if (iter.hasNext()) {
                     sb.append(",");
                 }
@@ -369,7 +369,7 @@ public class OpenMetricsExporter implements Exporter {
         if (writeHelpLine && md.getDescription().isPresent() && !alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# HELP ");
             getNameWithScopeAndSuffix(sb, scope, key, suffix);
-            sb.append(md.getDescription().get());
+            sb.append(quoteHelpText(md.getDescription().get()));
             sb.append(LF);
         }
 
@@ -448,6 +448,24 @@ public class OpenMetricsExporter implements Exporter {
         }
         m.appendTail(sb);
         return sb.toString().toLowerCase();
+    }
+
+    public static String quoteHelpText(String value) {
+        return value
+                // replace \ with \\, unless it is followed by n, in which case it is a newline character, which should not be changed
+                .replaceAll("\\\\([^n])", "\\\\\\\\$1")
+                // replace \ at the end of the value with \\
+                .replaceAll("\\\\$", "\\\\\\\\");
+    }
+
+    public static String quoteValue(String value) {
+        return value
+                // replace \ with \\, unless it is followed by n, in which case it is a newline character, which should not be changed
+                .replaceAll("\\\\([^n])", "\\\\\\\\$1")
+                // replace " with \"
+                .replaceAll("\"", "\\\\\"")
+                // replace \ at the end of the value with \\
+                .replaceAll("\\\\$", "\\\\\\\\");
     }
 
 }

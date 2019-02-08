@@ -101,7 +101,7 @@ public class OpenMetricsExporterTest {
             applicationRegistry.register(name, m);
             String out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name)).toString();
             String expectedLine = "application_" + name + "_total 0.0";
-            Assert.assertThat(out, containsString(expectedLine));
+            assertThat(out, containsString(expectedLine));
         }
     }
 
@@ -119,7 +119,7 @@ public class OpenMetricsExporterTest {
             applicationRegistry.register(name, h);
             String out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name)).toString();
             String expectedLine = "application_" + name + "_mean 0.0";
-            Assert.assertThat(out, containsString(expectedLine));
+            assertThat(out, containsString(expectedLine));
         }
     }
 
@@ -137,8 +137,63 @@ public class OpenMetricsExporterTest {
             applicationRegistry.register(name, t);
             String out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name)).toString();
             String expectedLine = "application_" + name + "_rate_per_second 0.0";
-            Assert.assertThat(out, containsString(expectedLine));
+            assertThat(out, containsString(expectedLine));
         }
+    }
+
+
+    @Test
+    public void testTagValueQuoting() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        // quotes: a"b" should become a\"b\"
+        Tag tag = new Tag("tag1", "a\"b\"");
+        registry.counter("counter1", tag);
+        String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter1", tag)).toString();
+        assertThat(export, containsString("{tag1=\"a\\\"b\\\"\"}"));
+
+        // newline character: a\nb should stay as a\nb
+        tag = new Tag("tag1", "a\\nb");
+        registry.counter("counter2", tag);
+        export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter2", tag)).toString();
+        assertThat(export, containsString("{tag1=\"a\\nb\"}"));
+
+        // backslash: b\c should become b\\c
+        tag = new Tag("tag1", "b\\c");
+        registry.counter("counter3", tag);
+        export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter3", tag)).toString();
+        assertThat(export, containsString("{tag1=\"b\\\\c\"}"));
+
+        // backslash at the end: b\ should become b\\
+        tag = new Tag("tag1", "b\\");
+        registry.counter("counter4", tag);
+        export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter4", tag)).toString();
+        assertThat(export, containsString("{tag1=\"b\\\\\"}"));
+    }
+
+    @Test
+    public void testHelpLineQuoting() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata.builder()
+                .withName("counter_with_complicated_description")
+                .withDescription("hhh\\ggg\\nfff\\").build();
+        registry.counter(metadata);
+        String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_complicated_description")).toString();
+
+        // hhh\ggg\nfff\ should become hhh\\ggg\nfff\\
+        assertThat(export, containsString("# HELP application_counter_with_complicated_description_total hhh\\\\ggg\\nfff\\\\"));
+
+        metadata = Metadata.builder()
+                .withName("counter_with_complicated_description_2")
+                .withDescription("description with \"quotes\"").build();
+        registry.counter(metadata);
+        export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_complicated_description_2")).toString();
+
+        // double quotes should stay unchanged
+        assertThat(export, containsString("# HELP application_counter_with_complicated_description_2_total description with \"quotes\""));
     }
 
 
@@ -155,12 +210,12 @@ public class OpenMetricsExporterTest {
         // in this case _total should be appended
         registry.counter("counter1", tag);
         String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter1", tag)).toString();
-        Assert.assertThat(export, containsString("application_counter1_total{a=\"b\"}"));
+        assertThat(export, containsString("application_counter1_total{a=\"b\"}"));
 
         // in this case _total should NOT be appended
         registry.counter("counter2_total", tag);
         export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter2_total", tag)).toString();
-        Assert.assertThat(export, containsString("application_counter2_total{a=\"b\"}"));
+        assertThat(export, containsString("application_counter2_total{a=\"b\"}"));
 
     }
 
