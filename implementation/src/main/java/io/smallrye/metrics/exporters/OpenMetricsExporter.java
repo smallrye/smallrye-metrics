@@ -35,9 +35,11 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,7 +49,6 @@ import java.util.stream.Collectors;
  *
  * @author Heiko W. Rupp
  */
-// TODO export multiple metrics by one name with different tags
 public class OpenMetricsExporter implements Exporter {
 
     private static final Logger log = Logger.getLogger("io.smallrye.metrics");
@@ -68,17 +69,24 @@ public class OpenMetricsExporter implements Exporter {
 
     private boolean writeHelpLine;
 
+    // names of metrics for which we have already exported TYPE and HELP lines within one scope
+    // this is to prevent writing them multiple times for the same metric name
+    // this should be initialized to an empty map during start of an export and cleared after the export is finished
+    private ThreadLocal<Set<String>> alreadyExportedNames = new ThreadLocal<>();
+
+
     public OpenMetricsExporter() {
         Config config = ConfigProvider.getConfig();
         Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
         writeHelpLine = !tmp.isPresent() || !tmp.get();
     }
 
+    @Override
     public StringBuffer exportOneScope(MetricRegistry.Type scope) {
-
+        alreadyExportedNames.set(new HashSet<>());
         StringBuffer sb = new StringBuffer();
         getEntriesForScope(scope, sb);
-
+        alreadyExportedNames.set(null);
         return sb;
     }
 
@@ -87,7 +95,9 @@ public class OpenMetricsExporter implements Exporter {
         StringBuffer sb = new StringBuffer();
 
         for (MetricRegistry.Type scope : MetricRegistry.Type.values()) {
+            alreadyExportedNames.set(new HashSet<>());
             getEntriesForScope(scope, sb);
+            alreadyExportedNames.set(null);
         }
 
         return sb;
@@ -95,6 +105,7 @@ public class OpenMetricsExporter implements Exporter {
 
     @Override
     public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
+        alreadyExportedNames.set(new HashSet<>());
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
 
@@ -105,14 +116,24 @@ public class OpenMetricsExporter implements Exporter {
 
         StringBuffer sb = new StringBuffer();
         exposeEntries(scope, sb, registry, outMap);
+        alreadyExportedNames.set(null);
         return sb;
     }
 
     @Override
     public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
-        // TODO method OpenMetricsExporter.exportMetricsByName
-        throw new UnsupportedOperationException("OpenMetricsExporter.exportMetricsByName not implemented yet");
+        alreadyExportedNames.set(new HashSet<>());
+        MetricRegistry registry = MetricRegistries.get(scope);
+        Map<MetricID, Metric> metricsToExport = registry.getMetrics()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getName().equals(name))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        StringBuffer sb = new StringBuffer();
+        exposeEntries(scope, sb, registry, metricsToExport);
+        alreadyExportedNames.set(null);
+        return sb;
     }
 
 
@@ -183,6 +204,7 @@ public class OpenMetricsExporter implements Exporter {
                         throw new IllegalArgumentException("Not supported: " + key);
                 }
                 sb.append(metricBuf);
+                alreadyExportedNames.get().add(key);
             } catch (Exception e) {
                 log.warn("Unable to export metric " + key, e);
             }
@@ -192,6 +214,7 @@ public class OpenMetricsExporter implements Exporter {
     private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md, Map<String, String> tags) {
 
         String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
+        if(unit.equals(NONE)) unit = "seconds";
 
         String theUnit = unit.equals(NONE) ? "" : USCORE + unit;
 
@@ -199,10 +222,9 @@ public class OpenMetricsExporter implements Exporter {
         Snapshot snapshot = timer.getSnapshot();
         writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true, tags);
 
-        String suffix = USCORE + OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
-        writeHelpLine(sb, scope, md.getName(), md, suffix);
-        writeTypeLine(sb,scope,md.getName(),md, suffix,SUMMARY);
-        writeValueLine(sb,scope,suffix + "_count",timer.getCount(),md, null, false);
+        writeHelpLine(sb, scope, md.getName(), md, theUnit);
+        writeTypeLine(sb,scope,md.getName(),md, theUnit,SUMMARY);
+        writeValueLine(sb,scope,theUnit + "_count", timer.getCount(), md, tags, false);
 
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
@@ -223,10 +245,10 @@ public class OpenMetricsExporter implements Exporter {
 
         String theUnit = unit.equals("none") ? "" : USCORE + unit;
 
-        writeHelpLine(sb, scope, md.getName(), md, SUMMARY);
+        writeHelpLine(sb, scope, md.getName(), md, theUnit);
         writeSnapshotBasics(sb, scope, md, snapshot, theUnit, true, tags);
         writeTypeLine(sb,scope,md.getName(),md, theUnit,SUMMARY);
-        writeValueLine(sb,scope,theUnit + "_count",histogram.getCount(),md, null, false);
+        writeValueLine(sb,scope,theUnit + "_count",histogram.getCount(), md, tags, false);
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
 
@@ -240,24 +262,19 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     private void writeSnapshotQuantiles(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit, boolean performScaling, Map<String, String> tags) {
-        Map<String, String> mapMedian = copyMap(tags);
-        mapMedian.put(QUANTILE, "0.5");
-        writeValueLine(sb, scope, unit, snapshot.getMedian(), md, mapMedian, performScaling);
-        Map<String, String> map75 = copyMap(tags);
-        mapMedian.put(QUANTILE, "0.75");
-        writeValueLine(sb, scope, unit, snapshot.get75thPercentile(), md, map75, performScaling);
-        Map<String, String> map95 = copyMap(tags);
-        mapMedian.put(QUANTILE, "0.95");
-        writeValueLine(sb, scope, unit, snapshot.get95thPercentile(), md, map95, performScaling);
-        Map<String, String> map98 = copyMap(tags);
-        mapMedian.put(QUANTILE, "0.98");
-        writeValueLine(sb, scope, unit, snapshot.get98thPercentile(), md, map98, performScaling);
-        Map<String, String> map99 = copyMap(tags);
-        mapMedian.put(QUANTILE, "0.99");
-        writeValueLine(sb, scope, unit, snapshot.get99thPercentile(), md, map99, performScaling);
-        Map<String, String> map999 = copyMap(tags);
-        mapMedian.put(QUANTILE, "0.999");
-        writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, map999, performScaling);
+        Map<String, String> map = copyMap(tags);
+        map.put(QUANTILE, "0.5");
+        writeValueLine(sb, scope, unit, snapshot.getMedian(), md, map, performScaling);
+        map.put(QUANTILE, "0.75");
+        writeValueLine(sb, scope, unit, snapshot.get75thPercentile(), md, map, performScaling);
+        map.put(QUANTILE, "0.95");
+        writeValueLine(sb, scope, unit, snapshot.get95thPercentile(), md, map, performScaling);
+        map.put(QUANTILE, "0.98");
+        writeValueLine(sb, scope, unit, snapshot.get98thPercentile(), md, map, performScaling);
+        map.put(QUANTILE, "0.99");
+        writeValueLine(sb, scope, unit, snapshot.get99thPercentile(), md, map, performScaling);
+        map.put(QUANTILE, "0.999");
+        writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, map, performScaling);
     }
 
     private void writeMeterValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md, Map<String, String> tags) {
@@ -349,7 +366,7 @@ public class OpenMetricsExporter implements Exporter {
 
     private void writeHelpLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
         // Only write this line if we actually have a description in metadata
-        if (writeHelpLine && md.getDescription().isPresent()) {
+        if (writeHelpLine && md.getDescription().isPresent() && !alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# HELP ");
             getNameWithScopeAndSuffix(sb, scope, key, suffix);
             sb.append(md.getDescription().get());
@@ -359,18 +376,20 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     private void writeTypeLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix, String typeOverride) {
-        sb.append("# TYPE ");
-        getNameWithScopeAndSuffix(sb, scope, key, suffix);
-        if (typeOverride != null) {
-            sb.append(typeOverride);
-        } else if (md.getTypeRaw().equals(MetricType.TIMER)) {
-            sb.append(SUMMARY);
-        } else if (md.getTypeRaw().equals(MetricType.METERED)) {
-            sb.append(COUNTER);
-        } else {
-            sb.append(md.getType());
+        if(!alreadyExportedNames.get().contains(md.getName())) {
+            sb.append("# TYPE ");
+            getNameWithScopeAndSuffix(sb, scope, key, suffix);
+            if (typeOverride != null) {
+                sb.append(typeOverride);
+            } else if (md.getTypeRaw().equals(MetricType.TIMER)) {
+                sb.append(SUMMARY);
+            } else if (md.getTypeRaw().equals(MetricType.METERED)) {
+                sb.append(COUNTER);
+            } else {
+                sb.append(md.getType());
+            }
+            sb.append(LF);
         }
-        sb.append(LF);
     }
 
     private void getNameWithScopeAndSuffix(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {

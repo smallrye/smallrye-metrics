@@ -8,6 +8,8 @@ import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
 import io.smallrye.metrics.mbean.MGaugeImpl;
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -23,14 +25,27 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMetricName;
+import static java.util.regex.Pattern.quote;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class OpenMetricsExporterTest {
 
     private static final String LINE_SEPARATOR = "\n";
+
+    private Tag QUANTILE_0_5 = new Tag("quantile", "0.5");
+    private Tag QUANTILE_0_75 = new Tag("quantile", "0.75");
+    private Tag QUANTILE_0_95 = new Tag("quantile", "0.95");
+    private Tag QUANTILE_0_98 = new Tag("quantile", "0.98");
+    private Tag QUANTILE_0_99 = new Tag("quantile", "0.99");
+    private Tag QUANTILE_0_999 = new Tag("quantile", "0.999");
+
 
     @After
     public void cleanupApplicationMetrics() {
@@ -147,5 +162,337 @@ public class OpenMetricsExporterTest {
         export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter2_total", tag)).toString();
         Assert.assertThat(export, containsString("application_counter2_total{a=\"b\"}"));
 
+    }
+
+    @Test
+    public void exportHistograms() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.HISTOGRAM)
+                .withName("myhisto")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        Histogram histogram1 = registry.histogram(metadata, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        Histogram histogram2 = registry.histogram(metadata, greenTag);
+
+        histogram1.update(5);
+        histogram1.update(9);
+        histogram2.update(10);
+        histogram2.update(12);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "myhisto").toString();
+        System.out.println(result);
+
+        assertHasValueLineExactlyOnce(result, "application_myhisto_min", "5.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_max", "9.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_mean", "7.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_stddev", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_count", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_5);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_75);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_95);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_98);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_99);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_999);
+
+        assertHasValueLineExactlyOnce(result, "application_myhisto_min", "10.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_max", "12.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_mean", "11.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_stddev", "1.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto_count", "2.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_5);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_75);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_95);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_98);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_99);
+        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_999);
+
+        assertHasTypeLineExactlyOnce(result, "application_myhisto_min", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myhisto_max", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myhisto_mean", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myhisto_stddev", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myhisto", "summary");
+
+        assertHasHelpLineExactlyOnce(result, "application_myhisto", "awesome");
+    }
+
+    @Test
+    public void exportCounters() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.COUNTER)
+                .withName("mycounter")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        Counter blueCounter = registry.counter(metadata, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        Counter greenCounter = registry.counter(metadata, greenTag);
+
+        blueCounter.inc(10);
+        greenCounter.inc(20);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mycounter").toString();
+        System.out.println(result);
+
+        assertHasTypeLineExactlyOnce(result, "application_mycounter_total", "counter");
+        assertHasHelpLineExactlyOnce(result, "application_mycounter_total", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "application_mycounter_total", "10.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mycounter_total", "20.0", greenTag);
+
+    }
+
+    @Test
+    public void exportGauges() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.GAUGE)
+                .withName("mygauge")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        registry.register(metadata, (Gauge<Long>) () -> 42L, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        registry.register(metadata, (Gauge<Long>) () -> 26L, greenTag);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mygauge").toString();
+        System.out.println(result);
+
+        assertHasTypeLineExactlyOnce(result, "application_mygauge", "gauge");
+        assertHasHelpLineExactlyOnce(result, "application_mygauge", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "application_mygauge", "42.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mygauge", "26.0", greenTag);
+    }
+
+    @Test
+    public void exportConcurrentGauges() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.CONCURRENT_GAUGE)
+                .withName("myconcurrentgauge")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        ConcurrentGauge blueCGauge = registry.concurrentGauge(metadata, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        ConcurrentGauge greenCGauge = registry.concurrentGauge(metadata, greenTag);
+
+        blueCGauge.inc();
+        blueCGauge.inc();
+        greenCGauge.inc();
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "myconcurrentgauge").toString();
+        System.out.println(result);
+
+        assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge_min", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge_max", "gauge");
+        assertHasHelpLineExactlyOnce(result, "application_myconcurrentgauge", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "application_myconcurrentgauge", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myconcurrentgauge", "1.0", greenTag);
+    }
+
+    @Test
+    public void exportMeters() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.METERED)
+                .withName("mymeter")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        Meter blueMeter = registry.meter(metadata, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        Meter greenMeter = registry.meter(metadata, greenTag);
+
+        blueMeter.mark(20);
+        greenMeter.mark(10);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mymeter").toString();
+        System.out.println(result);
+
+        assertHasTypeLineExactlyOnce(result, "application_mymeter_total", "counter");
+        assertHasHelpLineExactlyOnce(result, "application_mymeter_total", "awesome");
+        assertHasValueLineExactlyOnce(result, "application_mymeter_total", "20.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mymeter_total", "10.0", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mymeter_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mymeter_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mymeter_rate_per_second", "*", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mymeter_one_min_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mymeter_one_min_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mymeter_one_min_rate_per_second", "*", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mymeter_five_min_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mymeter_five_min_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mymeter_five_min_rate_per_second", "*", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mymeter_fifteen_min_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mymeter_fifteen_min_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mymeter_fifteen_min_rate_per_second", "*", greenTag);
+    }
+
+    @Test
+    public void exportTimers() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.TIMER)
+                .withName("mytimer")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        Timer blueTimer = registry.timer(metadata, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        Timer greenTimer = registry.timer(metadata, greenTag);
+
+        blueTimer.update(3, TimeUnit.SECONDS);
+        blueTimer.update(4, TimeUnit.SECONDS);
+        greenTimer.update(5, TimeUnit.SECONDS);
+        greenTimer.update(6, TimeUnit.SECONDS);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mytimer").toString();
+        System.out.println(result);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_seconds", "summary");
+        assertHasHelpLineExactlyOnce(result, "application_mytimer_seconds", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_count", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_count", "2.0", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_min_seconds", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_min_seconds", "3.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_min_seconds", "5.0", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_max_seconds", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_max_seconds", "4.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_max_seconds", "6.0", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_mean_seconds", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_mean_seconds", "3.5", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_mean_seconds", "5.5", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_stddev_seconds", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_stddev_seconds", "0.5", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_stddev_seconds", "0.5", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_rate_per_second", "*", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_one_min_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_one_min_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_one_min_rate_per_second", "*", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_five_min_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_five_min_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_five_min_rate_per_second", "*", greenTag);
+
+        assertHasTypeLineExactlyOnce(result, "application_mytimer_fifteen_min_rate_per_second", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_mytimer_fifteen_min_rate_per_second", "*", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_fifteen_min_rate_per_second", "*", greenTag);
+
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "4.0", blueTag, QUANTILE_0_5);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "4.0", blueTag, QUANTILE_0_75);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "4.0", blueTag, QUANTILE_0_95);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "4.0", blueTag, QUANTILE_0_98);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "4.0", blueTag, QUANTILE_0_99);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "4.0", blueTag, QUANTILE_0_999);
+
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_5);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_75);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_95);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_98);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_99);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_999);
+    }
+
+    private void assertHasValueLineExactlyOnce(String output, String metricName, String value, Tag... tags) {
+        List<String> foundLines = getLines(output, metricName, value, tags);
+        if(foundLines.isEmpty())
+            Assert.fail("Couldn't find a line with metricName=" + metricName
+                + ", value=" + value
+                + ", tags=" + Arrays.toString(tags)
+                + " in the OpenMetrics output: \n" + output);
+        if(foundLines.size() > 1)
+            Assert.fail("Found metricName=" + metricName
+                    + ", value=" + value
+                    + ", tags=" + Arrays.toString(tags)
+                    + " in the OpenMetrics output more than once! Output: \n" + output);
+    }
+
+    private void assertHasTypeLineExactlyOnce(String output, String metricName, String type) {
+        List<String> foundLines = getLinesByRegex(output, "# TYPE " + quote(metricName) + " " + quote(type));
+        if(foundLines.isEmpty())
+            Assert.fail("Couldn't find a TYPE line with metricName=" + metricName
+                    + " and type=" + type
+                    + " in the OpenMetrics output: \n" + output);
+        if(foundLines.size() > 1)
+            Assert.fail("Found TYPE line with metricName=" + metricName
+                    + " and type=" + type
+                    + " in the OpenMetrics output more than once! Output: \n" + output);
+    }
+
+    private void assertHasHelpLineExactlyOnce(String output, String metricName, String help) {
+        List<String> foundLines = getLinesByRegex(output, "# HELP " + quote(metricName) + " " + quote(help));
+        if(foundLines.isEmpty())
+            Assert.fail("Couldn't find a HELP line with metricName=" + metricName
+                    + " and help=" + help
+                    + " in the OpenMetrics output: \n" + output);
+        if(foundLines.size() > 1)
+            Assert.fail("Found HELP line with metricName=" + metricName
+                    + " and help=" + help
+                    + " in the OpenMetrics output more than once! Output: \n" + output);
+    }
+
+    /**
+     * get a line from an OpenMetrics output which contains a metric with the specified name, value and tags
+     * (order of the tags doesn't matter)
+     */
+    private List<String> getLines(String output, String metricName, String value, Tag... tags) {
+        return Arrays.stream(output.split("\n"))
+                // filter by metric name at the beginning of the line
+                .filter(line -> line.matches(quote(metricName) + "\\{.+"))
+                // filter by metric value at the end of the line
+                .filter(line -> line.matches(".+} " + quote(value)) || value.equals("*"))
+                // filter by present tags
+                .filter(line -> {
+                    boolean matches = true;
+                    for(Tag tag : tags) {
+                        if(!line.matches(".+" + quote(tag.getTagName()) + "=\"" + quote(tag.getTagValue()) +"\".+"))
+                            matches = false;
+                    }
+                    return matches;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getLinesByRegex(String output, String regex) {
+        return Arrays.stream(output.split("\n"))
+                .filter(line -> line.matches(regex))
+                .collect(Collectors.toList());
     }
 }
