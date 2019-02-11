@@ -78,7 +78,7 @@ public class MeteredInterceptor {
         MetricID metricID = new MetricID(name, tags);
         Meter meter = (Meter) registry.getMetrics().get(metricID);
         if (meter == null) {
-            throw new IllegalStateException("No meter with name [" + name + "] found in registry [" + registry + "]");
+            throw new IllegalStateException("No meter with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
 
         meter.mark();

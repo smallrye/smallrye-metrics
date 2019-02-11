@@ -78,7 +78,7 @@ public class TimedInterceptor {
         MetricID metricID = new MetricID(name, tags);
         Timer timer = (Timer) registry.getMetrics().get(metricID);
         if (timer == null) {
-            throw new IllegalStateException("No timer with name [" + name + "] found in registry [" + registry + "]");
+            throw new IllegalStateException("No timer with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
 
         Timer.Context time = timer.time();

@@ -77,7 +77,7 @@ public class CountedInterceptor {
         MetricID metricID = new MetricID(name, tags);
         Counter counter = registry.getCounters().get(metricID);
         if (counter == null) {
-            throw new IllegalStateException("No counter with name [" + name + "] found in registry [" + registry + "]");
+            throw new IllegalStateException("No counter with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
         log.debugf("Increment counter [metricName: %s]", name);
         counter.inc();
