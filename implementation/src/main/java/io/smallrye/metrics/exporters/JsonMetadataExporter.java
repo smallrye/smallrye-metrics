@@ -23,6 +23,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
@@ -30,7 +31,9 @@ import javax.json.stream.JsonGenerator;
 import java.io.StringWriter;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by bob on 1/22/18.
@@ -78,8 +81,7 @@ public class JsonMetadataExporter implements Exporter {
         }
 
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        // TODO find a way to append the set of known sets of tags for this metricName
-        metricJSON(builder, name, metadata);
+        metricJSON(builder, name, metadata, getKnownTagsByMetricName(registry, name));
         return stringify(builder.build());
 
     }
@@ -110,17 +112,18 @@ public class JsonMetadataExporter implements Exporter {
     private JsonObject registryJSON(MetricRegistry registry) {
         JsonObjectBuilder registryJSON = Json.createObjectBuilder();
         Map<String, Metadata> metrics = registry.getMetadata();
+
         metrics.entrySet().stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
-                .forEach(e -> metricJSON(registryJSON, e.getKey(), e.getValue()));
+                .forEach(e -> metricJSON(registryJSON, e.getKey(), e.getValue(), getKnownTagsByMetricName(registry, e.getKey())));
         return registryJSON.build();
     }
 
-    private void metricJSON(JsonObjectBuilder registryJSON, String name, Metadata metric) {
-        registryJSON.add(name, metricJSON(metric));
+    private void metricJSON(JsonObjectBuilder registryJSON, String name, Metadata metric, List<List<String>> tagSets) {
+        registryJSON.add(name, metricJSON(metric, tagSets));
     }
 
-    private JsonObject metricJSON(Metadata metadata) {
+    private JsonObject metricJSON(Metadata metadata, List<List<String>> tagSets) {
         JsonObjectBuilder obj = Json.createObjectBuilder();
 
         if (metadata.getUnit().isPresent()) {
@@ -135,15 +138,34 @@ public class JsonMetadataExporter implements Exporter {
         if (metadata.getDisplayName() != null) {
             obj.add("displayName", metadata.getDisplayName());
         }
-        // TODO what with this?
-/*        if (metadata.getTagsAsString() != null) {
-            //obj.add("tags", metadata.getTagsAsString());
-            String str = metadata.getTags().entrySet().stream()
-                    .map(e -> e.getKey() + "=" + e.getValue())
-                    .collect(Collectors.joining(","));
-            obj.add("tags", str);
-        }*/
+
+        // append known sets of tags
+        JsonArrayBuilder tagsArray = Json.createArrayBuilder();
+        tagSets.forEach(tagSet -> {
+            JsonArrayBuilder innerArrayBuilder = Json.createArrayBuilder();
+            tagSet.forEach(innerArrayBuilder::add);
+            tagsArray.add(innerArrayBuilder);
+        });
+        obj.add("tags", tagsArray);
 
         return obj.build();
+    }
+
+    /**
+     * Find all currently existing metrics under this name in this registry and
+     * for each of them, convert its tags to a list of strings.
+     * Return a list of all these lists (so one item in the outer list will correspond to a metric,
+     * one item in each of the inner lists will correspond to a tag pertaining to that metric)
+     */
+    private List<List<String>> getKnownTagsByMetricName(MetricRegistry registry, String name) {
+        return registry.getMetricIDs()
+                .stream()
+                .filter(id -> id.getName().equals(name))
+                .map(id -> id.getTagsAsList()
+                        .stream()
+                        .map(tag -> tag.getTagName() + "=" + tag.getTagValue())
+                        .collect(Collectors.toList())
+                )
+                .collect(Collectors.toList());
     }
 }
