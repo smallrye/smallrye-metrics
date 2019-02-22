@@ -39,7 +39,7 @@
 
     <version.annotation-api>1.3.2</version.annotation-api>
     <version.arquillian>1.4.1.Final</version.arquillian>
-    <version.arquillian-weld-embedded>2.0.0.Final</version.arquillian-weld-embedded>
+    <version.arquillian-weld-embedded>2.0.1.Final</version.arquillian-weld-embedded>
     <version.arquillian.wildfly>2.1.1.Final</version.arquillian.wildfly>
     <version.assertj>3.11.1</version.assertj>
     <version.cdi>1.2</version.cdi>
