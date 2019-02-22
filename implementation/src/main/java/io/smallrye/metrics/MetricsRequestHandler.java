@@ -63,12 +63,38 @@ public class MetricsRequestHandler {
                               String method,
                               Stream<String> acceptHeaders,
                               Responder responder) throws IOException {
+        handleRequest(requestPath, "/metrics", method, acceptHeaders, responder);
+    }
+
+    /**
+     *
+     * @param requestPath e.g. request.getRequestURI for an HttpServlet
+     * @param contextRoot the root at which Metrics are exposed, usually "/metrics"
+     * @param method http method (GET, POST, etc)
+     * @param acceptHeaders accepted content types
+     * @param responder a method that returns a response to the caller. See {@link Responder}
+     *
+     * @throws IOException rethrows IOException if thrown by the responder
+     *
+     * You can find example usage in the tests, in io.smallrye.metrics.tck.rest.MetricsHttpServlet
+     */
+    public void handleRequest(String requestPath,
+                              String contextRoot,
+                              String method,
+                              Stream<String> acceptHeaders,
+                              Responder responder) throws IOException {
         Exporter exporter = obtainExporter(method, acceptHeaders, responder);
         if (exporter == null) {
             return;
         }
 
-        String scopePath = requestPath.substring(8);
+        if(!requestPath.startsWith(contextRoot)) {
+            responder.respondWith(500, "The expected context root of metrics is "
+                    + contextRoot + ", but a request with a different path was routed to MetricsRequestHandler", Collections.emptyMap());
+            return;
+        }
+
+        String scopePath = requestPath.substring(contextRoot.length());
         if (scopePath.startsWith("/")) {
             scopePath = scopePath.substring(1);
         }
