@@ -366,7 +366,7 @@ public class OpenMetricsExporter implements Exporter {
 
     private void writeHelpLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
         // Only write this line if we actually have a description in metadata
-        if (writeHelpLine && md.getDescription().isPresent() && !alreadyExportedNames.get().contains(md.getName())) {
+        if (writeHelpLine && !md.getDescription().orElse("").isEmpty() && !alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# HELP ");
             getNameWithScopeAndSuffix(sb, scope, key, suffix);
             sb.append(quoteHelpText(md.getDescription().get()));

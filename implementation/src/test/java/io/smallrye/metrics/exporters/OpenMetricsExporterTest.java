@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMetricName;
 import static java.util.regex.Pattern.quote;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
 
 public class OpenMetricsExporterTest {
@@ -196,9 +197,25 @@ public class OpenMetricsExporterTest {
         assertThat(export, containsString("# HELP application_counter_with_complicated_description_2_total description with \"quotes\""));
     }
 
+    /**
+     * OpenMetrics exporter should only emit a HELP line if a description exists and is not empty
+     */
+    @Test
+    public void testEmptyDescription() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata.builder()
+                .withName("counter_with_empty_description")
+                .withDescription("").build();
+        registry.counter(metadata);
+        String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_empty_description")).toString();
+        assertThat(export, not(containsString("HELP")));
+    }
+
 
     /**
-     * In OpenMetrics exporter, if the metric name does not end with _total, then _total should be appended automatically.
+     * In OpenMetrics exporter and counters, if the metric name does not end with _total, then _total should be appended automatically.
      * If it ends with _total, nothing extra will be appended.
      */
     @Test
