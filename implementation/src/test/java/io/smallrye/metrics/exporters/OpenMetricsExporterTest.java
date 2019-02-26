@@ -342,6 +342,7 @@ public class OpenMetricsExporterTest {
                 .withType(MetricType.CONCURRENT_GAUGE)
                 .withName("myconcurrentgauge")
                 .withDescription("awesome")
+                .withUnit("dollars")  // this should get ignored and should not be reflected in the output
                 .build();
         Tag blueTag = new Tag("color", "blue");
         ConcurrentGauge blueCGauge = registry.concurrentGauge(metadata, blueTag);
