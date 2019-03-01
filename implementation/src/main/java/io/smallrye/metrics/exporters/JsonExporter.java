@@ -277,7 +277,7 @@ public class JsonExporter implements Exporter {
 
     private StringBuffer writeConcurrentGaugeValues(ConcurrentGauge concurrentGauge, String tags) {
         StringBuffer sb = new StringBuffer();
-        sb.append("    \"callCount").append(tags).append("\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
+        sb.append("    \"current").append(tags).append("\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
         sb.append("    \"max").append(tags).append("\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
         sb.append("    \"min").append(tags).append("\": ").append(concurrentGauge.getMin());
         return sb;

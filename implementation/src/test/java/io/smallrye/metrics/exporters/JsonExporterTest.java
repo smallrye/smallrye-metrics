@@ -192,9 +192,9 @@ public class JsonExporterTest {
 
         JsonObject myCgaugeObject = json.getJsonObject("mycgauge");
 
-        assertEquals(1, myCgaugeObject.getInt("callCount"));
-        assertEquals(2, myCgaugeObject.getInt("callCount;color=red"));
-        assertEquals(3, myCgaugeObject.getInt("callCount;color=blue;foo=bar"));
+        assertEquals(1, myCgaugeObject.getInt("current"));
+        assertEquals(2, myCgaugeObject.getInt("current;color=red"));
+        assertEquals(3, myCgaugeObject.getInt("current;color=blue;foo=bar"));
 
         assertNotNull(myCgaugeObject.getJsonNumber("min"));
         assertNotNull(myCgaugeObject.getJsonNumber("min;color=red"));
