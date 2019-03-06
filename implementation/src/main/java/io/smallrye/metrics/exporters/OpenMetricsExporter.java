@@ -231,8 +231,8 @@ public class OpenMetricsExporter implements Exporter {
 
     private void writeConcurrentGaugeValues(StringBuffer sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge, Metadata md, String key, Map<String, String> tags) {
         key = getOpenMetricsMetricName(key);
-        writeHelpLine(sb, scope, key, md, "");
-        writeTypeAndValue(sb, scope, "", concurrentGauge.getCount(), GAUGE, md, false, tags);
+        writeHelpLine(sb, scope, key, md, "_current");
+        writeTypeAndValue(sb, scope, "_current", concurrentGauge.getCount(), GAUGE, md, false, tags);
         writeTypeAndValue(sb, scope, "_max", concurrentGauge.getMax(), GAUGE, md, false, tags);
         writeTypeAndValue(sb, scope, "_min", concurrentGauge.getMin(), GAUGE, md, false, tags);
     }

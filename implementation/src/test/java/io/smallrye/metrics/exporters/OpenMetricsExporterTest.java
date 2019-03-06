@@ -390,13 +390,13 @@ public class OpenMetricsExporterTest {
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "myconcurrentgauge").toString();
         System.out.println(result);
 
-        assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge_current", "gauge");
         assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge_min", "gauge");
         assertHasTypeLineExactlyOnce(result, "application_myconcurrentgauge_max", "gauge");
-        assertHasHelpLineExactlyOnce(result, "application_myconcurrentgauge", "awesome");
+        assertHasHelpLineExactlyOnce(result, "application_myconcurrentgauge_current", "awesome");
 
-        assertHasValueLineExactlyOnce(result, "application_myconcurrentgauge", "2.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_myconcurrentgauge", "1.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_myconcurrentgauge_current", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_myconcurrentgauge_current", "1.0", greenTag);
     }
 
     @Test
