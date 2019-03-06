@@ -134,7 +134,6 @@ public class PrometheusExporter implements Exporter {
             try {
                 switch (md.getTypeRaw()) {
                     case GAUGE:
-                    case COUNTER:
                         key = getPrometheusMetricName(key);
                         String suffix = null;
                         if (!md.getUnit().equals(MetricUnits.NONE)) {
@@ -142,6 +141,12 @@ public class PrometheusExporter implements Exporter {
                         }
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
+                        createSimpleValueLine(metricBuf, scope, key, md, metric);
+                        break;
+                    case COUNTER:
+                        key = getPrometheusMetricName(key);
+                        writeHelpLine(metricBuf, scope, key, md, null);
+                        writeTypeLine(metricBuf, scope, key, md, null, null);
                         createSimpleValueLine(metricBuf, scope, key, md, metric);
                         break;
                     case METERED:
