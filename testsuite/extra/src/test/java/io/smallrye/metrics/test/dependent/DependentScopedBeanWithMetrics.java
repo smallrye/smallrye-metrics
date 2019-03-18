@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package io.smallrye.metrics.test.normalscoped;
+package io.smallrye.metrics.test.dependent;
 
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-public class NormalScopedBeanWithMetrics {
+public class DependentScopedBeanWithMetrics {
 
     @Counted(name = "counter", absolute = true)
     public void countedMethod() {
