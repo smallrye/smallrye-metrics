@@ -31,7 +31,6 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 @SuppressWarnings("unused")
 @Interceptor
@@ -50,36 +49,20 @@ public class MetricsInterceptor {
     private MetricsInterceptor(MetricRegistry registry) {
         this.registry = registry;
         this.resolver = new MetricResolver();
-        // LOGGER.infof("MetricsInterceptor.ctor, names=%s\n", registry.getNames());
     }
 
     @AroundConstruct
     Object metrics(InvocationContext context) throws Exception {
-        Class<?> bean = context.getConstructor().getDeclaringClass();
-        log.debugf("MetricsInterceptor, bean=%s\n", bean);
-        // Registers the bean constructor metrics
-        MetricsMetadata.registerMetrics(registry, resolver, bean, context.getConstructor());
-
-        // Registers the methods metrics over the bean type hierarchy
-        Class<?> type = bean;
-        do {
-            // TODO: discover annotations declared on implemented interfaces
-            for (Method method : type.getDeclaredMethods()) {
-                if (!method.isSynthetic() && !Modifier.isPrivate(method.getModifiers())) {
-                    MetricsMetadata.registerMetrics(registry, resolver, bean, method);
-                }
-            }
-            type = type.getSuperclass();
-        } while (!Object.class.equals(type));
+        Class<?> type = context.getConstructor().getDeclaringClass();
+        log.debugf("MetricsInterceptor, bean=%s\n", type);
 
         Object target = context.proceed();
 
         // Registers the gauges over the bean type hierarchy after the target is constructed as it is required for the gauge invocations
-        type = bean;
         do {
             // TODO: discover annotations declared on implemented interfaces
             for (Method method : type.getDeclaredMethods()) {
-                MetricResolver.Of<Gauge> gauge = resolver.gauge(bean, method);
+                MetricResolver.Of<Gauge> gauge = resolver.gauge(type, method);
                 if (gauge.isPresent()) {
                     Gauge g = gauge.metricAnnotation();
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(), g.displayName(), MetricType.GAUGE, false);
