@@ -51,7 +51,10 @@ import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMe
 import static java.util.regex.Pattern.quote;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class OpenMetricsExporterTest {
 

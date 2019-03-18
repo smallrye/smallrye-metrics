@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.normalscoped;
+package org.wildfly.swarm.microprofile.metrics.dependentscoped;
 
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
 
-public class NormalScopedBeanWithGauge {
+public class DependentScopedBeanWithGauge {
 
     @Gauge(name = "gauge", absolute = true, unit = MetricUnits.DAYS)
     public Long gaugedMethod() {

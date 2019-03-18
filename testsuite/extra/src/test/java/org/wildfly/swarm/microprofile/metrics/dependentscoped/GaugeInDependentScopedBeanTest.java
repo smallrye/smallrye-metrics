@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.normalscoped;
+package org.wildfly.swarm.microprofile.metrics.dependentscoped;
 
 import io.smallrye.metrics.MetricRegistries;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -39,13 +39,13 @@ import javax.inject.Inject;
  * create ambiguity.
  */
 @RunWith(Arquillian.class)
-public class GaugeInNormalScopedBeanTest {
+public class GaugeInDependentScopedBeanTest {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClass(NormalScopedBeanWithGauge.class);
+                .addClass(DependentScopedBeanWithGauge.class);
     }
 
     @After
@@ -54,13 +54,13 @@ public class GaugeInNormalScopedBeanTest {
     }
 
     @Inject
-    private Instance<NormalScopedBeanWithGauge> beanInstance;
+    private Instance<DependentScopedBeanWithGauge> beanInstance;
 
     @Test
     public void gauge() {
         try {
-            NormalScopedBeanWithGauge instance1 = beanInstance.get();
-            NormalScopedBeanWithGauge instance2 = beanInstance.get();
+            DependentScopedBeanWithGauge instance1 = beanInstance.get();
+            DependentScopedBeanWithGauge instance2 = beanInstance.get();
             Assert.fail("Shouldn't be able to create multiple instances of a bean that contains a gauge");
         } catch(Exception e) {
 

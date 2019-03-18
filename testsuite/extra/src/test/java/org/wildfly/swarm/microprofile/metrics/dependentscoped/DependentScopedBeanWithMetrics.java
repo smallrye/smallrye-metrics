@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.normalscoped;
+package org.wildfly.swarm.microprofile.metrics.dependentscoped;
 
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-public class NormalScopedBeanWithMetrics {
+public class DependentScopedBeanWithMetrics {
 
     @Counted(name = "counter", absolute = true)
     public void countedMethod() {

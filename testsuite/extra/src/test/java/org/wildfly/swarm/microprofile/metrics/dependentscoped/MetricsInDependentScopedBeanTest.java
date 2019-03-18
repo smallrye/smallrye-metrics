@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.normalscoped;
+package org.wildfly.swarm.microprofile.metrics.dependentscoped;
 
 import io.smallrye.metrics.MetricRegistries;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -25,7 +25,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,30 +41,30 @@ import static org.junit.Assert.assertEquals;
  * This does not work for gauges because a gauge must always be bound to just one object.
  */
 @RunWith(Arquillian.class)
-public class MetricsInNormalScopedBeanTest {
+public class MetricsInDependentScopedBeanTest {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClass(NormalScopedBeanWithMetrics.class);
+                .addClass(DependentScopedBeanWithMetrics.class);
     }
 
-    @After
-    public void cleanupApplicationMetrics() {
+    @AfterClass
+    public static void cleanupApplicationMetrics() {
         MetricRegistries.get(MetricRegistry.Type.APPLICATION).removeMatching(MetricFilter.ALL);
     }
 
     @Inject
-    private Instance<NormalScopedBeanWithMetrics> beanInstance;
+    private Instance<DependentScopedBeanWithMetrics> beanInstance;
 
     @Inject
     private MetricRegistry registry;
 
     @Test
     public void counter() {
-        NormalScopedBeanWithMetrics instance1 = beanInstance.get();
-        NormalScopedBeanWithMetrics instance2 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance1 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance2 = beanInstance.get();
 
         instance1.countedMethod();
         instance2.countedMethod();
@@ -74,8 +74,8 @@ public class MetricsInNormalScopedBeanTest {
 
     @Test
     public void meter() {
-        NormalScopedBeanWithMetrics instance1 = beanInstance.get();
-        NormalScopedBeanWithMetrics instance2 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance1 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance2 = beanInstance.get();
 
         instance1.meteredMethod();
         instance2.meteredMethod();
@@ -85,8 +85,8 @@ public class MetricsInNormalScopedBeanTest {
 
     @Test
     public void timer() {
-        NormalScopedBeanWithMetrics instance1 = beanInstance.get();
-        NormalScopedBeanWithMetrics instance2 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance1 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance2 = beanInstance.get();
 
         instance1.timedMethod();
         instance2.timedMethod();
@@ -96,8 +96,8 @@ public class MetricsInNormalScopedBeanTest {
 
     @Test
     public void concurrentGauge() {
-        NormalScopedBeanWithMetrics instance1 = beanInstance.get();
-        NormalScopedBeanWithMetrics instance2 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance1 = beanInstance.get();
+        DependentScopedBeanWithMetrics instance2 = beanInstance.get();
 
         instance1.cGaugedMethod();
         instance2.cGaugedMethod();

@@ -25,10 +25,13 @@ import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
 import javax.enterprise.inject.spi.Bean;
 import javax.inject.Inject;
-import javax.interceptor.*;
+import javax.interceptor.AroundConstruct;
+import javax.interceptor.AroundInvoke;
+import javax.interceptor.AroundTimeout;
+import javax.interceptor.Interceptor;
+import javax.interceptor.InvocationContext;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
-import java.util.Arrays;
 
 @SuppressWarnings("unused")
 @ConcurrentGauge
