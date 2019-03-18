@@ -41,6 +41,7 @@ import org.jboss.logging.Logger;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedParameter;
@@ -50,6 +51,7 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
@@ -75,7 +77,9 @@ public class MetricCdiInjectionExtension implements Extension {
     private static final AnnotationLiteral<Default> DEFAULT = new AnnotationLiteral<Default>() {
     };
 
-    private final Map<Bean<?>, AnnotatedMember<?>> metrics = new HashMap<>();
+    private final Map<Bean<?>, AnnotatedMember<?>> metricsFromProducers = new HashMap<>();
+
+    private final Map<Bean<?>, List<AnnotatedMember<?>>> metricsFromAnnotatedMethods = new HashMap<>();
 
     private final List<Class<?>> metricsInterfaces;
 
@@ -90,7 +94,7 @@ public class MetricCdiInjectionExtension implements Extension {
         String extensionName = MetricCdiInjectionExtension.class.getName();
 
         // It seems that fraction deployment module cannot be picked up as a CDI bean archive - see also SWARM-1725
-        for (Class clazz : new Class[] {
+        for (Class clazz : new Class[]{
                 MetricProducer.class,
                 MetricNameFactory.class,
                 MetricsInterceptor.class,
@@ -106,46 +110,71 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private <X> void metricsAnnotations(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class, Timed.class }) ProcessAnnotatedType<X> pat) {
+    // THORN-2068: MicroProfile Rest Client basic support
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
         if (pack != null && pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
-            // Do not add MetricsBinding to metrics interceptor classes
             return;
         }
         if (clazz.isInterface()) {
-            // THORN-2068: MicroProfile Rest Client basic support
             // All declared metrics of an annotated interface are registered during AfterDeploymentValidation
             metricsInterfaces.add(clazz);
-        } else {
-            AnnotatedTypeDecorator newPAT = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), METRICS_BINDING);
-            log.debugf("annotations: %s", newPAT.getAnnotations());
-            log.debugf("methods: %s", newPAT.getMethods());
-            pat.setAnnotatedType(newPAT);
         }
     }
 
-    private void metricProducerField(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
-        log.infof("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
-        metrics.put(ppf.getBean(), ppf.getAnnotatedProducerField());
+    // for classes with at least one gauge, apply @MetricsBinding which serves for gauge registration
+    private <X> void applyMetricsBinding(@Observes @WithAnnotations({Gauge.class}) ProcessAnnotatedType<X> pat) {
+        Class<X> clazz = pat.getAnnotatedType().getJavaClass();
+        Package pack = clazz.getPackage();
+        if (pack == null || !pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
+            if (!clazz.isInterface()) {
+                AnnotatedTypeDecorator newPAT = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), METRICS_BINDING);
+                log.debugf("annotations: %s", newPAT.getAnnotations());
+                log.debugf("methods: %s", newPAT.getMethods());
+                pat.setAnnotatedType(newPAT);
+            }
+        }
+
     }
 
-    private void metricProducerMethod(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
+    private <X> void findAnnotatedMethods(@Observes ProcessManagedBean<X> bean) {
+        if (bean.getBean().getBeanClass().getPackage().equals(MetricsInterceptor.class.getPackage())) {
+            return;
+        }
+        ArrayList<AnnotatedMember<?>> list = new ArrayList<>();
+        for (AnnotatedMethod<? super X> aMethod : bean.getAnnotatedBeanClass().getMethods()) {
+            Method method = aMethod.getJavaMember();
+            if (!method.isSynthetic() && !Modifier.isPrivate(method.getModifiers())) {
+                list.add(aMethod);
+            }
+        }
+        list.addAll(bean.getAnnotatedBeanClass().getConstructors());
+        if (!list.isEmpty()) {
+            metricsFromAnnotatedMethods.put(bean.getBean(), list);
+        }
+    }
+
+    private void findMetricProducerFields(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
+        log.infof("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
+        metricsFromProducers.put(ppf.getBean(), ppf.getAnnotatedProducerField());
+    }
+
+    private void findMetricProducerMethods(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
         if (!ppm.getBean().getBeanClass().equals(MetricProducer.class)) {
             log.infof("Metrics producer method discovered: %s", ppm.getAnnotatedProducerMethod());
-            metrics.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
+            metricsFromProducers.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
         }
     }
 
     void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
-
         // Produce and register custom metrics
         MetricRegistry registry = getReference(manager, MetricRegistry.class);
         MetricName name = getReference(manager, MetricName.class);
-        for (Map.Entry<Bean<?>, AnnotatedMember<?>> bean : metrics.entrySet()) {
+        for (Map.Entry<Bean<?>, AnnotatedMember<?>> bean : metricsFromProducers.entrySet()) {
             if (// skip non @Default beans
-            !bean.getKey().getQualifiers().contains(DEFAULT)
-                    // skip producer methods with injection point metadata
-                    || hasInjectionPointMetadata(bean.getValue())) {
+                    !bean.getKey().getQualifiers().contains(DEFAULT)
+                            // skip producer methods with injection point metadata
+                            || hasInjectionPointMetadata(bean.getValue())) {
                 continue;
             }
 
@@ -169,6 +198,18 @@ public class MetricCdiInjectionExtension implements Extension {
             }
         }
 
+        for (Map.Entry<Bean<?>, List<AnnotatedMember<?>>> entry : metricsFromAnnotatedMethods.entrySet()) {
+            Bean<?> bean = entry.getKey();
+            for (AnnotatedMember<?> method : entry.getValue()) {
+                MetricsMetadata.registerMetrics(registry,
+                        new MetricResolver(),
+                        bean.getBeanClass(),
+                        method instanceof AnnotatedMethod<?> ?
+                                ((AnnotatedMethod<?>) method).getJavaMember() :
+                                ((AnnotatedConstructor<?>) method).getJavaMember());
+            }
+        }
+
         // THORN-2068: MicroProfile Rest Client basic support
         if (!metricsInterfaces.isEmpty()) {
             MetricResolver resolver = new MetricResolver();
@@ -180,10 +221,12 @@ public class MetricCdiInjectionExtension implements Extension {
                 }
             }
         }
+
         metricsInterfaces.clear();
 
-        // Let's clear the collected metric producers
-        metrics.clear();
+        // Let's clear the collected metrics
+        metricsFromProducers.clear();
+        metricsFromAnnotatedMethods.clear();
     }
 
     private static boolean hasInjectionPointMetadata(AnnotatedMember<?> member) {
