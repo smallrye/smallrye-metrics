@@ -15,49 +15,37 @@
  *   limitations under the License.
  */
 
-package io.smallrye.metrics.exporters;
+package io.smallrye.metrics;
 
-import java.io.OutputStream;
+import org.eclipse.microprofile.metrics.Tag;
 
-import org.eclipse.microprofile.metrics.Snapshot;
+import java.util.List;
 
-public class SomeSnapshot extends Snapshot {
-    @Override
-    public double getValue(double quantile) {
-        return 0;
+public class ExtendedMetadataAndTags {
+
+    private final ExtendedMetadata metadata;
+
+    private final List<Tag> tags;
+
+    public ExtendedMetadataAndTags(ExtendedMetadata metadata, List<Tag> tags) {
+        this.metadata = metadata;
+        this.tags = tags;
+    }
+
+    public ExtendedMetadata getMetadata() {
+        return metadata;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
     }
 
     @Override
-    public long[] getValues() {
-        return new long[0];
+    public String toString() {
+        return "ExtendedMetadataAndTags{" +
+                "metadata=" + metadata +
+                ", tags=" + tags +
+                '}';
     }
 
-    @Override
-    public int size() {
-        return 0;
-    }
-
-    @Override
-    public long getMax() {
-        return 0;
-    }
-
-    @Override
-    public double getMean() {
-        return 0;
-    }
-
-    @Override
-    public long getMin() {
-        return 0;
-    }
-
-    @Override
-    public double getStdDev() {
-        return 0;
-    }
-
-    @Override
-    public void dump(OutputStream output) {
-    }
 }

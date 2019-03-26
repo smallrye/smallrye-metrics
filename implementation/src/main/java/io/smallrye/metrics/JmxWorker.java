@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 import org.jboss.logging.Logger;
 
 import javax.management.MBeanServer;
@@ -35,8 +35,6 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.jboss.logging.Logger;
 
 /**
  * @author hrupp
@@ -109,13 +107,13 @@ public class JmxWorker {
      *
      * @param entries List of entries
      */
-    public void expandMultiValueEntries(List<ExtendedMetadata> entries) {
-        List<ExtendedMetadata> result = new ArrayList<>();
-        List<Metadata> toBeRemoved = new ArrayList<>(entries.size());
+    public void expandMultiValueEntries(List<ExtendedMetadataAndTags> entries) {
+        List<ExtendedMetadataAndTags> result = new ArrayList<>();
+        List<ExtendedMetadataAndTags> toBeRemoved = new ArrayList<>(entries.size());
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        for (ExtendedMetadata entry : entries) {
-            if (entry.isMulti()) {
-                String name = entry.getMbean();
+        for (ExtendedMetadataAndTags entry : entries) {
+            if (entry.getMetadata().isMulti()) {
+                String name = entry.getMetadata().getMbean();
                 String attName;
                 String queryableName;
                 int slashIndex = name.indexOf('/');
@@ -137,35 +135,36 @@ public class JmxWorker {
 
                     Set<ObjectName> objNames = mbs.queryNames(objectName, null);
                     for (ObjectName oName : objNames) {
-                        String newName = entry.getName();
+                        String newName = entry.getMetadata().getName();
                         if (!newName.contains(PLACEHOLDER) && entry.getTags().isEmpty()) {
                             log.warn("Name [" + newName + "] did not contain a %s or any tags, no replacement will be done, check" +
                                     " the configuration");
                         }
-                        String newDisplayName = entry.getDisplayName();
-                        String newDescription = entry.getDescription();
-                        Map<String, String> newTags = new HashMap<>(entry.getTags());
+                        String newDisplayName = entry.getMetadata().getDisplayName();
+                        String newDescription = entry.getMetadata().getDescription().orElse("");
+                        List<Tag> newTags = new ArrayList<>(entry.getTags());
                        	for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
                             String keyValue = oName.getKeyPropertyList().get(keyHolder.getValue());
                             newName = newName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDisplayName = newDisplayName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDescription = newDescription.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
-                            newTags = newTags.entrySet().stream().collect(Collectors.toMap(
-                                    tag -> tag.getKey(),
-                                    tag -> tag.getValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue)
-                                ));
+                            newTags = newTags.stream()
+                                    .map(originalTag ->
+                                                new Tag(originalTag.getTagName(),
+                                                        originalTag.getTagValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue)))
+                                    .collect(Collectors.toList());
                       	}
-                        ExtendedMetadata newEntry = new ExtendedMetadata(newName, newDisplayName, newDescription,
-                                entry.getTypeRaw(), entry.getUnit());
-                        newEntry.getTags().putAll(newTags);
-                      
+
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
-                        newEntry.setMbean(newObjectName);
+
+                        ExtendedMetadata newEntryMetadata = new ExtendedMetadata(newName, newDisplayName, newDescription,
+                                entry.getMetadata().getTypeRaw(), entry.getMetadata().getUnit().get(), newObjectName, true);
+                       	ExtendedMetadataAndTags newEntry = new ExtendedMetadataAndTags(newEntryMetadata, newTags);
                         result.add(newEntry);
                     }
                     toBeRemoved.add(entry);
                 } catch (MalformedObjectNameException e) {
-                    e.printStackTrace();  // TODO: Customise this generated block
+                    throw new IllegalStateException(e);
                 }
             }
         }

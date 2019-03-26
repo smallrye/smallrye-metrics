@@ -19,7 +19,10 @@ package io.smallrye.metrics.interceptors;
 
 
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 import javax.annotation.Priority;
@@ -69,10 +72,13 @@ public class MeteredInterceptor {
     }
 
     private <E extends Member & AnnotatedElement> Object meteredCallable(InvocationContext context, E element) throws Exception {
-        String name = resolver.metered(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element).metricName();
-        Meter meter = (Meter) registry.getMetrics().get(name);
+        MetricResolver.Of<Metered> meterResolver = resolver.metered(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
+        String name = meterResolver.metricName();
+        Tag[] tags = meterResolver.tags();
+        MetricID metricID = new MetricID(name, tags);
+        Meter meter = (Meter) registry.getMetrics().get(metricID);
         if (meter == null) {
-            throw new IllegalStateException("No meter with name [" + name + "] found in registry [" + registry + "]");
+            throw new IllegalStateException("No meter with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
 
         meter.mark();

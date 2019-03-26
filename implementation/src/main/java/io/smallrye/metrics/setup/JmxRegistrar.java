@@ -1,6 +1,24 @@
+/*
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package io.smallrye.metrics.setup;
 
 import io.smallrye.metrics.ExtendedMetadata;
+import io.smallrye.metrics.ExtendedMetadataAndTags;
 import io.smallrye.metrics.JmxWorker;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.mbean.MCounterImpl;
@@ -8,9 +26,11 @@ import io.smallrye.metrics.mbean.MGaugeImpl;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,14 +52,14 @@ public class JmxRegistrar {
     }
 
     private void register(String propertiesFile, MetricRegistry registry) throws IOException {
-        List<ExtendedMetadata> configs = findMetadata(propertiesFile);
+        List<ExtendedMetadataAndTags> configs = findMetadata(propertiesFile);
 
-        for (ExtendedMetadata config : configs) {
-            register(registry, config);
+        for (ExtendedMetadataAndTags config : configs) {
+            register(registry, config.getMetadata(), config.getTags());
         }
     }
 
-    void register(MetricRegistry registry, ExtendedMetadata config) {
+    void register(MetricRegistry registry, ExtendedMetadata config, List<Tag> tags) {
         Metric metric = null;
         switch (config.getTypeRaw()) {
             case COUNTER:
@@ -51,11 +71,11 @@ public class JmxRegistrar {
         }
 
         if (metric != null) {
-            registry.register(config, metric);
+            registry.register(config, metric, tags.toArray(new Tag[]{}));
         }
     }
 
-    private List<ExtendedMetadata> findMetadata(String propertiesFile) throws IOException {
+    private List<ExtendedMetadataAndTags> findMetadata(String propertiesFile) throws IOException {
         try (
                 InputStream propertiesResource = getResource("/io/smallrye/metrics/" + propertiesFile)
         ) {
@@ -63,7 +83,7 @@ public class JmxRegistrar {
                 return Collections.emptyList();
             }
 
-            List<ExtendedMetadata> resultList = loadMetadataFromProperties(propertiesResource);
+            List<ExtendedMetadataAndTags> resultList = loadMetadataFromProperties(propertiesResource);
 
             JmxWorker.instance().expandMultiValueEntries(resultList);
 
@@ -71,7 +91,7 @@ public class JmxRegistrar {
         }
     }
 
-    List<ExtendedMetadata> loadMetadataFromProperties(InputStream propertiesResource) throws IOException {
+    List<ExtendedMetadataAndTags> loadMetadataFromProperties(InputStream propertiesResource) throws IOException {
         Properties baseMetricsProps = new Properties();
         baseMetricsProps.load(propertiesResource);
 
@@ -83,7 +103,7 @@ public class JmxRegistrar {
         return parsedMetrics.entrySet()
                 .stream()
                 .map(this::metadataOf)
-                .sorted(Comparator.comparing(e -> e.getName()))
+                .sorted(Comparator.comparing(e -> e.getMetadata().getName()))
                 .collect(Collectors.toList());
     }
 
@@ -95,29 +115,31 @@ public class JmxRegistrar {
         return is;
     }
 
-    private ExtendedMetadata metadataOf(Map.Entry<String, List<MetricProperty>> metadataEntry) {
+    private ExtendedMetadataAndTags metadataOf(Map.Entry<String, List<MetricProperty>> metadataEntry) {
         String name = metadataEntry.getKey();
         Map<String, String> entryProperties = new HashMap<>();
         metadataEntry.getValue()
                 .forEach(
                         prop -> entryProperties.put(prop.propertyKey, prop.propertyValue)
                 );
-        ExtendedMetadata meta = new ExtendedMetadata(name, entryProperties.get("displayName"),
-                                                     entryProperties.get("description"),
-                                                     metricTypeOf(entryProperties.get("type")),entryProperties.get(
-                                                         "unit"));
-        meta.setMbean(entryProperties.get("mbean"));
-        meta.setMulti("true".equalsIgnoreCase(entryProperties.get("multi")));
+        List<Tag> tags = new ArrayList<>();
         if(entryProperties.containsKey("tags")) {
-
-        	final String labelDefs[] = entryProperties.get("tags").split(";");
-        	for (final String labelDef : labelDefs) {
-        		final String label[] = labelDef.split("=", 2);
-				meta.getTags().put(label[0], label[1]);
-			}
-        	
+            final String labelDefs[] = entryProperties.get("tags").split(";");
+            for (final String labelDef : labelDefs) {
+                final String label[] = labelDef.split("=", 2);
+                final Tag tag = new Tag(label[0], label[1]);
+                tags.add(tag);
+            }
         }
-        return meta;
+
+        ExtendedMetadata meta = new ExtendedMetadata(name, entryProperties.get("displayName"),
+                entryProperties.get("description"),
+                metricTypeOf(entryProperties.get("type")),
+                entryProperties.get("unit"),
+                entryProperties.get("mbean"),
+                "true".equalsIgnoreCase(entryProperties.get("multi")));
+
+        return new ExtendedMetadataAndTags(meta, tags);
     }
 
     private static class MetricProperty {

@@ -19,11 +19,12 @@ package io.smallrye.metrics;
 import io.smallrye.metrics.exporters.Exporter;
 import io.smallrye.metrics.exporters.JsonExporter;
 import io.smallrye.metrics.exporters.JsonMetadataExporter;
-import io.smallrye.metrics.exporters.PrometheusExporter;
+import io.smallrye.metrics.exporters.OpenMetricsExporter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -89,9 +90,9 @@ public class MetricsRequestHandler {
             sb = exporter.exportAllScopes();
 
         } else if (scopePath.contains("/")) {
-            // One metric in a scope
+            // One metric name in a scope
 
-            String attribute = scopePath.substring(scopePath.indexOf('/') + 1);
+            String metricName = scopePath.substring(scopePath.indexOf('/') + 1);
 
             MetricRegistry.Type scope = getScopeFromPath(responder, scopePath.substring(0, scopePath.indexOf('/')));
             if (scope == null) {
@@ -100,10 +101,10 @@ public class MetricsRequestHandler {
             }
 
             MetricRegistry registry = MetricRegistries.get(scope);
-            Map<String, Metric> metricValuesMap = registry.getMetrics();
+            Map<MetricID, Metric> metricValuesMap = registry.getMetrics();
 
-            if (metricValuesMap.containsKey(attribute)) {
-                sb = exporter.exportOneMetric(scope, attribute);
+            if (metricValuesMap.keySet().stream().anyMatch(id -> id.getName().equals(metricName))) {
+                sb = exporter.exportMetricsByName(scope, metricName);
             } else {
                 responder.respondWith( 404, "Metric " + scopePath + " not found", Collections.emptyMap());
                 return;
@@ -160,7 +161,7 @@ public class MetricsRequestHandler {
 
         if (acceptHeaders == null) {
             if (method.equals("GET")) {
-                exporter = new PrometheusExporter();
+                exporter = new OpenMetricsExporter();
             } else {
                 return null;
             }
@@ -180,9 +181,9 @@ public class MetricsRequestHandler {
                         return null;
                     }
                 } else {
-                    // This is the fallback, but only for GET, as Prometheus does not support OPTIONS
+                    // This is the fallback, but only for GET, as OpenMetrics does not support OPTIONS
                     if (method.equals("GET")) {
-                        exporter = new PrometheusExporter();
+                        exporter = new OpenMetricsExporter();
                     } else {
                         return null;
                     }

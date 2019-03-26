@@ -15,49 +15,26 @@
  *   limitations under the License.
  */
 
-package io.smallrye.metrics.exporters;
+package org.wildfly.swarm.microprofile.metrics.reusability;
 
-import java.io.OutputStream;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
-import org.eclipse.microprofile.metrics.Snapshot;
+public class ReusableMetricWithDifferingTagsBean {
 
-public class SomeSnapshot extends Snapshot {
-    @Override
-    public double getValue(double quantile) {
-        return 0;
+    @Counted(name = "colorCounter", absolute = true, tags = {"color=blue"}, reusable = true)
+    public void colorBlue1() {
     }
 
-    @Override
-    public long[] getValues() {
-        return new long[0];
+    @Counted(name = "colorCounter", absolute = true, tags = {"color=red"}, reusable = true)
+    public void colorRed1() {
     }
 
-    @Override
-    public int size() {
-        return 0;
+    @Counted(name = "colorCounter", absolute = true, tags = {"color=blue"}, reusable = true)
+    public void colorBlue2() {
     }
 
-    @Override
-    public long getMax() {
-        return 0;
+    @Counted(name = "colorCounter", absolute = true, tags = {"color=red"}, reusable = true)
+    public void colorRed2() {
     }
 
-    @Override
-    public double getMean() {
-        return 0;
-    }
-
-    @Override
-    public long getMin() {
-        return 0;
-    }
-
-    @Override
-    public double getStdDev() {
-        return 0;
-    }
-
-    @Override
-    public void dump(OutputStream output) {
-    }
 }

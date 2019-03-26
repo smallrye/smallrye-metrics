@@ -16,6 +16,7 @@
 
 package io.smallrye.metrics.interceptors;
 
+import io.smallrye.metrics.TagsUtils;
 import io.smallrye.metrics.setup.MetricsMetadata;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -81,8 +82,8 @@ public class MetricsInterceptor {
                 MetricResolver.Of<Gauge> gauge = resolver.gauge(bean, method);
                 if (gauge.isPresent()) {
                     Gauge g = gauge.metricAnnotation();
-                    Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(), g.displayName(), MetricType.GAUGE, false, g.tags());
-                    registry.register(metadata, new ForwardingGauge(method, context.getTarget()));
+                    Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(), g.displayName(), MetricType.GAUGE, false);
+                    registry.register(metadata, new ForwardingGauge(method, context.getTarget()), TagsUtils.parseTagsAsArray(g.tags()));
                 }
             }
             type = type.getSuperclass();

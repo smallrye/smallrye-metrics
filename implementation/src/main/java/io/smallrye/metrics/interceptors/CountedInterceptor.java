@@ -16,7 +16,9 @@
 package io.smallrye.metrics.interceptors;
 
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.jboss.logging.Logger;
 
@@ -71,9 +73,11 @@ public class CountedInterceptor {
     private <E extends Member & AnnotatedElement> Object countedCallable(InvocationContext context, E element) throws Exception {
         MetricResolver.Of<Counted> counted = resolver.counted(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
         String name = counted.metricName();
-        Counter counter = registry.getCounters().get(name);
+        Tag[] tags = counted.tags();
+        MetricID metricID = new MetricID(name, tags);
+        Counter counter = registry.getCounters().get(metricID);
         if (counter == null) {
-            throw new IllegalStateException("No counter with name [" + name + "] found in registry [" + registry + "]");
+            throw new IllegalStateException("No counter with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
         log.debugf("Increment counter [metricName: %s]", name);
         counter.inc();

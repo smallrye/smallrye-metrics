@@ -15,49 +15,23 @@
  *   limitations under the License.
  */
 
-package io.smallrye.metrics.exporters;
+package org.wildfly.swarm.microprofile.metrics.reusability;
 
-import java.io.OutputStream;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
-import org.eclipse.microprofile.metrics.Snapshot;
+import javax.enterprise.context.ApplicationScoped;
 
-public class SomeSnapshot extends Snapshot {
-    @Override
-    public double getValue(double quantile) {
-        return 0;
+@ApplicationScoped
+public class NonReusableMetricBean {
+
+    @Counted(name = "countedMethod", absolute = true)
+    public void countedMethodOne() {
+
     }
 
-    @Override
-    public long[] getValues() {
-        return new long[0];
+    @Counted(name = "countedMethod", absolute = true)
+    public void countedMethodOne2() {
+
     }
 
-    @Override
-    public int size() {
-        return 0;
-    }
-
-    @Override
-    public long getMax() {
-        return 0;
-    }
-
-    @Override
-    public double getMean() {
-        return 0;
-    }
-
-    @Override
-    public long getMin() {
-        return 0;
-    }
-
-    @Override
-    public double getStdDev() {
-        return 0;
-    }
-
-    @Override
-    public void dump(OutputStream output) {
-    }
 }

@@ -15,46 +15,18 @@
  *   limitations under the License.
  */
 
-package io.smallrye.metrics.exporters;
+package org.wildfly.swarm.microprofile.metrics.reusability;
 
-import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
-/**
- * Provides a second (useless) Meter implementation
- */
-public class SomeMeter implements Meter {
-    @Override
-    public void mark() {
+public class NonReusableMetricWithDifferingTagsBean {
 
+    @Counted(name = "colorCounter", absolute = true, tags = {"color=blue"})
+    public void colorBlue() {
     }
 
-    @Override
-    public void mark(long l) {
-
+    @Counted(name = "colorCounter", absolute = true, tags = {"color=red"})
+    public void colorRed() {
     }
 
-    @Override
-    public long getCount() {
-        return 0;
-    }
-
-    @Override
-    public double getFifteenMinuteRate() {
-        return 0;
-    }
-
-    @Override
-    public double getFiveMinuteRate() {
-        return 0;
-    }
-
-    @Override
-    public double getMeanRate() {
-        return 0;
-    }
-
-    @Override
-    public double getOneMinuteRate() {
-        return 0;
-    }
 }

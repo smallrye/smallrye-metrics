@@ -18,8 +18,6 @@
 package io.smallrye.metrics;
 
 import io.smallrye.metrics.interceptors.MetricName;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
@@ -31,6 +29,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
@@ -68,51 +67,71 @@ public class MetricProducer {
 
     @Produces
     Counter getCounter(InjectionPoint ip) {
-        return this.applicationRegistry.counter(getMetadata(ip, MetricType.COUNTER));
+        Metadata metadata = getMetadata(ip, MetricType.COUNTER);
+        Tag[] tags = getTags(ip);
+        return this.applicationRegistry.counter(metadata, tags);
     }
 
     @Produces
     ConcurrentGauge getConcurrentGauge(InjectionPoint ip) {
-        return this.applicationRegistry.concurrentGauge(getMetadata(ip, MetricType.CONCURRENT_GAUGE));
+        Metadata metadata = getMetadata(ip, MetricType.CONCURRENT_GAUGE);
+        Tag[] tags = getTags(ip);
+        return this.applicationRegistry.concurrentGauge(metadata, tags);
     }
 
     @Produces
     Histogram getHistogram(InjectionPoint ip) {
-        return this.applicationRegistry.histogram(getMetadata(ip, MetricType.HISTOGRAM));
+        Metadata metadata = getMetadata(ip, MetricType.HISTOGRAM);
+        Tag[] tags = getTags(ip);
+        return this.applicationRegistry.histogram(metadata, tags);
     }
 
     @Produces
     Meter getMeter(InjectionPoint ip) {
-        return this.applicationRegistry.meter(getMetadata(ip, MetricType.METERED));
+        Metadata metadata = getMetadata(ip, MetricType.METERED);
+        Tag[] tags = getTags(ip);
+        return this.applicationRegistry.meter(metadata, tags);
     }
 
     @Produces
     Timer getTimer(InjectionPoint ip) {
-        return this.applicationRegistry.timer(getMetadata(ip, MetricType.TIMER));
+        Metadata metadata = getMetadata(ip, MetricType.TIMER);
+        Tag[] tags = getTags(ip);
+        return this.applicationRegistry.timer(metadata, tags);
     }
 
     private Metadata getMetadata(InjectionPoint ip, MetricType type) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         Metadata metadata;
         if (metric!= null) {
-            Map<String, String> tagMap = new HashMap<>();
-            if (metric.tags().length > 0) {
-                for (String tag : metric.tags()) {
-                    Tag t = new Tag(tag);
-                    tagMap.put(t.getKey(),t.getValue());
-                }
-            }
-
-            metadata = new OriginTrackedMetadata(ip, metricName.of(ip), type, metric.unit(), metric.description(),
-                                                 metric.displayName(),
-                                                 false, tagMap);
+            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip))
+                    .withType(type)
+                    .withUnit(metric.unit())
+                    .withDescription(metric.description())
+                    .withDisplayName(metric.displayName())
+                    .notReusable()
+                    .build();
+            metadata = new OriginAndMetadata(ip, actualMetadata);
         } else {
-            metadata = new OriginTrackedMetadata(ip, metricName.of(ip), type, MetricUnits.NONE, "", "", false,
-                                                 new HashMap<>(1));
+            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip))
+                    .withType(type)
+                    .withUnit(MetricUnits.NONE)
+                    .withDescription("")
+                    .withDisplayName("")
+                    .notReusable()
+                    .build();
+            metadata = new OriginAndMetadata(ip, actualMetadata);
         }
 
-        if (metric != null) {
-        }
         return metadata;
+    }
+
+    private Tag[] getTags(InjectionPoint ip) {
+        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
+        if (metric != null && metric.tags().length > 0) {
+            return TagsUtils.parseTagsAsArray(metric.tags());
+        } else {
+            return new Tag[0];
+        }
     }
 }

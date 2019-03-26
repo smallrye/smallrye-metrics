@@ -22,22 +22,18 @@ import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
-
-import java.util.SortedSet;
-import java.util.TreeSet;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
@@ -46,9 +42,10 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -57,31 +54,28 @@ import java.util.concurrent.ConcurrentHashMap;
 @Vetoed
 public class MetricsRegistryImpl extends MetricRegistry {
 
-    private static final Logger log = Logger.getLogger(MetricsRegistryImpl.class);
-    private static final String NONE = "NONE";
+    private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
+    private static String NONE = "NONE";
 
     private Map<String, Metadata> metadataMap = new HashMap<>();
+
     private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
 
-    Optional<String> globalTags;
+    /* this is for storing origins. until 2.0, origins were stored using OriginTrackedMetadata instead of regular metadata, but
+        since 2.0 we have to keep track of the origin per each MetricID separately, while Metadata itself
+        is only tracked per Metric Name, that's why we need two maps for that now.
+     */
+    private Map<MetricID, Object> originMap = new ConcurrentHashMap<>();
 
     public MetricsRegistryImpl() {
-
-        Config c  = org.eclipse.microprofile.config.ConfigProvider.getConfig();
-
-        // TODO find out if this dance is still needed in newer versions of config
-        globalTags = c.getOptionalValue("mp.metrics.tags", String.class);
-        if (globalTags.isPresent()) {
-            return;
-        }
-        globalTags = c.getOptionalValue("MP_METRICS_TAGS",String.class);
 
     }
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
 
-        if (metricMap.keySet().contains(name)) {
+        final MetricID metricID = new MetricID(name);
+        if (metricMap.keySet().contains(metricID)) {
             throw new IllegalArgumentException("A metric with name " + name + " already exists");
         }
 
@@ -103,35 +97,24 @@ public class MetricsRegistryImpl extends MetricRegistry {
             }
         }
 
-        MetadataBuilder  mb = Metadata.builder().withName(name).withType(type);
-        if (globalTags.isPresent()) {
-            addGlobalTags(mb);
-        }
-        Metadata m = mb.build();
-        metricMap.put(new MetricID(name), metric);
-
+        Metadata m = Metadata.builder().withName(name).withType(type).build();
+        metricMap.put(metricID, metric);
         metadataMap.put(name, m);
         return metric;
     }
 
-    private void addGlobalTags(MetadataBuilder mb) {
-        if (!globalTags.isPresent()) {
-            return;
-        }
-
-        String[] tagsArray=globalTags.get().split(",");
-        for (String aTag : tagsArray) {
-            // mb.addTag(aTag); TODO
-        }
+    @Override
+    public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
+        return register(metadata, metric, (Tag[]) null);
     }
 
     @Override
-    public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
-
+    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
         String name = metadata.getName();
         if (name == null) {
             throw new IllegalArgumentException("Metric name must not be null");
         }
+        MetricID metricID = new MetricID(name, tags);
         Metadata existingMetadata = metadataMap.get(name);
 
         boolean reusableFlag = (existingMetadata == null || existingMetadata.isReusable());
@@ -141,160 +124,202 @@ public class MetricsRegistryImpl extends MetricRegistry {
             reusableFlag = false;
         }
 
-        if (metricMap.keySet().contains(metadata.getName()) && !reusableFlag) {
-            throw new IllegalArgumentException("A metric with name " + metadata.getName() + " already exists");
+        if (metricMap.keySet().contains(metricID) && !reusableFlag) {
+            throw new IllegalArgumentException("A metric with metricID " + metricID + " already exists");
         }
 
-        if (existingMetadata != null && !existingMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
-            throw new IllegalArgumentException("Passed metric type does not match existing type");
+        /* if metadata for this name already exists:
+               - if no metadata was specified for this registration, check that this metric has the same type, then reuse the existing metadata instance
+               - if metadata was specified for this registration, verify that it's the same as the existing one
+           if no metadata for this name exists:
+               - if no metadata was specified for this registration, create a reasonable default
+               - if metadata was specified for this registration, use it
+             */
+        if(existingMetadata != null) {
+            if(metadata instanceof UnspecifiedMetadata) {
+                if(!metadata.getType().equals(existingMetadata.getType())) {
+                    throw new IllegalArgumentException("There is an existing metric with name " + name + " but of different type (" + existingMetadata.getType()+")");
+                }
+                metricMap.put(metricID, metric);
+            } else {
+                verifyMetadataEquality(metadata, existingMetadata);
+                metricMap.put(metricID, metric);
+                if(metadata instanceof OriginAndMetadata)
+                    originMap.put(metricID, ((OriginAndMetadata)metadata).getOrigin());
+            }
+        } else {
+            if(metadata instanceof UnspecifiedMetadata) {
+                Metadata realMetadata = ((UnspecifiedMetadata)metadata).convertToRealMetadata();
+                metadataMap.put(name, realMetadata);
+                metricMap.put(metricID, metric);
+            } else {
+                if(metadata instanceof OriginAndMetadata) {
+                    originMap.put(metricID, ((OriginAndMetadata)metadata).getOrigin());
+                    metadataMap.put(name, ((OriginAndMetadata)metadata).getMetadata());
+                } else {
+                    metadataMap.put(name, metadata);
+                }
+                metricMap.put(metricID, metric);
+            }
         }
-
-        if (existingMetadata != null && (existingMetadata.isReusable() != metadata.isReusable())) {
-            throw new IllegalArgumentException("Reusable flag differs from previous usage");
-        }
-
-        metricMap.put(new MetricID(name), metric);
-        metadataMap.put(name, duplicate(metadata));
-
         return metric;
     }
 
-    @Override
-    public <T extends Metric> T register(Metadata metadata, T metric, org.eclipse.microprofile.metrics.Tag... tags) throws IllegalArgumentException {
-        return null;  // TODO: Customise this generated block
-    }
-
-    protected Metadata duplicate(Metadata meta) {
-        Metadata copy = null;
-        Map<String, String> tagsCopy = new HashMap<>();
-//        tagsCopy.putAll(meta.getTags());  // TODO
-        if (globalTags.isPresent()) {
-            String[] tagsArray = globalTags.get().split(",");
-            for (String aTag : tagsArray) {
-                Tag t = new Tag(aTag);
-                tagsCopy.put(t.getKey(),t.getValue());
-            }
+    private void verifyMetadataEquality(Metadata newMetadata, Metadata existingMetadata) {
+        /*
+            we could use simply an equals() call but inspecting the objects in detail allows us to
+            throw a more user-friendly error if the metadata objects are not equal
+         */
+        if (!existingMetadata.getTypeRaw().equals(newMetadata.getTypeRaw())) {
+            throw new IllegalStateException("Passed metric type does not match existing type");
         }
 
-
-        if (meta instanceof OriginTrackedMetadata) {
-            copy = new OriginTrackedMetadata(((OriginTrackedMetadata) meta).getOrigin(), meta.getName(),
-                                             meta.getTypeRaw(), meta.getUnit().orElse(NONE), meta.getDescription().orElse(""),
-                                             meta.getDisplayName(),
-                                             meta.isReusable(),
-                                             tagsCopy);
-        } else {
-            MetadataBuilder builder = Metadata.builder().withName(meta.getName()).withType(meta.getTypeRaw());
-
-            builder.withDisplayName(meta.getDisplayName());
-            if (meta.isReusable()) {
-                builder.reusable();
-            } else {
-                builder.notReusable();
+        // unspecified means that someone is programmatically obtaining a metric instance without specifying the metadata, so we check only the name and type
+        if(!(newMetadata instanceof UnspecifiedMetadata)) {
+            if (existingMetadata.isReusable() != newMetadata.isReusable()) {
+                throw new IllegalStateException("Reusable flag differs from previous usage");
             }
-            builder.withUnit(meta.getUnit().orElse(NONE));
-            builder.withDescription(meta.getDescription().orElse(""));
 
-            for (Map.Entry<String,String> tag : tagsCopy.entrySet()) {
-                // builder.addTag(tag.getKey()+"="+tag.getValue());  TODO
+            String existingUnit = existingMetadata.getUnit().orElse("none");
+            String newUnit = newMetadata.getUnit().orElse("none");
+            if (!existingUnit.equals(newUnit)) {
+                throw new IllegalStateException("Unit is different from the unit in previous usage (" + existingUnit + ")");
             }
-            addGlobalTags(builder);
-            copy = builder.build();
+
+            String existingDescription = existingMetadata.getDescription().orElse("none");
+            String newDescription = newMetadata.getDescription().orElse("none");
+            if (!existingDescription.equals(newDescription)) {
+                throw new IllegalStateException("Description differs from previous usage");
+            }
+
+            if (!existingMetadata.getDisplayName().equals(newMetadata.getDisplayName())) {
+                throw new IllegalStateException("Display name differs from previous usage");
+            }
         }
-
-        return copy;
     }
 
     @Override
     public Counter counter(String name) {
-        return counter(Metadata.builder().withName(name).withType(MetricType.COUNTER).build());
+        return get(new MetricID(name),
+                new UnspecifiedMetadata(name, MetricType.COUNTER));
     }
 
     @Override
-    public Counter counter(String name, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public Counter counter(String name, Tag... tags) {
+        return get(new MetricID(name, tags),
+                new UnspecifiedMetadata(name, MetricType.COUNTER));
     }
 
     @Override
-    public Counter counter(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public Counter counter(Metadata metadata, Tag... tags) {
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.COUNTER));
     }
 
     @Override
-    public org.eclipse.microprofile.metrics.Counter counter(Metadata metadata) {
-        return get(metadata, MetricType.COUNTER);
+    public Counter counter(Metadata metadata) {
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.COUNTER));
     }
 
     @Override
     public ConcurrentGauge concurrentGauge(String name) {
-        return concurrentGauge(Metadata.builder().withName(name).withType(MetricType.CONCURRENT_GAUGE).build());
+        return get(new MetricID(name),
+                new UnspecifiedMetadata(name, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return get(metadata, MetricType.CONCURRENT_GAUGE);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
-    public ConcurrentGauge concurrentGauge(String name, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
+        return get(new MetricID(name, tags),
+                new UnspecifiedMetadata(name, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
-    public ConcurrentGauge concurrentGauge(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
     public Histogram histogram(String name) {
-        return histogram(Metadata.builder().withName(name).withType(MetricType.HISTOGRAM).build());
+        return get(new MetricID(name),
+                new UnspecifiedMetadata(name, MetricType.HISTOGRAM));
     }
 
     @Override
     public Histogram histogram(Metadata metadata) {
-        return get(metadata, MetricType.HISTOGRAM);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.HISTOGRAM));
     }
 
     @Override
-    public Histogram histogram(String name, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public Histogram histogram(String name, Tag... tags) {
+        return get(new MetricID(name, tags),
+                new UnspecifiedMetadata(name, MetricType.HISTOGRAM));
     }
 
     @Override
-    public Histogram histogram(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public Histogram histogram(Metadata metadata, Tag... tags) {
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.HISTOGRAM));
     }
 
     @Override
-    public Meter meter(String s) {
-        return meter(Metadata.builder().withName(s).withType(MetricType.METERED).build());
+    public Meter meter(String name) {
+        return get(new MetricID(name),
+                new UnspecifiedMetadata(name, MetricType.METERED));
     }
 
     @Override
     public Meter meter(Metadata metadata) {
-        return get(metadata, MetricType.METERED);
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.METERED));
     }
 
     @Override
-    public Meter meter(String name, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public Meter meter(String name, Tag... tags) {
+        return get(new MetricID(name, tags),
+                new UnspecifiedMetadata(name, MetricType.METERED));
     }
 
     @Override
-    public Meter meter(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
+    public Meter meter(Metadata metadata, Tag... tags) {
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.METERED));
     }
 
-    private <T extends Metric> T get(Metadata metadata, MetricType type) {
+    @Override
+    public Timer timer(String name) {
+        return get(new MetricID(name),
+                new UnspecifiedMetadata(name, MetricType.TIMER));
+    }
+
+    @Override
+    public Timer timer(Metadata metadata) {
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.TIMER));
+    }
+
+    @Override
+    public Timer timer(String name, Tag... tags) {
+        return get(new MetricID(name, tags),
+                new UnspecifiedMetadata(name, MetricType.TIMER));
+    }
+
+    @Override
+    public Timer timer(Metadata metadata, Tag... tags) {
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.TIMER));
+    }
+
+    private <T extends Metric> T get(MetricID metricID, Metadata metadata) {
         String name = metadata.getName();
-        log.debugf("Get metric [name: %s, type: %s]", name, type);
+        MetricType type = metadata.getTypeRaw();
+        log.debugf("Get metric [id: %s, type: %s]", metricID, type);
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Name must not be null or empty");
         }
 
-        Metadata previous = metadataMap.get(name);
+        Metadata previousMetadata = metadataMap.get(name);
+        Metric previousMetric = metricMap.get(metricID);
 
-        if (previous == null) {
+        if (previousMetric == null) {
             Metric m;
             switch (type) {
 
@@ -319,79 +344,66 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 default:
                     throw new IllegalStateException("Must not happen");
             }
-            log.infof("Register metric [name: %s, type: %s]", name, type);
-            register(metadata, m);
-        } else if (!previous.getTypeRaw().equals(metadata.getTypeRaw())) {
+            if(metadata instanceof OriginAndMetadata) {
+                log.infof("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata)metadata).getOrigin());
+            } else {
+                log.infof("Register metric [metricId: %s, type: %s]", metricID, type);
+            }
+
+            register(metadata, m, metricID.getTagsAsList().toArray(new Tag[]{}));
+        } else if (!previousMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " is of type "
-                    + previous.getType() + ", expected " + metadata.getType());
-        } else if ( haveCompatibleOrigins(previous, metadata)) {
+                    + previousMetadata.getType() + ", expected " + metadata.getType());
+        } else if ( metadata instanceof OriginAndMetadata &&
+                originMap.get(metricID) != null &&
+                areCompatibleOrigins(originMap.get(metricID), ((OriginAndMetadata) metadata).getOrigin())) {
             // stop caring, same thing.
-        } else if (previous.isReusable() && !metadata.isReusable()) {
+        } else if (previousMetadata.isReusable() && (!(metadata instanceof UnspecifiedMetadata) && !metadata.isReusable())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " was flagged as reusable, while current request is not.");
-        } else if (!previous.isReusable()) {
+        } else if (!previousMetadata.isReusable()) {
             throw new IllegalArgumentException("Previously registered metric " + name + " was not flagged as reusable");
+        } else {
+            verifyMetadataEquality(metadata, previousMetadata);
         }
 
-        return (T) metricMap.get(name);
+        return (T) metricMap.get(metricID);
     }
 
-    private boolean haveCompatibleOrigins(Metadata left, Metadata right) {
-        if ( left instanceof OriginTrackedMetadata && right instanceof OriginTrackedMetadata ) {
-            OriginTrackedMetadata leftOrigin = (OriginTrackedMetadata) left;
-            OriginTrackedMetadata rightOrigin = (OriginTrackedMetadata) right;
+    private boolean areCompatibleOrigins(Object left, Object right) {
+        if (left.equals(right)) {
+            return true;
+        }
 
-            if ( leftOrigin.getOrigin().equals(rightOrigin.getOrigin())) {
-                return true;
-            }
-
-            if ( leftOrigin.getOrigin() instanceof InjectionPoint || ((OriginTrackedMetadata) right).getOrigin() instanceof InjectionPoint ) {
-                return true;
-            }
-
+        if (left instanceof InjectionPoint || right instanceof InjectionPoint) {
+            return true;
         }
 
         return false;
-
-    }
-
-    @Override
-    public Timer timer(String s) {
-        return timer(Metadata.builder().withName(s).withType(MetricType.TIMER).build());
-    }
-
-    @Override
-    public Timer timer(Metadata metadata) {
-        return get(metadata, MetricType.TIMER);
-    }
-
-    @Override
-    public Timer timer(String name, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
-    }
-
-    @Override
-    public Timer timer(Metadata metadata, org.eclipse.microprofile.metrics.Tag... tags) {
-        return null;  // TODO: Customise this generated block
     }
 
     @Override
     public boolean remove(String metricName) {
-        MetricID idToRemove = new MetricID(metricName);
-        if (metricMap.containsKey(idToRemove)) {
-            log.debugf("Remove metric [name: %s]", metricName);
-            metricMap.remove(idToRemove);
-            metadataMap.remove(metricName);
-            return true;
+        log.infof("Removing metrics with [name: %s]", metricName);
+        // iterate over all metricID's in the map and remove the ones with this name
+        for (MetricID metricID : metricMap.keySet()) {
+            if(metricID.getName().equals(metricName)) {
+                metricMap.remove(metricID);
+            }
         }
-        return false;
+        // dispose of the metadata as well
+        return metadataMap.remove(metricName) != null;
     }
 
     @Override
     public boolean remove(MetricID metricID) {
         if (metricMap.containsKey(metricID)) {
-            log.debugf("Remove metric [id: %s]", metricID);
+            log.infof("Remove metric with [id: %s]", metricID);
             metricMap.remove(metricID);
-            metadataMap.remove(metricID.getName());
+            // remove the metadata as well if this is the last metric of this name to be removed
+            if(metricMap.keySet().stream().noneMatch(id -> id.getName().equals(metricID.getName()))) {
+                log.debugf("Remove metadata for [name: %s]", metricID.getName());
+                metadataMap.remove(metricID.getName());
+            }
             return true;
         }
         return false;
@@ -486,6 +498,22 @@ public class MetricsRegistryImpl extends MetricRegistry {
     public Map<MetricID, Metric> getMetrics() {
 
         return new HashMap<>(metricMap);
+    }
+
+    private Metadata sanitizeMetadata(Metadata metadata, MetricType metricType) {
+        // if the metadata does not specify a type, we add it here
+        // if the metadata specifies a type, we check that it's the correct one
+        // (for example, someone might have called registry.counter(metadata) where metadata.type="gauge")
+        if(metadata.getTypeRaw() == null || metadata.getTypeRaw() == MetricType.INVALID)  {
+            return Metadata.builder(metadata).withType(metricType).build();
+        } else {
+            if(metadata.getTypeRaw() != metricType) {
+                throw new IllegalArgumentException("Attempting to register a " + metricType + ", but the passed metadata" +
+                        " contains type=" + metadata.getType());
+            } else {
+                return metadata;
+            }
+        }
     }
 
     private <T extends Metric> SortedMap<MetricID, T> getMetrics(MetricType type, MetricFilter filter) {

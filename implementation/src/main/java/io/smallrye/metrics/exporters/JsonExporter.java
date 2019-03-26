@@ -28,12 +28,14 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author hrupp
@@ -53,165 +55,6 @@ public class JsonExporter implements Exporter {
         getMetricsForAScope(sb, scope);
 
         return sb;
-    }
-
-    private void getMetricsForAScope(StringBuffer sb, MetricRegistry.Type scope) {
-
-        MetricRegistry registry = MetricRegistries.get(scope);
-        Map<MetricID, Metric> metricMap = registry.getMetrics();
-        Map<String, Metadata> metadataMap = registry.getMetadata();
-
-        sb.append("{\n");
-
-        writeMetricsForMap(sb, metricMap, metadataMap);
-
-        sb.append(LF).append("}");
-    }
-
-    private void writeMetricsForMap(StringBuffer sb, Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
-
-        boolean first = true;
-
-        for (Iterator<Map.Entry<MetricID, Metric>> iterator = metricMap.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<MetricID, Metric> entry = iterator.next();
-            String key = entry.getKey().getName();
-
-            Metric value = entry.getValue();
-            Metadata metadata = metadataMap.get(key);
-
-            if (metadata == null) {
-                throw new IllegalArgumentException("MD is null for " + key);
-            }
-            StringBuffer metricBuffer = new StringBuffer();
-
-            if (first) {
-                first = false;
-            } else {
-                metricBuffer.append(',').append(LF);
-            }
-
-            try {
-                switch (metadata.getTypeRaw()) {
-                    case GAUGE:
-                    case COUNTER:
-                        Number val = getValueFromMetric(value, key);
-                        metricBuffer.append("  ").append('"').append(key).append('"').append(" : ").append(val);
-                        break;
-                    case METERED:
-                        Metered meter = (Metered) value;
-                        writeStartLine(metricBuffer, key);
-                        writeMeterValues(metricBuffer, meter);
-                        writeEndLine(metricBuffer);
-                        break;
-                    case CONCURRENT_GAUGE:
-                        ConcurrentGauge gauge = (ConcurrentGauge) value;
-                        writeStartLine(sb, key);
-                        writeConcurrentGaugeValues(sb, gauge);
-                        writeEndLine(sb);
-                        break;
-                    case TIMER:
-                        Timer timer = (Timer) value;
-                        writeStartLine(metricBuffer, key);
-                        writeTimerValues(metricBuffer, timer, metadata.getUnit().get());
-                        writeEndLine(metricBuffer);
-                        break;
-                    case HISTOGRAM:
-                        Histogram hist = (Histogram) value;
-                        writeStartLine(metricBuffer, key);
-                        metricBuffer.append("    \"count\": ").append(hist.getCount()).append(COMMA_LF);
-                        writeSnapshotValues(metricBuffer, hist.getSnapshot());
-                        writeEndLine(metricBuffer);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Not supported: " + key);
-                }
-
-                sb.append(metricBuffer);
-            } catch (Exception e) {
-                log.warn("Unable to export metric " + key, e);
-            }
-        }
-    }
-
-    private void writeEndLine(StringBuffer sb) {
-        sb.append("  }");
-    }
-
-    private void writeStartLine(StringBuffer sb, String key) {
-        sb.append("  ").append('"').append(key).append('"').append(" : ").append("{\n");
-    }
-
-    private void writeConcurrentGaugeValues(StringBuffer sb, ConcurrentGauge concurrentGauge) {
-        sb.append("    \"callCount\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
-        sb.append("    \"max\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
-        sb.append("    \"min\": ").append(concurrentGauge.getMin()).append(LF);
-    }
-
-    private void writeMeterValues(StringBuffer sb, Metered meter) {
-        sb.append("    \"count\": ").append(meter.getCount()).append(COMMA_LF);
-        sb.append("    \"meanRate\": ").append(meter.getMeanRate()).append(COMMA_LF);
-        sb.append("    \"oneMinRate\": ").append(meter.getOneMinuteRate()).append(COMMA_LF);
-        sb.append("    \"fiveMinRate\": ").append(meter.getFiveMinuteRate()).append(COMMA_LF);
-        sb.append("    \"fifteenMinRate\": ").append(meter.getFifteenMinuteRate()).append(LF);
-    }
-
-    private void writeTimerValues(StringBuffer sb, Timer timer, String unit) {
-        writeSnapshotValues(sb, timer.getSnapshot(), unit);
-        // Backup and write COMMA_LF
-        sb.setLength(sb.length() - 1);
-        sb.append(COMMA_LF);
-        writeMeterValues(sb, timer);
-    }
-
-    private void writeSnapshotValues(StringBuffer sb, Snapshot snapshot) {
-        sb.append("    \"p50\": ").append(snapshot.getMedian()).append(COMMA_LF);
-        sb.append("    \"p75\": ").append(snapshot.get75thPercentile()).append(COMMA_LF);
-        sb.append("    \"p95\": ").append(snapshot.get95thPercentile()).append(COMMA_LF);
-        sb.append("    \"p98\": ").append(snapshot.get98thPercentile()).append(COMMA_LF);
-        sb.append("    \"p99\": ").append(snapshot.get99thPercentile()).append(COMMA_LF);
-        sb.append("    \"p999\": ").append(snapshot.get999thPercentile()).append(COMMA_LF);
-        sb.append("    \"min\": ").append(snapshot.getMin()).append(COMMA_LF);
-        sb.append("    \"mean\": ").append(snapshot.getMean()).append(COMMA_LF);
-        sb.append("    \"max\": ").append(snapshot.getMax()).append(COMMA_LF);
-        // Can't be COMMA_LF has there may not be anything following as is the case for a Histogram
-        sb.append("    \"stddev\": ").append(snapshot.getStdDev()).append(LF);
-
-    }
-
-    private void writeSnapshotValues(StringBuffer sb, Snapshot snapshot, String unit) {
-        sb.append("    \"p50\": ").append(toBase(snapshot.getMedian(), unit)).append(COMMA_LF);
-        sb.append("    \"p75\": ").append(toBase(snapshot.get75thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p95\": ").append(toBase(snapshot.get95thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p98\": ").append(toBase(snapshot.get98thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p99\": ").append(toBase(snapshot.get99thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p999\": ").append(toBase(snapshot.get999thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"min\": ").append(toBase(snapshot.getMin(), unit)).append(COMMA_LF);
-        sb.append("    \"mean\": ").append(toBase(snapshot.getMean(), unit)).append(COMMA_LF);
-        sb.append("    \"max\": ").append(toBase(snapshot.getMax(), unit)).append(COMMA_LF);
-        // Can't be COMMA_LF has there may not be anything following as is the case for a Histogram
-        sb.append("    \"stddev\": ").append(toBase(snapshot.getStdDev(), unit)).append(LF);
-
-    }
-
-    private Number toBase(Number count, String unit) {
-        return ExporterUtil.convertNanosTo(count.doubleValue(), unit);
-    }
-
-    private Number getValueFromMetric(Metric theMetric, String name) {
-        if (theMetric instanceof Gauge) {
-            Number value = (Number) ((Gauge) theMetric).getValue();
-            if (value != null) {
-                return value;
-            } else {
-                log.warn("Value is null for " + name);
-                return -142.142; // TODO
-            }
-        } else if (theMetric instanceof Counter) {
-            return ((Counter) theMetric).getCount();
-        } else {
-            log.error("Not yet supported metric: " + theMetric.getClass().getName());
-            return -42.42;
-        }
     }
 
     @Override
@@ -238,17 +81,16 @@ public class JsonExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, String metricName) {
+    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
 
-        Metric m = metricMap.get(metricName);
+        Metric m = metricMap.get(metricID);
 
         Map<MetricID, Metric> outMap = new HashMap<>(1);
-        MetricID outId = new MetricID(metricName);
-        outMap.put(outId, m);
+        outMap.put(metricID, m);
 
         StringBuffer sb = new StringBuffer();
         sb.append("{");
@@ -260,7 +102,261 @@ public class JsonExporter implements Exporter {
     }
 
     @Override
+    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
+        MetricRegistry registry = MetricRegistries.get(scope);
+        Map<MetricID, Metric> metricMap = registry.getMetrics()
+                .entrySet()
+                .stream()
+                .filter(e -> e.getKey().getName().equals(name))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+        Map<String, Metadata> metadataMap = registry.getMetadata();
+
+        StringBuffer sb = new StringBuffer();
+        sb.append("{");
+        sb.append(JsonExporter.LF);
+        writeMetricsForMap(sb, metricMap, metadataMap);
+        sb.append(JsonExporter.LF);
+        sb.append("}");
+        sb.append(JsonExporter.LF);
+
+        return sb;
+    }
+
+    @Override
     public String getContentType() {
         return "application/json";
     }
+
+
+    private StringBuffer writeMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuffer sb = new StringBuffer();
+        switch (metadata.getTypeRaw()) {
+            case GAUGE:
+            case COUNTER:
+                String metricsString = metricMap.entrySet()
+                        .stream()
+                        .map(metric -> writeOneSimpleMetric(metric.getKey(), metric.getValue(), metadata))
+                        .collect(Collectors.joining(COMMA_LF));
+                sb.append(metricsString);
+                break;
+            case METERED:
+                sb.append(writeMeters(metricMap, metadata));
+                break;
+            case CONCURRENT_GAUGE:
+                sb.append(writeConcurrentGauges(metricMap, metadata));
+                break;
+            case TIMER:
+                sb.append(writeTimers(metricMap, metadata));
+                break;
+            case HISTOGRAM:
+                sb.append(writeHistograms(metricMap, metadata));
+                break;
+            default:
+                throw new IllegalArgumentException("Not supported: " + metadata.getTypeRaw());
+        }
+        return sb;
+    }
+
+    private void getMetricsForAScope(StringBuffer sb, MetricRegistry.Type scope) {
+
+        MetricRegistry registry = MetricRegistries.get(scope);
+        Map<MetricID, Metric> metricMap = registry.getMetrics();
+        Map<String, Metadata> metadataMap = registry.getMetadata();
+
+        sb.append("{\n");
+
+        writeMetricsForMap(sb, metricMap, metadataMap);
+
+        sb.append(LF).append("}");
+    }
+
+    private void writeMetricsForMap(StringBuffer outSb, Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
+        // split into groups by metric name
+        Map<String, Map<MetricID, Metric>> metricsGroupedByName = metricMap.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        entry -> entry.getKey().getName(),
+                        Collectors.mapping(e -> e, Collectors.toMap(e -> e.getKey(), e -> e.getValue()))));
+        // and then for each group, perform the export
+        String result = metricsGroupedByName.entrySet().stream()
+                .map(entry -> writeMetricsByName(entry.getValue(), metadataMap.get(entry.getKey())))
+                .collect(Collectors.joining(COMMA_LF));
+        outSb.append(result);
+    }
+
+    private void writeEndLine(StringBuffer sb) {
+        sb.append("  }");
+    }
+
+    private void writeStartLine(StringBuffer sb, String key) {
+        sb.append("  ").append('"').append(key).append('"').append(" : ").append("{\n");
+    }
+
+    private StringBuffer writeOneSimpleMetric(MetricID metricID, Metric metric, Metadata metadata) {
+        StringBuffer result = new StringBuffer();
+        Number val = getValueFromMetric(metric, metricID.getName());
+        String tags = createTagsString(metricID.getTagsAsList());
+        result.append("  ").append('"').append(metricID.getName()).append(tags).append('"').append(" : ").append(val);
+        return result;
+    }
+
+    private StringBuffer writeMeters(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuffer sb = new StringBuffer();
+        if (metricMap.size() > 0) {
+            writeStartLine(sb, metadata.getName());
+            String values = metricMap.entrySet()
+                    .stream()
+                    .map(e -> writeMeterValues((Metered) e.getValue(), createTagsString(e.getKey().getTagsAsList())))
+                    .collect(Collectors.joining(COMMA_LF));
+            sb.append(values).append(LF);
+            writeEndLine(sb);
+        }
+        return sb;
+    }
+
+    private StringBuffer writeHistograms(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuffer sb = new StringBuffer();
+        if (metricMap.size() > 0) {
+            writeStartLine(sb, metadata.getName());
+            String values = metricMap.entrySet()
+                    .stream()
+                    .map(e -> {
+                        String tags = createTagsString(e.getKey().getTagsAsList());
+                        long count = ((Histogram) e.getValue()).getCount();
+                        return new StringBuffer().append("    \"count").append(tags).append("\": ").append(count).append(COMMA_LF)
+                                .append(writeSnapshotValues(((Histogram) e.getValue()).getSnapshot(), tags));
+                    })
+                    .collect(Collectors.joining(COMMA_LF));
+            sb.append(values).append(LF);
+            writeEndLine(sb);
+        }
+        return sb;
+    }
+
+    private StringBuffer writeConcurrentGauges(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuffer sb = new StringBuffer();
+        if (metricMap.size() > 0) {
+            writeStartLine(sb, metadata.getName());
+            String values = metricMap.entrySet()
+                    .stream()
+                    .map(e -> writeConcurrentGaugeValues((ConcurrentGauge) e.getValue(), createTagsString(e.getKey().getTagsAsList())))
+                    .collect(Collectors.joining(COMMA_LF));
+            sb.append(values).append(LF);
+            writeEndLine(sb);
+        }
+        return sb;
+    }
+
+    private StringBuffer writeTimers(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuffer sb = new StringBuffer();
+        if (metricMap.size() > 0) {
+            writeStartLine(sb, metadata.getName());
+            String values = metricMap.entrySet()
+                    .stream()
+                    .map(e -> writeTimerValues((Timer) e.getValue(),
+                            metadata.getUnit().get(),
+                            createTagsString(e.getKey().getTagsAsList())))
+                    .collect(Collectors.joining(COMMA_LF));
+            sb.append(values).append(LF);
+            writeEndLine(sb);
+        }
+        return sb;
+    }
+
+    private StringBuffer writeMeterValues(Metered meter, String tags) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("    \"count").append(tags).append("\": ").append(meter.getCount()).append(COMMA_LF);
+        sb.append("    \"meanRate").append(tags).append("\": ").append(meter.getMeanRate()).append(COMMA_LF);
+        sb.append("    \"oneMinRate").append(tags).append("\": ").append(meter.getOneMinuteRate()).append(COMMA_LF);
+        sb.append("    \"fiveMinRate").append(tags).append("\": ").append(meter.getFiveMinuteRate()).append(COMMA_LF);
+        sb.append("    \"fifteenMinRate").append(tags).append("\": ").append(meter.getFifteenMinuteRate());
+        return sb;
+    }
+
+    private StringBuffer writeConcurrentGaugeValues(ConcurrentGauge concurrentGauge, String tags) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("    \"current").append(tags).append("\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
+        sb.append("    \"max").append(tags).append("\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
+        sb.append("    \"min").append(tags).append("\": ").append(concurrentGauge.getMin());
+        return sb;
+    }
+
+    private StringBuffer writeTimerValues(Timer timer, String unit, String tags) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(writeSnapshotValues(timer.getSnapshot(), unit, tags));
+        sb.append(COMMA_LF);
+        sb.append(writeMeterValues(timer, tags));
+        return sb;
+    }
+
+    private StringBuffer writeSnapshotValues(Snapshot snapshot, String tags) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("    \"p50").append(tags).append("\": ").append(snapshot.getMedian()).append(COMMA_LF);
+        sb.append("    \"p75").append(tags).append("\": ").append(snapshot.get75thPercentile()).append(COMMA_LF);
+        sb.append("    \"p95").append(tags).append("\": ").append(snapshot.get95thPercentile()).append(COMMA_LF);
+        sb.append("    \"p98").append(tags).append("\": ").append(snapshot.get98thPercentile()).append(COMMA_LF);
+        sb.append("    \"p99").append(tags).append("\": ").append(snapshot.get99thPercentile()).append(COMMA_LF);
+        sb.append("    \"p999").append(tags).append("\": ").append(snapshot.get999thPercentile()).append(COMMA_LF);
+        sb.append("    \"min").append(tags).append("\": ").append(snapshot.getMin()).append(COMMA_LF);
+        sb.append("    \"mean").append(tags).append("\": ").append(snapshot.getMean()).append(COMMA_LF);
+        sb.append("    \"max").append(tags).append("\": ").append(snapshot.getMax()).append(COMMA_LF);
+        sb.append("    \"stddev").append(tags).append("\": ").append(snapshot.getStdDev());
+        return sb;
+    }
+
+    private StringBuffer writeSnapshotValues(Snapshot snapshot, String unit, String tags) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("    \"p50").append(tags).append("\": ").append(toBase(snapshot.getMedian(), unit)).append(COMMA_LF);
+        sb.append("    \"p75").append(tags).append("\": ").append(toBase(snapshot.get75thPercentile(), unit)).append(COMMA_LF);
+        sb.append("    \"p95").append(tags).append("\": ").append(toBase(snapshot.get95thPercentile(), unit)).append(COMMA_LF);
+        sb.append("    \"p98").append(tags).append("\": ").append(toBase(snapshot.get98thPercentile(), unit)).append(COMMA_LF);
+        sb.append("    \"p99").append(tags).append("\": ").append(toBase(snapshot.get99thPercentile(), unit)).append(COMMA_LF);
+        sb.append("    \"p999").append(tags).append("\": ").append(toBase(snapshot.get999thPercentile(), unit)).append(COMMA_LF);
+        sb.append("    \"min").append(tags).append("\": ").append(toBase(snapshot.getMin(), unit)).append(COMMA_LF);
+        sb.append("    \"mean").append(tags).append("\": ").append(toBase(snapshot.getMean(), unit)).append(COMMA_LF);
+        sb.append("    \"max").append(tags).append("\": ").append(toBase(snapshot.getMax(), unit)).append(COMMA_LF);
+        sb.append("    \"stddev").append(tags).append("\": ").append(toBase(snapshot.getStdDev(), unit));
+        return sb;
+    }
+
+    private Number toBase(Number count, String unit) {
+        return ExporterUtil.convertNanosTo(count.doubleValue(), unit);
+    }
+
+    private Number getValueFromMetric(Metric theMetric, String name) {
+        if (theMetric instanceof Gauge) {
+            Number value = (Number) ((Gauge) theMetric).getValue();
+            if (value != null) {
+                return value;
+            } else {
+                log.warn("Value is null for " + name);
+                return -142.142; // TODO
+            }
+        } else if (theMetric instanceof Counter) {
+            return ((Counter) theMetric).getCount();
+        } else {
+            log.error("Not yet supported metric: " + theMetric.getClass().getName());
+            return -42.42;
+        }
+    }
+
+    /**
+     * Converts a list of tags to the string that will be appended to the metric name in JSON output.
+     * If there are no tags, this returns an empty string.
+     */
+    private String createTagsString(List<Tag> tagsAsList) {
+        if (tagsAsList == null || tagsAsList.isEmpty())
+            return "";
+        else {
+            return ";" + tagsAsList.stream()
+                    .map(tag -> tag.getTagName() + "=" + tag.getTagValue()
+                            .replaceAll(";", "_")
+                            .replaceAll("\"", "\\\\\"" )
+                            .replaceAll("\n", "\\\\n" )
+                    ).collect(Collectors.joining(";"));
+        }
+    }
+
 }
