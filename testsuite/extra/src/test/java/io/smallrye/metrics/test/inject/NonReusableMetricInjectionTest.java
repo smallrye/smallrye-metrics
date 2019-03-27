@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.reusability;
+package io.smallrye.metrics.test.inject;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -29,38 +29,35 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
 /**
- * Test that two metrics of the same name and differing tags can be created by annotations.
+ * Test that it is possible to inject a metric using an annotated method parameter.
  */
 @RunWith(Arquillian.class)
-public class ReusableMetricWithDifferingTagsTest {
+public class NonReusableMetricInjectionTest {
 
     @Inject
-    MetricRegistry metricRegistry;
+    private Instance<NonReusableMetricInjectionBean> bean;
 
     @Inject
-    private ReusableMetricWithDifferingTagsBean bean;
+    private MetricRegistry metricRegistry;
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClass(ReusableMetricWithDifferingTagsBean.class);
+                .addClass(NonReusableMetricInjectionBean.class);
     }
 
     @Test
     public void test() {
-        bean.colorBlue1();
-        bean.colorBlue1();
-        bean.colorBlue2();
-        bean.colorRed1();
-        bean.colorRed2();
-        Assert.assertEquals(3,
-                metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "blue"))).getCount());
-        Assert.assertEquals(2,
-                metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "red"))).getCount());
+        // force creating two instances of the bean
+        bean.get();
+        bean.get();
+        Assert.assertEquals(4, metricRegistry.getCounters().get(new MetricID("mycounter", new Tag("k", "v1"))).getCount());
+        Assert.assertEquals(6, metricRegistry.getCounters().get(new MetricID("mycounter", new Tag("k", "v2"))).getCount());
     }
 
 }

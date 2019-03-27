@@ -15,26 +15,23 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.reusability;
+package io.smallrye.metrics.test.reusability;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
-public class ReusableMetricWithDifferingTagsBean {
+import javax.enterprise.context.ApplicationScoped;
 
-    @Counted(name = "colorCounter", absolute = true, tags = {"color=blue"}, reusable = true)
-    public void colorBlue1() {
+@ApplicationScoped
+public class NonReusableMetricBean {
+
+    @Counted(name = "countedMethod", absolute = true)
+    public void countedMethodOne() {
+
     }
 
-    @Counted(name = "colorCounter", absolute = true, tags = {"color=red"}, reusable = true)
-    public void colorRed1() {
-    }
+    @Counted(name = "countedMethod", absolute = true)
+    public void countedMethodOne2() {
 
-    @Counted(name = "colorCounter", absolute = true, tags = {"color=blue"}, reusable = true)
-    public void colorBlue2() {
-    }
-
-    @Counted(name = "colorCounter", absolute = true, tags = {"color=red"}, reusable = true)
-    public void colorRed2() {
     }
 
 }
