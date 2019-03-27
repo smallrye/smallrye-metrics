@@ -20,9 +20,11 @@ import io.smallrye.metrics.exporters.Exporter;
 import io.smallrye.metrics.exporters.JsonExporter;
 import io.smallrye.metrics.exporters.JsonMetadataExporter;
 import io.smallrye.metrics.exporters.OpenMetricsExporter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -56,12 +58,10 @@ public class MetricsRequestHandler {
     }
 
     /**
-     *
-     * @param requestPath e.g. request.getRequestURI for an HttpServlet
-     * @param method http method (GET, POST, etc)
+     * @param requestPath   e.g. request.getRequestURI for an HttpServlet
+     * @param method        http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
-     * @param responder a method that returns a response to the caller. See {@link Responder}
-     *
+     * @param responder     a method that returns a response to the caller. See {@link Responder}
      * @throws IOException rethrows IOException if thrown by the responder
      *
      * You can find example usage in the tests, in io.smallrye.metrics.tck.rest.MetricsHttpServlet
@@ -90,13 +90,12 @@ public class MetricsRequestHandler {
                               String method,
                               Stream<String> acceptHeaders,
                               Responder responder) throws IOException {
-        Exporter exporter = obtainExporter(method, acceptHeaders);
+        Exporter exporter = obtainExporter(method, acceptHeaders, responder);
         if (exporter == null) {
-            responder.respondWith(406, "No exporter found for method " + method + " and media type", Collections.emptyMap());
             return;
         }
 
-        if(!requestPath.startsWith(contextRoot)) {
+        if (!requestPath.startsWith(contextRoot)) {
             responder.respondWith(500, "The expected context root of metrics is "
                     + contextRoot + ", but a request with a different path was routed to MetricsRequestHandler", Collections.emptyMap());
             return;
@@ -132,7 +131,7 @@ public class MetricsRequestHandler {
             if (metricValuesMap.keySet().stream().anyMatch(id -> id.getName().equals(metricName))) {
                 sb = exporter.exportMetricsByName(scope, metricName);
             } else {
-                responder.respondWith( 404, "Metric " + scopePath + " not found", Collections.emptyMap());
+                responder.respondWith(404, "Metric " + scopePath + " not found", Collections.emptyMap());
                 return;
             }
         } else {
@@ -140,13 +139,13 @@ public class MetricsRequestHandler {
 
             MetricRegistry.Type scope = getScopeFromPath(responder, scopePath);
             if (scope == null) {
-                responder.respondWith( 404, "Scope " + scopePath + " not found", Collections.emptyMap());
+                responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
                 return;
             }
 
             MetricRegistry reg = MetricRegistries.get(scope);
             if (reg.getMetadata().size() == 0) {
-                responder.respondWith( 204, "No data in scope " + scopePath, Collections.emptyMap());
+                responder.respondWith(204, "No data in scope " + scopePath, Collections.emptyMap());
                 return;
             }
 
@@ -177,18 +176,22 @@ public class MetricsRequestHandler {
     /**
      * Determine which exporter we want.
      *
-     * @param method http method (GET, POST, etc)
+     * @param method        http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
-     *
-     * @return An exporter instance or null in case no matching exporter existed.
+     * @param responder     the responder to use if an error occurs
+     * @return An exporter instance. If an exporter cannot be obtained for some reason, this method will use the responder
+     * to inform the user and will return null.
      */
-    private Exporter obtainExporter(String method, Stream<String> acceptHeaders) {
-        Exporter exporter = null;
-
-        if (acceptHeaders == null) {
+    private Exporter obtainExporter(String method, Stream<String> acceptHeaders, Responder responder) throws IOException {
+        if (!method.equals("GET") && !method.equals("OPTIONS")) {
+            responder.respondWith(405, "Only GET and OPTIONS methods are accepted.", Collections.emptyMap());
+            return null;
+        } else if (acceptHeaders == null) {
+            // use OpenMetrics exporter
             if (method.equals("GET")) {
-                exporter = new OpenMetricsExporter();
+                return new OpenMetricsExporter();
             } else {
+                responder.respondWith(405, "OPTIONS method is only allowed with application/json media type.", Collections.emptyMap());
                 return null;
             }
         } else {
@@ -200,29 +203,31 @@ public class MetricsRequestHandler {
                 if (mediaType.startsWith(APPLICATION_JSON)) {
 
                     if (method.equals("GET")) {
-                        exporter = new JsonExporter();
-                    } else if (method.equals("OPTIONS")) {
-                        exporter = new JsonMetadataExporter();
+                        return new JsonExporter();
                     } else {
-                        return null;
+                        return new JsonMetadataExporter();
                     }
                 } else {
                     // This is the fallback, but only for GET, as OpenMetrics does not support OPTIONS
                     if (method.equals("GET")) {
-                        exporter = new OpenMetricsExporter();
+                        return new OpenMetricsExporter();
                     } else {
+                        responder.respondWith(406, "OPTIONS method is only allowed with application/json media type.", Collections.emptyMap());
                         return null;
                     }
                 }
+            } else {
+                responder.respondWith(406, "Couldn't determine a suitable media type for the given Accept header.", Collections.emptyMap());
+                return null;
             }
         }
-        return exporter;
     }
 
     /**
      * Find the best matching media type (i.e. the one with highest prio.
      * If two have the same prio, and one is text/plain, then use this.
      * Return empty if no match can be found
+     *
      * @param acceptHeaders A steam of Accept: headers
      * @return best media type as string or null if no match
      */
@@ -246,12 +251,12 @@ public class MetricsRequestHandler {
                         }
                     }
                 }
-                WTTuple t = new WTTuple(prio,parts[0]);
+                WTTuple t = new WTTuple(prio, parts[0]);
                 tupleList.add(t);
             }
         });
 
-        WTTuple bestMatchTuple = new WTTuple(-1,null);
+        WTTuple bestMatchTuple = new WTTuple(-1, null);
 
         // Iterate over the list and find the best match
         for (WTTuple tuple : tupleList) {
@@ -268,7 +273,7 @@ public class MetricsRequestHandler {
         }
 
         // We found a match. Now if this is */* return text/plain. Otherwise return the type found
-        if (bestMatchTuple.weight >0 ) {
+        if (bestMatchTuple.weight > 0) {
             return bestMatchTuple.type.equals(STAR_STAR) ? Optional.of(TEXT_PLAIN) : Optional.of(bestMatchTuple.type);
         }
 
@@ -286,7 +291,6 @@ public class MetricsRequestHandler {
      */
     public interface Responder {
         /**
-         *
          * @param status http status code
          * @param message message to be returned
          * @param headers a map of http headers
