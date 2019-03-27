@@ -14,33 +14,18 @@
  * limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.normalscoped;
+package io.smallrye.metrics.test.normalscoped;
 
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
 
-public class NormalScopedBeanWithMetrics {
+public class NormalScopedBeanWithGauge {
 
-    @Counted(name = "counter", absolute = true)
-    public void countedMethod() {
-
-    }
-
-    @Metered(name = "meter", absolute = true)
-    public void meteredMethod() {
-
-    }
-
-    @Timed(name = "timer", absolute = true)
-    public void timedMethod() {
-
-    }
-
-    @ConcurrentGauge(name = "cgauge", absolute = true)
-    public void cGaugedMethod() {
-
+    @Gauge(name = "gauge", absolute = true, unit = MetricUnits.DAYS)
+    public Long gaugedMethod() {
+        return 42L;
     }
 
 }

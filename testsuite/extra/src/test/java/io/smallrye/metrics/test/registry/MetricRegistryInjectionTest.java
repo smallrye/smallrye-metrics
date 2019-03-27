@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wildfly.swarm.microprofile.metrics.registry;
+package io.smallrye.metrics.test.registry;
 
 import org.eclipse.microprofile.metrics.Counting;
 import org.eclipse.microprofile.metrics.Metric;
@@ -25,8 +25,8 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.swarm.microprofile.metrics.HelloService;
-import org.wildfly.swarm.microprofile.metrics.MetricsSummary;
+import io.smallrye.metrics.test.HelloService;
+import io.smallrye.metrics.test.MetricsSummary;
 
 import javax.inject.Inject;
 

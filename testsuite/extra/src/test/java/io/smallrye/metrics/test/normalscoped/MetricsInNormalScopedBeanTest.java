@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.normalscoped;
+package io.smallrye.metrics.test.normalscoped;
 
 import io.smallrye.metrics.MetricRegistries;
 import org.eclipse.microprofile.metrics.MetricFilter;

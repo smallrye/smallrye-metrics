@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.inject;
+package io.smallrye.metrics.test.reusability;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -29,35 +29,36 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
 /**
- * Test that it is possible to inject a metric using an annotated method parameter.
+ * Test that two metrics of the same name and differing tags can be created by annotations.
  */
 @RunWith(Arquillian.class)
-public class NonReusableMetricInjectionTest {
-
-    @Inject
-    private Instance<NonReusableMetricInjectionBean> bean;
+public class NonReusableMetricWithDifferingTagsTest {
 
     @Inject
     private MetricRegistry metricRegistry;
+
+    @Inject
+    private NonReusableMetricWithDifferingTagsBean bean;
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClass(NonReusableMetricInjectionBean.class);
+                .addClass(NonReusableMetricWithDifferingTagsBean.class);
     }
 
     @Test
     public void test() {
-        // force creating two instances of the bean
-        bean.get();
-        bean.get();
-        Assert.assertEquals(4, metricRegistry.getCounters().get(new MetricID("mycounter", new Tag("k", "v1"))).getCount());
-        Assert.assertEquals(6, metricRegistry.getCounters().get(new MetricID("mycounter", new Tag("k", "v2"))).getCount());
+        bean.colorBlue();
+        bean.colorBlue();
+        bean.colorRed();
+        Assert.assertEquals(2,
+                metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "blue"))).getCount());
+        Assert.assertEquals(1,
+                metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "red"))).getCount());
     }
 
 }

@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.reusability;
+package io.smallrye.metrics.test.reusability;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;

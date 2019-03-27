@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.reusability;
+package io.smallrye.metrics.test.reusability;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -35,29 +35,31 @@ import javax.inject.Inject;
  * Test that two metrics of the same name and differing tags can be created by annotations.
  */
 @RunWith(Arquillian.class)
-public class NonReusableMetricWithDifferingTagsTest {
+public class ReusableMetricWithDifferingTagsTest {
 
     @Inject
-    private MetricRegistry metricRegistry;
+    MetricRegistry metricRegistry;
 
     @Inject
-    private NonReusableMetricWithDifferingTagsBean bean;
+    private ReusableMetricWithDifferingTagsBean bean;
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClass(NonReusableMetricWithDifferingTagsBean.class);
+                .addClass(ReusableMetricWithDifferingTagsBean.class);
     }
 
     @Test
     public void test() {
-        bean.colorBlue();
-        bean.colorBlue();
-        bean.colorRed();
-        Assert.assertEquals(2,
+        bean.colorBlue1();
+        bean.colorBlue1();
+        bean.colorBlue2();
+        bean.colorRed1();
+        bean.colorRed2();
+        Assert.assertEquals(3,
                 metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "blue"))).getCount());
-        Assert.assertEquals(1,
+        Assert.assertEquals(2,
                 metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "red"))).getCount());
     }
 
