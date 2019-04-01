@@ -57,17 +57,17 @@ public class MeteredInterceptor {
     }
 
     @AroundConstruct
-    private Object meteredConstructor(InvocationContext context) throws Exception {
+    Object meteredConstructor(InvocationContext context) throws Exception {
         return meteredCallable(context, context.getConstructor());
     }
 
     @AroundInvoke
-    private Object meteredMethod(InvocationContext context) throws Exception {
+    Object meteredMethod(InvocationContext context) throws Exception {
         return meteredCallable(context, context.getMethod());
     }
 
     @AroundTimeout
-    private Object meteredTimeout(InvocationContext context) throws Exception {
+    Object meteredTimeout(InvocationContext context) throws Exception {
         return meteredCallable(context, context.getMethod());
     }
 

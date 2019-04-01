@@ -57,17 +57,17 @@ public class TimedInterceptor {
     }
 
     @AroundConstruct
-    private Object timedConstructor(InvocationContext context) throws Exception {
+    Object timedConstructor(InvocationContext context) throws Exception {
         return timedCallable(context, context.getConstructor());
     }
 
     @AroundInvoke
-    private Object timedMethod(InvocationContext context) throws Exception {
+    Object timedMethod(InvocationContext context) throws Exception {
         return timedCallable(context, context.getMethod());
     }
 
     @AroundTimeout
-    private Object timedTimeout(InvocationContext context) throws Exception {
+    Object timedTimeout(InvocationContext context) throws Exception {
         return timedCallable(context, context.getMethod());
     }
 

@@ -56,17 +56,17 @@ public class CountedInterceptor {
     }
 
     @AroundConstruct
-    private Object countedConstructor(InvocationContext context) throws Exception {
+    Object countedConstructor(InvocationContext context) throws Exception {
         return countedCallable(context, context.getConstructor());
     }
 
     @AroundInvoke
-    private Object countedMethod(InvocationContext context) throws Exception {
+    Object countedMethod(InvocationContext context) throws Exception {
         return countedCallable(context, context.getMethod());
     }
 
     @AroundTimeout
-    private Object countedTimeout(InvocationContext context) throws Exception {
+    Object countedTimeout(InvocationContext context) throws Exception {
         return countedCallable(context, context.getMethod());
     }
 
