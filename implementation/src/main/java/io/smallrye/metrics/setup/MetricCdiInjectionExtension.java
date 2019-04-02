@@ -20,6 +20,9 @@ package io.smallrye.metrics.setup;
 import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRequestHandler;
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.interceptors.CountedInterceptor;
 import io.smallrye.metrics.interceptors.MeteredInterceptor;
 import io.smallrye.metrics.interceptors.MetricName;
@@ -41,7 +44,6 @@ import org.jboss.logging.Logger;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedParameter;
@@ -170,6 +172,9 @@ public class MetricCdiInjectionExtension implements Extension {
         // Produce and register custom metrics
         MetricRegistry registry = getReference(manager, MetricRegistry.class);
         MetricName name = getReference(manager, MetricName.class);
+        BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
+        CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
+
         for (Map.Entry<Bean<?>, AnnotatedMember<?>> bean : metricsFromProducers.entrySet()) {
             if (// skip non @Default beans
                     !bean.getKey().getQualifiers().contains(DEFAULT)
@@ -203,10 +208,8 @@ public class MetricCdiInjectionExtension implements Extension {
             for (AnnotatedMember<?> method : entry.getValue()) {
                 MetricsMetadata.registerMetrics(registry,
                         new MetricResolver(),
-                        bean.getBeanClass(),
-                        method instanceof AnnotatedMethod<?> ?
-                                ((AnnotatedMethod<?>) method).getJavaMember() :
-                                ((AnnotatedConstructor<?>) method).getJavaMember());
+                        beanInfoAdapter.convert(bean.getBeanClass()),
+                        memberInfoAdapter.convert(method.getJavaMember()));
             }
         }
 
@@ -216,7 +219,7 @@ public class MetricCdiInjectionExtension implements Extension {
             for (Class<?> metricsInterface : metricsInterfaces) {
                 for (Method method : metricsInterface.getDeclaredMethods()) {
                     if (!method.isDefault() && !Modifier.isStatic(method.getModifiers())) {
-                        MetricsMetadata.registerMetrics(registry, resolver, metricsInterface, method);
+                        MetricsMetadata.registerMetrics(registry, resolver, beanInfoAdapter.convert(metricsInterface), memberInfoAdapter.convert(method));
                     }
                 }
             }

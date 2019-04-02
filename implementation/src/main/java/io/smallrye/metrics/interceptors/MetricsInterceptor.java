@@ -16,6 +16,11 @@
 
 package io.smallrye.metrics.interceptors;
 
+import io.smallrye.metrics.elementdesc.AnnotationInfo;
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.setup.MetricsMetadata;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -29,6 +34,7 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 @SuppressWarnings("unused")
@@ -57,13 +63,15 @@ public class MetricsInterceptor {
 
         Object target = context.proceed();
 
+        BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
+        MemberInfoAdapter<Member> memberInfoAdapter = new CDIMemberInfoAdapter();
         // Registers the gauges over the bean type hierarchy after the target is constructed as it is required for the gauge invocations
         do {
             // TODO: discover annotations declared on implemented interfaces
             for (Method method : type.getDeclaredMethods()) {
-                MetricResolver.Of<Gauge> gauge = resolver.gauge(type, method);
+                MetricResolver.Of<Gauge> gauge = resolver.gauge(beanInfoAdapter.convert(type), memberInfoAdapter.convert(method));
                 if (gauge.isPresent()) {
-                    Gauge g = gauge.metricAnnotation();
+                    AnnotationInfo g = gauge.metricAnnotation();
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(), g.displayName(), MetricType.GAUGE, false, g.tags());
                     registry.register(metadata, new ForwardingGauge(method, context.getTarget()));
                 }

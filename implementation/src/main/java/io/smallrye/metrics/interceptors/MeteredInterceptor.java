@@ -18,6 +18,9 @@
 package io.smallrye.metrics.interceptors;
 
 
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -69,7 +72,12 @@ public class MeteredInterceptor {
     }
 
     private <E extends Member & AnnotatedElement> Object meteredCallable(InvocationContext context, E element) throws Exception {
-        String name = resolver.metered(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element).metricName();
+        BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
+        CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
+        MetricResolver.Of<Metered> meterResolver = resolver.metered(
+                bean != null ? beanInfoAdapter.convert(bean.getBeanClass()) : beanInfoAdapter.convert(element.getDeclaringClass()),
+                memberInfoAdapter.convert(element));
+        String name = meterResolver.metricName();
         Meter meter = (Meter) registry.getMetrics().get(name);
         if (meter == null) {
             throw new IllegalStateException("No meter with name [" + name + "] found in registry [" + registry + "]");

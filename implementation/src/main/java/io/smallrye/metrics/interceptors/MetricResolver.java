@@ -16,6 +16,10 @@
 
 package io.smallrye.metrics.interceptors;
 
+import io.smallrye.metrics.elementdesc.AnnotationInfo;
+import io.smallrye.metrics.elementdesc.BeanInfo;
+import io.smallrye.metrics.elementdesc.MemberInfo;
+import io.smallrye.metrics.elementdesc.MemberType;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
@@ -24,10 +28,6 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.enterprise.inject.Vetoed;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
 import java.util.Collections;
 
 @Vetoed
@@ -37,23 +37,23 @@ public class MetricResolver {
     private MetricName metricName = new SeMetricName(Collections.emptySet());
 
 
-    public <E extends Member & AnnotatedElement> Of<Counted> counted(Class<?> topClass, E element) {
+    public Of<Counted> counted(BeanInfo topClass, MemberInfo element) {
         return resolverOf(topClass, element, Counted.class);
     }
 
-    public Of<Gauge> gauge(Class<?> topClass, Method method) {
+    public Of<Gauge> gauge(BeanInfo topClass, MemberInfo method) {
         return resolverOf(topClass, method, Gauge.class);
     }
 
-    public <E extends Member & AnnotatedElement> Of<Metered> metered(Class<?> topClass, E element) {
+    public Of<Metered> metered(BeanInfo topClass, MemberInfo element) {
         return resolverOf(topClass, element, Metered.class);
     }
 
-    public <E extends Member & AnnotatedElement> Of<Timed> timed(Class<?> bean, E element) {
+    public Of<Timed> timed(BeanInfo bean, MemberInfo element) {
         return resolverOf(bean, element, Timed.class);
     }
 
-    private <E extends Member & AnnotatedElement, T extends Annotation> Of<T> resolverOf(Class<?> bean, E element, Class<T> metric) {
+    private <T extends Annotation> Of<T> resolverOf(BeanInfo bean, MemberInfo element, Class<T> metric) {
         if (element.isAnnotationPresent(metric)) {
             return elementResolverOf(element, metric);
         } else {
@@ -61,16 +61,16 @@ public class MetricResolver {
         }
     }
 
-    private <E extends Member & AnnotatedElement, T extends Annotation> Of<T> elementResolverOf(E element, Class<T> metric) {
-        T annotation = element.getAnnotation(metric);
-        String name = metricName(element, metric, metricName(annotation), isMetricAbsolute(annotation));
+    private <T extends Annotation> Of<T> elementResolverOf(MemberInfo element, Class<T> metric) {
+        AnnotationInfo annotation = element.getAnnotation(metric);
+        String name = metricName(element, metric, annotation.name(), annotation.absolute());
         return new DoesHaveMetric<>(annotation, name);
     }
 
-    private <E extends Member & AnnotatedElement, T extends Annotation> Of<T> beanResolverOf(E element, Class<T> metric, Class<?> bean) {
+    private <T extends Annotation> Of<T> beanResolverOf(MemberInfo element, Class<T> metric, BeanInfo bean) {
         if (bean.isAnnotationPresent(metric)) {
-            T annotation = bean.getAnnotation(metric);
-            String name = metricName(bean, element, metric, metricName(annotation), isMetricAbsolute(annotation));
+            AnnotationInfo annotation = bean.getAnnotation(metric);
+            String name = metricName(bean, element, metric, annotation.name(), annotation.absolute());
             return new DoesHaveMetric<>(annotation, name);
         } else if (bean.getSuperclass() != null) {
             return beanResolverOf(element, metric, bean.getSuperclass());
@@ -79,18 +79,17 @@ public class MetricResolver {
     }
 
     // TODO: should be grouped with the metric name strategy
-    private <E extends Member & AnnotatedElement> String metricName(E element, Class<? extends Annotation> type, String name, boolean absolute) {
+    private String metricName(MemberInfo element, Class<? extends Annotation> type, String name, boolean absolute) {
         String metric = name.isEmpty() ? defaultName(element, type) : metricName.of(name);
-        return absolute ? metric : MetricRegistry.name(element.getDeclaringClass(), metric);
+        return absolute ? metric : MetricRegistry.name(element.getDeclaringClassName(), metric);
     }
 
-    private <E extends Member & AnnotatedElement> String metricName(Class<?> bean, E element, Class<? extends Annotation> type, String name, boolean absolute) {
+    private String metricName(BeanInfo bean, MemberInfo element, Class<? extends Annotation> type, String name, boolean absolute) {
         String metric = name.isEmpty() ? bean.getSimpleName() : metricName.of(name);
-        return absolute ? MetricRegistry.name(metric, defaultName(element, type)) : MetricRegistry.name(bean.getPackage().getName(), metric, defaultName(element, type));
+        return absolute ? MetricRegistry.name(metric, defaultName(element, type)) : MetricRegistry.name(bean.getPackageName(), metric, defaultName(element, type));
     }
 
-    private <E extends Member & AnnotatedElement> String defaultName(E element, Class<? extends Annotation> type) {
-
+    private String defaultName(MemberInfo element, Class<? extends Annotation> type) {
         return memberName(element);
     }
 
@@ -98,9 +97,9 @@ public class MetricResolver {
     // the simple name of the underlying member or constructor, the FQN is returned
     // for constructors. See JDK-6294399:
     // http://bugs.java.com/view_bug.do?bug_id=6294399
-    private String memberName(Member member) {
-        if (member instanceof Constructor) {
-            return member.getDeclaringClass().getSimpleName();
+    private String memberName(MemberInfo member) {
+        if (member.getMemberType() == MemberType.CONSTRUCTOR) {
+            return member.getDeclaringClassSimpleName();
         } else {
             return member.getName();
         }
@@ -146,16 +145,17 @@ public class MetricResolver {
 
         String metricName();
 
-        T metricAnnotation();
+        AnnotationInfo metricAnnotation();
+
     }
 
     private static final class DoesHaveMetric<T extends Annotation> implements Of<T> {
 
-        private final T annotation;
+        private final AnnotationInfo annotation;
 
         private final String name;
 
-        private DoesHaveMetric(T annotation, String name) {
+        private DoesHaveMetric(AnnotationInfo annotation, String name) {
             this.annotation = annotation;
             this.name = name;
         }
@@ -171,7 +171,7 @@ public class MetricResolver {
         }
 
         @Override
-        public T metricAnnotation() {
+        public AnnotationInfo metricAnnotation() {
             return annotation;
         }
     }
@@ -193,8 +193,9 @@ public class MetricResolver {
         }
 
         @Override
-        public T metricAnnotation() {
+        public AnnotationInfo metricAnnotation() {
             throw new UnsupportedOperationException();
         }
     }
+
 }

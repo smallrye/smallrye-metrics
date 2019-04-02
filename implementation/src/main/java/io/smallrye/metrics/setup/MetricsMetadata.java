@@ -18,6 +18,9 @@
 package io.smallrye.metrics.setup;
 
 import io.smallrye.metrics.OriginTrackedMetadata;
+import io.smallrye.metrics.elementdesc.AnnotationInfo;
+import io.smallrye.metrics.elementdesc.BeanInfo;
+import io.smallrye.metrics.elementdesc.MemberInfo;
 import io.smallrye.metrics.interceptors.MetricResolver;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -26,31 +29,28 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
-
 public class MetricsMetadata {
 
     private MetricsMetadata() {
     }
 
-    public static <E extends Member & AnnotatedElement> void registerMetrics(MetricRegistry registry, MetricResolver resolver, Class<?> bean, E element) {
+    public static void registerMetrics(MetricRegistry registry, MetricResolver resolver, BeanInfo bean, MemberInfo element) {
         MetricResolver.Of<Counted> counted = resolver.counted(bean, element);
         if (counted.isPresent()) {
-            Counted t = counted.metricAnnotation();
-            Metadata metadata = getMetadata(t, counted.metricName(), t.unit(), t.description(), t.displayName(), MetricType.COUNTER, t.reusable(), t.tags());
+            AnnotationInfo t = counted.metricAnnotation();
+            Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(), t.displayName(), MetricType.COUNTER, t.reusable(), t.tags());
             registry.counter(metadata);
         }
         MetricResolver.Of<Metered> metered = resolver.metered(bean, element);
         if (metered.isPresent()) {
-            Metered t = metered.metricAnnotation();
-            Metadata metadata = getMetadata(t, metered.metricName(), t.unit(), t.description(), t.displayName(), MetricType.METERED, t.reusable(), t.tags());
+            AnnotationInfo t = metered.metricAnnotation();
+            Metadata metadata = getMetadata(element, metered.metricName(), t.unit(), t.description(), t.displayName(), MetricType.METERED, t.reusable(), t.tags());
             registry.meter(metadata);
         }
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
         if (timed.isPresent()) {
-            Timed t = timed.metricAnnotation();
-            Metadata metadata = getMetadata(t, timed.metricName(), t.unit(), t.description(), t.displayName(), MetricType.TIMER, t.reusable(), t.tags());
+            AnnotationInfo t = timed.metricAnnotation();
+            Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(), t.displayName(), MetricType.TIMER, t.reusable(), t.tags());
             registry.timer(metadata);
         }
     }

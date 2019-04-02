@@ -18,6 +18,10 @@
 package io.smallrye.metrics.interceptors;
 
 
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -69,7 +73,12 @@ public class TimedInterceptor {
     }
 
     private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext context, E element) throws Exception {
-        String name = resolver.timed(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element).metricName();
+        BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
+        MemberInfoAdapter<Member> memberInfoAdapter = new CDIMemberInfoAdapter();
+        MetricResolver.Of<Timed> meterResolver = resolver.timed(
+                bean != null ? beanInfoAdapter.convert(bean.getBeanClass()) : beanInfoAdapter.convert(element.getDeclaringClass()),
+                memberInfoAdapter.convert(element));
+        String name = meterResolver.metricName();
         Timer timer = (Timer) registry.getMetrics().get(name);
         if (timer == null) {
             throw new IllegalStateException("No timer with name [" + name + "] found in registry [" + registry + "]");
