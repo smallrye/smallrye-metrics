@@ -18,11 +18,14 @@
 package io.smallrye.metrics.interceptors;
 
 
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import javax.annotation.Priority;
@@ -72,7 +75,11 @@ public class TimedInterceptor {
     }
 
     private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext context, E element) throws Exception {
-        MetricResolver.Of<Timed> meterResolver = resolver.timed(bean != null ? bean.getBeanClass() : element.getDeclaringClass(), element);
+        BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
+        MemberInfoAdapter<Member> memberInfoAdapter = new CDIMemberInfoAdapter();
+        MetricResolver.Of<Timed> meterResolver = resolver.timed(
+                bean != null ? beanInfoAdapter.convert(bean.getBeanClass()) : beanInfoAdapter.convert(element.getDeclaringClass()),
+                memberInfoAdapter.convert(element));
         String name = meterResolver.metricName();
         Tag[] tags = meterResolver.tags();
         MetricID metricID = new MetricID(name, tags);
