@@ -97,12 +97,15 @@ public class OpenMetricsExporterTest {
 
     @Test
     public void metricNameConversion() {
-        assertEquals("frag3", getOpenMetricsMetricName("FRAG3"));
-        assertEquals("unicast3", getOpenMetricsMetricName("UNICAST3"));
+        assertEquals("FRAG3", getOpenMetricsMetricName("FRAG3"));
+        assertEquals("UNICAST3", getOpenMetricsMetricName("UNICAST3"));
 
-        assertEquals("foo_bar", getOpenMetricsMetricName("FOO-BAR"));
-        assertEquals("foo_bar", getOpenMetricsMetricName("FooBAR"));
-        assertEquals("foo_bar", getOpenMetricsMetricName("FooBar"));
+        assertEquals("FOO_BAR", getOpenMetricsMetricName("FOO-BAR"));
+        assertEquals("FooBAR", getOpenMetricsMetricName("FooBAR"));
+        assertEquals("FooBar", getOpenMetricsMetricName("FooBar"));
+
+        assertEquals("a_a", getOpenMetricsMetricName("a__a"));
+        assertEquals("fooBar_blaBla", getOpenMetricsMetricName("fooBar_blaBla"));
     }
 
     @Test
@@ -261,7 +264,7 @@ public class OpenMetricsExporterTest {
         Metadata metadata = Metadata
                 .builder()
                 .withType(MetricType.HISTOGRAM)
-                .withName("myhisto")
+                .withName("MyHisto")
                 .withDescription("awesome")
                 .build();
         Tag blueTag = new Tag("color", "blue");
@@ -274,40 +277,40 @@ public class OpenMetricsExporterTest {
         histogram2.update(10);
         histogram2.update(12);
 
-        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "myhisto").toString();
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "MyHisto").toString();
         System.out.println(result);
 
-        assertHasValueLineExactlyOnce(result, "application_myhisto_min", "5.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_max", "9.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_mean", "7.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_stddev", "2.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_count", "2.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_5);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_75);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_95);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_98);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_99);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "9.0", blueTag, QUANTILE_0_999);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_min", "5.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_max", "9.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_mean", "7.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_stddev", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_count", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "9.0", blueTag, QUANTILE_0_5);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "9.0", blueTag, QUANTILE_0_75);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "9.0", blueTag, QUANTILE_0_95);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "9.0", blueTag, QUANTILE_0_98);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "9.0", blueTag, QUANTILE_0_99);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "9.0", blueTag, QUANTILE_0_999);
 
-        assertHasValueLineExactlyOnce(result, "application_myhisto_min", "10.0", greenTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_max", "12.0", greenTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_mean", "11.0", greenTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_stddev", "1.0", greenTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto_count", "2.0", greenTag);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_5);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_75);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_95);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_98);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_99);
-        assertHasValueLineExactlyOnce(result, "application_myhisto", "12.0", greenTag, QUANTILE_0_999);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_min", "10.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_max", "12.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_mean", "11.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_stddev", "1.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto_count", "2.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "12.0", greenTag, QUANTILE_0_5);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "12.0", greenTag, QUANTILE_0_75);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "12.0", greenTag, QUANTILE_0_95);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "12.0", greenTag, QUANTILE_0_98);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "12.0", greenTag, QUANTILE_0_99);
+        assertHasValueLineExactlyOnce(result, "application_MyHisto", "12.0", greenTag, QUANTILE_0_999);
 
-        assertHasTypeLineExactlyOnce(result, "application_myhisto_min", "gauge");
-        assertHasTypeLineExactlyOnce(result, "application_myhisto_max", "gauge");
-        assertHasTypeLineExactlyOnce(result, "application_myhisto_mean", "gauge");
-        assertHasTypeLineExactlyOnce(result, "application_myhisto_stddev", "gauge");
-        assertHasTypeLineExactlyOnce(result, "application_myhisto", "summary");
+        assertHasTypeLineExactlyOnce(result, "application_MyHisto_min", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_MyHisto_max", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_MyHisto_mean", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_MyHisto_stddev", "gauge");
+        assertHasTypeLineExactlyOnce(result, "application_MyHisto", "summary");
 
-        assertHasHelpLineExactlyOnce(result, "application_myhisto", "awesome");
+        assertHasHelpLineExactlyOnce(result, "application_MyHisto", "awesome");
     }
 
     @Test
