@@ -433,21 +433,10 @@ public class OpenMetricsExporter implements Exporter {
 
     static String getOpenMetricsMetricName(String name) {
         String out = name.replaceAll("[^\\w]+",USCORE);
-        out = decamelize(out);
         out = out.replace("__", USCORE);
         out = out.replace(":_", ":");
 
         return out;
-    }
-
-    private static String decamelize(String in) {
-        Matcher m = SNAKE_CASE_PATTERN.matcher(in);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            m.appendReplacement(sb, USCORE + m.group().toLowerCase());
-        }
-        m.appendTail(sb);
-        return sb.toString().toLowerCase();
     }
 
     public static String quoteHelpText(String value) {
