@@ -57,7 +57,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
     private static String NONE = "NONE";
 
-    private Map<String, Metadata> metadataMap = new HashMap<>();
+    private Map<String, Metadata> metadataMap = new ConcurrentHashMap<>();
 
     private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
 
