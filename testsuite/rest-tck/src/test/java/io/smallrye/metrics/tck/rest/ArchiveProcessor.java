@@ -43,7 +43,7 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
                 "io.smallrye:smallrye-config",
                 "io.smallrye:smallrye-metrics",
                 "io.smallrye:smallrye-metrics-testsuite-common",
-                "org.jboss.weld.servlet:weld-servlet"
+                "org.jboss.weld.servlet:weld-servlet-core"
         };
 
         File[] dependencies = Maven.resolver().loadPomFromFile(new File("pom.xml")).resolve(deps).withTransitivity().asFile();

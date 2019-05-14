@@ -54,6 +54,11 @@ import java.util.Set;
     }
 
     @Override
+    public <T extends Annotation> Set<T> getAnnotations(Class<T> annotationType) {
+        return decorated.getAnnotations(annotationType);
+    }
+
+    @Override
     public Set<Annotation> getAnnotations() {
         Set<Annotation> annotations = new HashSet<>(this.annotations);
         annotations.addAll(decorated.getAnnotations());
