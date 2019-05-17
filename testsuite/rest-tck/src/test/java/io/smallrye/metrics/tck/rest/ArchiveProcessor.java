@@ -41,7 +41,7 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
         war.addAsWebInfResource("WEB-INF/jboss-web.xml", "jboss-web.xml");
         String[] deps = {
                 "io.smallrye:smallrye-config",
-                "io.smallrye:smallrye-metrics",
+                "io.smallrye:smallrye-metrics-2.0",
                 "io.smallrye:smallrye-metrics-testsuite-common",
                 "org.jboss.weld.servlet:weld-servlet-core"
         };
