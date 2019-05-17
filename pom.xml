@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>smallrye-metrics-parent-2.0</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye: MicroProfile Metrics Parent</name>
@@ -47,7 +47,7 @@
     <connection>scm:git:git@github.com:smallrye/smallrye-metrics.git</connection>
     <developerConnection>scm:git:git@github.com:smallrye/smallrye-metrics.git</developerConnection>
     <url>https://github.com/smallrye/smallrye-metrics/</url>
-    <tag>smallrye-metrics-2.0-1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <modules>
