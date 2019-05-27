@@ -345,9 +345,9 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     throw new IllegalStateException("Must not happen");
             }
             if(metadata instanceof OriginAndMetadata) {
-                log.infof("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata)metadata).getOrigin());
+                log.debugf("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata)metadata).getOrigin());
             } else {
-                log.infof("Register metric [metricId: %s, type: %s]", metricID, type);
+                log.debugf("Register metric [metricId: %s, type: %s]", metricID, type);
             }
 
             register(metadata, m, metricID.getTagsAsList().toArray(new Tag[]{}));
@@ -397,7 +397,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public boolean remove(MetricID metricID) {
         if (metricMap.containsKey(metricID)) {
-            log.infof("Remove metric with [id: %s]", metricID);
+            log.debugf("Remove metric with [id: %s]", metricID);
             metricMap.remove(metricID);
             // remove the metadata as well if this is the last metric of this name to be removed
             if(metricMap.keySet().stream().noneMatch(id -> id.getName().equals(metricID.getName()))) {
