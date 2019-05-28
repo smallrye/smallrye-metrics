@@ -19,7 +19,7 @@ package io.smallrye.metrics.elementdesc;
 
 import java.lang.annotation.Annotation;
 
-public interface MemberInfo {  // TODO this better be abstract class (and the other Infos as well) ???
+public interface MemberInfo {
 
     MemberType getMemberType();
 
