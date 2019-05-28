@@ -154,6 +154,12 @@ public class CDIAnnotationInfo implements AnnotationInfo {
     }
 
     @Override
+    public String annotationName() {
+        return annotation.annotationType().getName();
+    }
+
+
+    @Override
     public String toString() {
         return annotation.toString();
     }

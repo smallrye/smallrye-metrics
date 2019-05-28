@@ -33,4 +33,6 @@ public interface AnnotationInfo {
 
     boolean reusable();
 
+    String annotationName();
+
 }
