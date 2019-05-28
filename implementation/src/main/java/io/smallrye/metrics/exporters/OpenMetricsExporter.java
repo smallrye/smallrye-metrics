@@ -178,8 +178,8 @@ public class OpenMetricsExporter implements Exporter {
                         break;
                     }
                     case COUNTER:
-                        String suffix = md.getName().endsWith("_total") ? null : "_total";
                         key = getOpenMetricsMetricName(key);
+                        String suffix = key.endsWith("_total") ? null : "_total";
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
                         createSimpleValueLine(metricBuf, scope, key, md, metric, suffix, tagsMap);
