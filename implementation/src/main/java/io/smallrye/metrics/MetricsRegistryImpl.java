@@ -383,7 +383,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public boolean remove(String metricName) {
-        log.infof("Removing metrics with [name: %s]", metricName);
+        log.debugf("Removing metrics with [name: %s]", metricName);
         // iterate over all metricID's in the map and remove the ones with this name
         for (MetricID metricID : metricMap.keySet()) {
             if(metricID.getName().equals(metricName)) {
