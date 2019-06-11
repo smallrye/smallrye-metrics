@@ -170,7 +170,7 @@ public class JmxWorker {
         }
         entries.removeAll(toBeRemoved);
         entries.addAll(result);
-        log.info("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
+        log.debug("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
     }
 
     private Map<String,String> findKeyForValueToBeReplaced(ObjectName objectName) {
