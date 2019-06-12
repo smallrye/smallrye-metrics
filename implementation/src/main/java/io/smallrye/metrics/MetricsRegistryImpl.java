@@ -55,24 +55,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MetricsRegistryImpl extends MetricRegistry {
 
     private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
-    private static String NONE = "NONE";
 
-    private Map<String, Metadata> metadataMap = new ConcurrentHashMap<>();
+    private Map<String, Metadata> metadataMap = new HashMap<>();
 
+    // Only this map needs to be concurrent because it is being iterated in getMetrics which is not synchronized.
+    // Other maps are accessed only in synchronized methods.
     private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
 
     /* this is for storing origins. until 2.0, origins were stored using OriginTrackedMetadata instead of regular metadata, but
         since 2.0 we have to keep track of the origin per each MetricID separately, while Metadata itself
         is only tracked per Metric Name, that's why we need two maps for that now.
      */
-    private Map<MetricID, Object> originMap = new ConcurrentHashMap<>();
+    private Map<MetricID, Object> originMap = new HashMap<>();
 
     public MetricsRegistryImpl() {
 
     }
 
     @Override
-    public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
 
         final MetricID metricID = new MetricID(name);
         if (metricMap.keySet().contains(metricID)) {
@@ -109,7 +110,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
         String name = metadata.getName();
         if (name == null) {
             throw new IllegalArgumentException("Metric name must not be null");
@@ -135,27 +136,28 @@ public class MetricsRegistryImpl extends MetricRegistry {
                - if no metadata was specified for this registration, create a reasonable default
                - if metadata was specified for this registration, use it
              */
-        if(existingMetadata != null) {
-            if(metadata instanceof UnspecifiedMetadata) {
-                if(!metadata.getType().equals(existingMetadata.getType())) {
-                    throw new IllegalArgumentException("There is an existing metric with name " + name + " but of different type (" + existingMetadata.getType()+")");
+        if (existingMetadata != null) {
+            if (metadata instanceof UnspecifiedMetadata) {
+                if (!metadata.getType().equals(existingMetadata.getType())) {
+                    throw new IllegalArgumentException("There is an existing metric with name " + name + " but of different type (" + existingMetadata.getType() + ")");
                 }
                 metricMap.put(metricID, metric);
             } else {
                 verifyMetadataEquality(metadata, existingMetadata);
                 metricMap.put(metricID, metric);
-                if(metadata instanceof OriginAndMetadata)
-                    originMap.put(metricID, ((OriginAndMetadata)metadata).getOrigin());
+                if (metadata instanceof OriginAndMetadata) {
+                    originMap.put(metricID, ((OriginAndMetadata) metadata).getOrigin());
+                }
             }
         } else {
-            if(metadata instanceof UnspecifiedMetadata) {
-                Metadata realMetadata = ((UnspecifiedMetadata)metadata).convertToRealMetadata();
+            if (metadata instanceof UnspecifiedMetadata) {
+                Metadata realMetadata = ((UnspecifiedMetadata) metadata).convertToRealMetadata();
                 metadataMap.put(name, realMetadata);
                 metricMap.put(metricID, metric);
             } else {
-                if(metadata instanceof OriginAndMetadata) {
-                    originMap.put(metricID, ((OriginAndMetadata)metadata).getOrigin());
-                    metadataMap.put(name, ((OriginAndMetadata)metadata).getMetadata());
+                if (metadata instanceof OriginAndMetadata) {
+                    originMap.put(metricID, ((OriginAndMetadata) metadata).getOrigin());
+                    metadataMap.put(name, ((OriginAndMetadata) metadata).getMetadata());
                 } else {
                     metadataMap.put(name, metadata);
                 }
@@ -175,7 +177,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
         }
 
         // unspecified means that someone is programmatically obtaining a metric instance without specifying the metadata, so we check only the name and type
-        if(!(newMetadata instanceof UnspecifiedMetadata)) {
+        if (!(newMetadata instanceof UnspecifiedMetadata)) {
             if (existingMetadata.isReusable() != newMetadata.isReusable()) {
                 throw new IllegalStateException("Reusable flag differs from previous usage");
             }
@@ -308,7 +310,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
         return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.TIMER));
     }
 
-    private <T extends Metric> T get(MetricID metricID, Metadata metadata) {
+    private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata) {
         String name = metadata.getName();
         MetricType type = metadata.getTypeRaw();
         log.debugf("Get metric [id: %s, type: %s]", metricID, type);
@@ -344,8 +346,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 default:
                     throw new IllegalStateException("Must not happen");
             }
-            if(metadata instanceof OriginAndMetadata) {
-                log.debugf("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata)metadata).getOrigin());
+            if (metadata instanceof OriginAndMetadata) {
+                log.debugf("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata) metadata).getOrigin());
             } else {
                 log.debugf("Register metric [metricId: %s, type: %s]", metricID, type);
             }
@@ -354,7 +356,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
         } else if (!previousMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " is of type "
                     + previousMetadata.getType() + ", expected " + metadata.getType());
-        } else if ( metadata instanceof OriginAndMetadata &&
+        } else if (metadata instanceof OriginAndMetadata &&
                 originMap.get(metricID) != null &&
                 areCompatibleOrigins(originMap.get(metricID), ((OriginAndMetadata) metadata).getOrigin())) {
             // stop caring, same thing.
@@ -386,7 +388,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
         log.debugf("Removing metrics with [name: %s]", metricName);
         // iterate over all metricID's in the map and remove the ones with this name
         for (MetricID metricID : metricMap.keySet()) {
-            if(metricID.getName().equals(metricName)) {
+            if (metricID.getName().equals(metricName)) {
                 metricMap.remove(metricID);
             }
         }
@@ -395,12 +397,12 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public boolean remove(MetricID metricID) {
+    public synchronized boolean remove(MetricID metricID) {
         if (metricMap.containsKey(metricID)) {
             log.debugf("Remove metric with [id: %s]", metricID);
             metricMap.remove(metricID);
             // remove the metadata as well if this is the last metric of this name to be removed
-            if(metricMap.keySet().stream().noneMatch(id -> id.getName().equals(metricID.getName()))) {
+            if (metricMap.keySet().stream().noneMatch(id -> id.getName().equals(metricID.getName()))) {
                 log.debugf("Remove metadata for [name: %s]", metricID.getName());
                 metadataMap.remove(metricID.getName());
             }
@@ -504,10 +506,10 @@ public class MetricsRegistryImpl extends MetricRegistry {
         // if the metadata does not specify a type, we add it here
         // if the metadata specifies a type, we check that it's the correct one
         // (for example, someone might have called registry.counter(metadata) where metadata.type="gauge")
-        if(metadata.getTypeRaw() == null || metadata.getTypeRaw() == MetricType.INVALID)  {
+        if (metadata.getTypeRaw() == null || metadata.getTypeRaw() == MetricType.INVALID) {
             return Metadata.builder(metadata).withType(metricType).build();
         } else {
-            if(metadata.getTypeRaw() != metricType) {
+            if (metadata.getTypeRaw() != metricType) {
                 throw new IllegalArgumentException("Attempting to register a " + metricType + ", but the passed metadata" +
                         " contains type=" + metadata.getType());
             } else {
@@ -520,15 +522,32 @@ public class MetricsRegistryImpl extends MetricRegistry {
         SortedMap<MetricID, T> out = new TreeMap<>();
 
         for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
-            Metadata metadata = metadataMap.get(entry.getKey().getName());
-            if (metadata.getTypeRaw() == type) {
+            if (isSameType(entry.getValue(), type)) {
                 if (filter.matches(entry.getKey(), entry.getValue())) {
                     out.put(entry.getKey(), (T) entry.getValue());
                 }
             }
         }
-
         return out;
+    }
+
+    private boolean isSameType(Metric metricInstance, MetricType type) {
+        switch(type) {
+            case CONCURRENT_GAUGE:
+                return metricInstance instanceof ConcurrentGauge;
+            case GAUGE:
+                return metricInstance instanceof Gauge;
+            case HISTOGRAM:
+                return metricInstance instanceof Histogram;
+            case TIMER:
+                return metricInstance instanceof Timer;
+            case METERED:
+                return metricInstance instanceof Meter;
+            case COUNTER:
+                return metricInstance instanceof Counter;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     @Override
