@@ -59,8 +59,6 @@ import io.smallrye.metrics.mbean.MGaugeImpl;
 
 public class OpenMetricsExporterTest {
 
-    private static final String LINE_SEPARATOR = "\n";
-
     private Tag QUANTILE_0_5 = new Tag("quantile", "0.5");
     private Tag QUANTILE_0_75 = new Tag("quantile", "0.75");
     private Tag QUANTILE_0_95 = new Tag("quantile", "0.95");
@@ -85,7 +83,7 @@ public class OpenMetricsExporterTest {
         long actualUptime /* in ms */ = ManagementFactory.getRuntimeMXBean().getUptime();
         double actualUptimeInSeconds = actualUptime / 1000.0;
 
-        StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.BASE, new MetricID("jvm.uptime"));
+        StringBuilder out = exporter.exportOneMetric(MetricRegistry.Type.BASE, new MetricID("jvm.uptime"));
         assertNotNull(out);
 
         double valueFromOpenMetrics = -1;

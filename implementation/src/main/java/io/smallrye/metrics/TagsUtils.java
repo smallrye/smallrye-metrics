@@ -21,7 +21,9 @@ import org.eclipse.microprofile.metrics.Tag;
 
 public class TagsUtils {
 
-    private static final String MALFORMED_TAGS = "Malformed list of tags";
+    private TagsUtils() {
+        throw new UnsupportedOperationException("Don't construct me");
+    }
 
     public static Tag parseTag(String kvString) {
         if (kvString == null || kvString.isEmpty() || !kvString.contains("=")) {

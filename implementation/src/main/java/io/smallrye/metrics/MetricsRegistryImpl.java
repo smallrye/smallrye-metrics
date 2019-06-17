@@ -71,12 +71,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
      */
     private Map<MetricID, Object> originMap = new HashMap<>();
 
-    public MetricsRegistryImpl() {
-
-    }
-
     @Override
-    public synchronized <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(String name, T metric) {
 
         final MetricID metricID = new MetricID(name);
         if (metricMap.keySet().contains(metricID)) {
@@ -109,13 +105,12 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
+    public <T extends Metric> T register(Metadata metadata, T metric) {
         return register(metadata, metric, (Tag[]) null);
     }
 
     @Override
-    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags)
-            throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) {
         String name = metadata.getName();
         if (name == null) {
             throw new IllegalArgumentException("Metric name must not be null");

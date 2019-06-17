@@ -18,8 +18,8 @@
 package io.smallrye.metrics.exporters;
 
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ public class JsonMetadataExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneScope(MetricRegistry.Type scope) {
+    public StringBuilder exportOneScope(MetricRegistry.Type scope) {
         MetricRegistry registry = MetricRegistries.get(scope);
         if (registry == null) {
             return null;
@@ -59,19 +59,19 @@ public class JsonMetadataExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportAllScopes() {
+    public StringBuilder exportAllScopes() {
         JsonObject obj = rootJSON();
         return stringify(obj);
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
+    public StringBuilder exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
         throw new UnsupportedOperationException(
                 "Exporting metadata of one metricID is currently not implemented because it is not possible to perform such export according to specification.");
     }
 
     @Override
-    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
+    public StringBuilder exportMetricsByName(MetricRegistry.Type scope, String name) {
         MetricRegistry registry = MetricRegistries.get(scope);
         if (registry == null) {
             return null;
@@ -89,18 +89,14 @@ public class JsonMetadataExporter implements Exporter {
 
     }
 
-    private static final Map<String, ?> JSON_CONFIG = new HashMap<String, Object>() {
-        {
-            put(JsonGenerator.PRETTY_PRINTING, true);
-        }
-    };
+    private static final Map<String, ?> JSON_CONFIG = Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true);
 
-    StringBuffer stringify(JsonObject obj) {
+    StringBuilder stringify(JsonObject obj) {
         StringWriter out = new StringWriter();
         try (JsonWriter writer = Json.createWriterFactory(JSON_CONFIG).createWriter(out)) {
             writer.writeObject(obj);
         }
-        return out.getBuffer();
+        return new StringBuilder(out.toString());
     }
 
     private JsonObject rootJSON() {

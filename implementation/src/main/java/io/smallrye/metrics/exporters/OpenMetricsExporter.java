@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.Config;
@@ -55,7 +54,6 @@ public class OpenMetricsExporter implements Exporter {
 
     // This allows to suppress the (noisy) # HELP line
     private static final String MICROPROFILE_METRICS_OMIT_HELP_LINE = "microprofile.metrics.omitHelpLine";
-    private static final Pattern SNAKE_CASE_PATTERN = Pattern.compile("(?<=[a-z])[A-Z]");
 
     private static final String LF = "\n";
     private static final String GAUGE = "gauge";
@@ -80,17 +78,17 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneScope(MetricRegistry.Type scope) {
+    public StringBuilder exportOneScope(MetricRegistry.Type scope) {
         alreadyExportedNames.set(new HashSet<>());
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         getEntriesForScope(scope, sb);
         alreadyExportedNames.set(null);
         return sb;
     }
 
     @Override
-    public StringBuffer exportAllScopes() {
-        StringBuffer sb = new StringBuffer();
+    public StringBuilder exportAllScopes() {
+        StringBuilder sb = new StringBuilder();
 
         for (MetricRegistry.Type scope : MetricRegistry.Type.values()) {
             alreadyExportedNames.set(new HashSet<>());
@@ -102,7 +100,7 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
+    public StringBuilder exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
         alreadyExportedNames.set(new HashSet<>());
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
@@ -112,14 +110,14 @@ public class OpenMetricsExporter implements Exporter {
         Map<MetricID, Metric> outMap = new HashMap<>(1);
         outMap.put(metricID, m);
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         exposeEntries(scope, sb, registry, outMap);
         alreadyExportedNames.set(null);
         return sb;
     }
 
     @Override
-    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
+    public StringBuilder exportMetricsByName(MetricRegistry.Type scope, String name) {
         alreadyExportedNames.set(new HashSet<>());
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricsToExport = registry.getMetrics()
@@ -128,7 +126,7 @@ public class OpenMetricsExporter implements Exporter {
                 .filter(entry -> entry.getKey().getName().equals(name))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         exposeEntries(scope, sb, registry, metricsToExport);
         alreadyExportedNames.set(null);
         return sb;
@@ -139,14 +137,14 @@ public class OpenMetricsExporter implements Exporter {
         return "text/plain";
     }
 
-    private void getEntriesForScope(MetricRegistry.Type scope, StringBuffer sb) {
+    private void getEntriesForScope(MetricRegistry.Type scope, StringBuilder sb) {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
 
         exposeEntries(scope, sb, registry, metricMap);
     }
 
-    private void exposeEntries(MetricRegistry.Type scope, StringBuffer sb, MetricRegistry registry,
+    private void exposeEntries(MetricRegistry.Type scope, StringBuilder sb, MetricRegistry registry,
             Map<MetricID, Metric> metricMap) {
         for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
             String key = entry.getKey().getName();
@@ -158,7 +156,7 @@ public class OpenMetricsExporter implements Exporter {
 
             Metric metric = entry.getValue();
             final Map<String, String> tagsMap = entry.getKey().getTags();
-            StringBuffer metricBuf = new StringBuffer();
+            StringBuilder metricBuf = new StringBuilder();
 
             try {
                 switch (md.getTypeRaw()) {
@@ -208,14 +206,14 @@ public class OpenMetricsExporter implements Exporter {
         }
     }
 
-    private void writeTimerValues(StringBuffer sb, MetricRegistry.Type scope, Timer timer, Metadata md,
+    private void writeTimerValues(StringBuilder sb, MetricRegistry.Type scope, Timer timer, Metadata md,
             Map<String, String> tags) {
 
         String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
         if (unit.equals(NONE))
             unit = "seconds";
 
-        String theUnit = unit.equals(NONE) ? "" : USCORE + unit;
+        String theUnit = USCORE + unit;
 
         writeMeterRateValues(sb, scope, timer, md, tags);
         Snapshot snapshot = timer.getSnapshot();
@@ -228,7 +226,7 @@ public class OpenMetricsExporter implements Exporter {
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
 
-    private void writeConcurrentGaugeValues(StringBuffer sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge,
+    private void writeConcurrentGaugeValues(StringBuilder sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge,
             Metadata md, String key, Map<String, String> tags) {
         key = getOpenMetricsMetricName(key);
         writeHelpLine(sb, scope, key, md, "_current");
@@ -237,7 +235,7 @@ public class OpenMetricsExporter implements Exporter {
         writeTypeAndValue(sb, scope, "_min", concurrentGauge.getMin(), GAUGE, md, false, tags);
     }
 
-    private void writeHistogramValues(StringBuffer sb, MetricRegistry.Type scope, Histogram histogram, Metadata md,
+    private void writeHistogramValues(StringBuilder sb, MetricRegistry.Type scope, Histogram histogram, Metadata md,
             Map<String, String> tags) {
 
         Snapshot snapshot = histogram.getSnapshot();
@@ -253,7 +251,7 @@ public class OpenMetricsExporter implements Exporter {
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
 
-    private void writeSnapshotBasics(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit,
+    private void writeSnapshotBasics(StringBuilder sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit,
             boolean performScaling, Map<String, String> tags) {
 
         writeTypeAndValue(sb, scope, "_min" + unit, snapshot.getMin(), GAUGE, md, performScaling, tags);
@@ -262,7 +260,8 @@ public class OpenMetricsExporter implements Exporter {
         writeTypeAndValue(sb, scope, "_stddev" + unit, snapshot.getStdDev(), GAUGE, md, performScaling, tags);
     }
 
-    private void writeSnapshotQuantiles(StringBuffer sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot, String unit,
+    private void writeSnapshotQuantiles(StringBuilder sb, MetricRegistry.Type scope, Metadata md, Snapshot snapshot,
+            String unit,
             boolean performScaling, Map<String, String> tags) {
         Map<String, String> map = copyMap(tags);
         map.put(QUANTILE, "0.5");
@@ -279,14 +278,14 @@ public class OpenMetricsExporter implements Exporter {
         writeValueLine(sb, scope, unit, snapshot.get999thPercentile(), md, map, performScaling);
     }
 
-    private void writeMeterValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md,
+    private void writeMeterValues(StringBuilder sb, MetricRegistry.Type scope, Metered metric, Metadata md,
             Map<String, String> tags) {
         writeHelpLine(sb, scope, md.getName(), md, "_total");
         writeTypeAndValue(sb, scope, "_total", metric.getCount(), COUNTER, md, false, tags);
         writeMeterRateValues(sb, scope, metric, md, tags);
     }
 
-    private void writeMeterRateValues(StringBuffer sb, MetricRegistry.Type scope, Metered metric, Metadata md,
+    private void writeMeterRateValues(StringBuilder sb, MetricRegistry.Type scope, Metered metric, Metadata md,
             Map<String, String> tags) {
         writeTypeAndValue(sb, scope, "_rate_per_second", metric.getMeanRate(), GAUGE, md, false, tags);
         writeTypeAndValue(sb, scope, "_one_min_rate_per_second", metric.getOneMinuteRate(), GAUGE, md, false, tags);
@@ -294,23 +293,23 @@ public class OpenMetricsExporter implements Exporter {
         writeTypeAndValue(sb, scope, "_fifteen_min_rate_per_second", metric.getFifteenMinuteRate(), GAUGE, md, false, tags);
     }
 
-    private void writeTypeAndValue(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, String type,
+    private void writeTypeAndValue(StringBuilder sb, MetricRegistry.Type scope, String suffix, double valueRaw, String type,
             Metadata md, boolean performScaling, Map<String, String> tags) {
         String key = md.getName();
         writeTypeLine(sb, scope, key, md, suffix, type);
         writeValueLine(sb, scope, suffix, valueRaw, md, tags, performScaling);
     }
 
-    private void writeValueLine(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md) {
+    private void writeValueLine(StringBuilder sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md) {
         writeValueLine(sb, scope, suffix, valueRaw, md, null);
     }
 
-    private void writeValueLine(StringBuffer sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md,
+    private void writeValueLine(StringBuilder sb, MetricRegistry.Type scope, String suffix, double valueRaw, Metadata md,
             Map<String, String> tags) {
         writeValueLine(sb, scope, suffix, valueRaw, md, tags, true);
     }
 
-    private void writeValueLine(StringBuffer sb,
+    private void writeValueLine(StringBuilder sb,
             MetricRegistry.Type scope,
             String suffix,
             double valueRaw,
@@ -343,7 +342,7 @@ public class OpenMetricsExporter implements Exporter {
 
     }
 
-    private void addTags(StringBuffer sb, Map<String, String> tags) {
+    private void addTags(StringBuilder sb, Map<String, String> tags) {
         if (tags == null || tags.isEmpty()) {
             return;
         } else {
@@ -364,13 +363,13 @@ public class OpenMetricsExporter implements Exporter {
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private void fillBaseName(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {
+    private void fillBaseName(StringBuilder sb, MetricRegistry.Type scope, String key, String suffix) {
         sb.append(scope.getName().toLowerCase()).append("_").append(key);
         if (suffix != null)
             sb.append(suffix);
     }
 
-    private void writeHelpLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
+    private void writeHelpLine(StringBuilder sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
         // Only write this line if we actually have a description in metadata
         if (writeHelpLine && !md.getDescription().orElse("").isEmpty() && !alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# HELP ");
@@ -381,7 +380,7 @@ public class OpenMetricsExporter implements Exporter {
 
     }
 
-    private void writeTypeLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, String suffix,
+    private void writeTypeLine(StringBuilder sb, MetricRegistry.Type scope, String key, Metadata md, String suffix,
             String typeOverride) {
         if (!alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# TYPE ");
@@ -399,7 +398,7 @@ public class OpenMetricsExporter implements Exporter {
         }
     }
 
-    private void getNameWithScopeAndSuffix(StringBuffer sb, MetricRegistry.Type scope, String key, String suffix) {
+    private void getNameWithScopeAndSuffix(StringBuilder sb, MetricRegistry.Type scope, String key, String suffix) {
         sb.append(scope.getName().toLowerCase());
         sb.append('_').append(getOpenMetricsMetricName(key));
         if (suffix != null) {
@@ -408,7 +407,7 @@ public class OpenMetricsExporter implements Exporter {
         sb.append(SPACE);
     }
 
-    private void createSimpleValueLine(StringBuffer sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric,
+    private void createSimpleValueLine(StringBuilder sb, MetricRegistry.Type scope, String key, Metadata md, Metric metric,
             String suffix, Map<String, String> tags) {
 
         // value line

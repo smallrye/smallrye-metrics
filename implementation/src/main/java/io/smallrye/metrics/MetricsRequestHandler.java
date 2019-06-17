@@ -110,7 +110,7 @@ public class MetricsRequestHandler {
             scopePath = scopePath.substring(0, scopePath.length() - 1);
         }
 
-        StringBuffer sb;
+        StringBuilder sb;
         if (scopePath.isEmpty()) {
             // All metrics
             sb = exporter.exportAllScopes();

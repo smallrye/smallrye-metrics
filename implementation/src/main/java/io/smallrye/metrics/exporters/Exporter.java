@@ -25,19 +25,19 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  */
 public interface Exporter {
 
-    StringBuffer exportOneScope(MetricRegistry.Type scope);
+    StringBuilder exportOneScope(MetricRegistry.Type scope);
 
-    StringBuffer exportAllScopes();
+    StringBuilder exportAllScopes();
 
     String getContentType();
 
     /**
      * Exports just one metric obtained from a scope using its MetricID.
      */
-    StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID);
+    StringBuilder exportOneMetric(MetricRegistry.Type scope, MetricID metricID);
 
     /**
      * Exports all metrics with the given name inside the given scope.
      */
-    StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name);
+    StringBuilder exportMetricsByName(MetricRegistry.Type scope, String name);
 }
