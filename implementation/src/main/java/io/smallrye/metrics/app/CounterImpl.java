@@ -31,9 +31,9 @@
  */
 package io.smallrye.metrics.app;
 
-import org.eclipse.microprofile.metrics.Counter;
-
 import java.util.concurrent.atomic.LongAdder;
+
+import org.eclipse.microprofile.metrics.Counter;
 
 /**
  * @author hrupp

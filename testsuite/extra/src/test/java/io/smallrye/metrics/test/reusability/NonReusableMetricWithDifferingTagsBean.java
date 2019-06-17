@@ -21,11 +21,11 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 
 public class NonReusableMetricWithDifferingTagsBean {
 
-    @Counted(name = "colorCounter", absolute = true, tags = {"color=blue"})
+    @Counted(name = "colorCounter", absolute = true, tags = { "color=blue" })
     public void colorBlue() {
     }
 
-    @Counted(name = "colorCounter", absolute = true, tags = {"color=red"})
+    @Counted(name = "colorCounter", absolute = true, tags = { "color=red" })
     public void colorRed() {
     }
 

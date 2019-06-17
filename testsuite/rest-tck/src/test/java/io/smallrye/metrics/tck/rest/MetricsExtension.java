@@ -26,4 +26,3 @@ public class MetricsExtension implements LoadableExtension {
     }
 
 }
-

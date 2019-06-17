@@ -17,19 +17,21 @@
 
 package io.smallrye.metrics.exporters;
 
-import io.smallrye.metrics.MetricRegistries;
+import static org.junit.Assert.assertEquals;
+
+import java.io.StringReader;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.After;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import java.io.StringReader;
-
-import static org.junit.Assert.assertEquals;
+import io.smallrye.metrics.MetricRegistries;
 
 public class JsonMetadataExporterTest {
 
@@ -60,8 +62,7 @@ public class JsonMetadataExporterTest {
         MetricRegistry applicationRegistry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         applicationRegistry.counter("counter1",
                 new Tag("key1", "value1"),
-                new Tag("color", "blue")
-        );
+                new Tag("color", "blue"));
 
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "counter1").toString();
         JsonObject json = Json.createReader(new StringReader(result)).read().asJsonObject();

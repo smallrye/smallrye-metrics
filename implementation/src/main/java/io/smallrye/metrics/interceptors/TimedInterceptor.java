@@ -17,16 +17,8 @@
  */
 package io.smallrye.metrics.interceptors;
 
-
-import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
@@ -37,8 +29,17 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.Timed;
+
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
 @Timed
@@ -78,7 +79,8 @@ public class TimedInterceptor {
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         MemberInfoAdapter<Member> memberInfoAdapter = new CDIMemberInfoAdapter();
         MetricResolver.Of<Timed> meterResolver = resolver.timed(
-                bean != null ? beanInfoAdapter.convert(bean.getBeanClass()) : beanInfoAdapter.convert(element.getDeclaringClass()),
+                bean != null ? beanInfoAdapter.convert(bean.getBeanClass())
+                        : beanInfoAdapter.convert(element.getDeclaringClass()),
                 memberInfoAdapter.convert(element));
         String name = meterResolver.metricName();
         Tag[] tags = meterResolver.tags();

@@ -17,6 +17,8 @@
 
 package io.smallrye.metrics.test.reusability;
 
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
@@ -28,8 +30,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.inject.Inject;
 
 /**
  * Test that two metrics of the same name and differing tags can be created by annotations.

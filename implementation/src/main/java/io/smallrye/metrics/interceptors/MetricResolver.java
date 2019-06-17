@@ -16,11 +16,11 @@
 
 package io.smallrye.metrics.interceptors;
 
-import io.smallrye.metrics.TagsUtils;
-import io.smallrye.metrics.elementdesc.AnnotationInfo;
-import io.smallrye.metrics.elementdesc.BeanInfo;
-import io.smallrye.metrics.elementdesc.MemberInfo;
-import io.smallrye.metrics.elementdesc.MemberType;
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+
+import javax.enterprise.inject.Vetoed;
+
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
@@ -29,16 +29,16 @@ import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import javax.enterprise.inject.Vetoed;
-import java.lang.annotation.Annotation;
-import java.util.Collections;
+import io.smallrye.metrics.TagsUtils;
+import io.smallrye.metrics.elementdesc.AnnotationInfo;
+import io.smallrye.metrics.elementdesc.BeanInfo;
+import io.smallrye.metrics.elementdesc.MemberInfo;
+import io.smallrye.metrics.elementdesc.MemberType;
 
 @Vetoed
 public class MetricResolver {
 
-
     private MetricName metricName = new SeMetricName(Collections.emptySet());
-
 
     public Of<Counted> counted(BeanInfo topClass, MemberInfo element) {
         return resolverOf(topClass, element, Counted.class);
@@ -93,9 +93,11 @@ public class MetricResolver {
         return absolute ? metric : MetricRegistry.name(element.getDeclaringClassName(), metric);
     }
 
-    private String metricName(BeanInfo bean, MemberInfo element, Class<? extends Annotation> type, String name, boolean absolute) {
+    private String metricName(BeanInfo bean, MemberInfo element, Class<? extends Annotation> type, String name,
+            boolean absolute) {
         String metric = name.isEmpty() ? bean.getSimpleName() : metricName.of(name);
-        return absolute ? MetricRegistry.name(metric, defaultName(element, type)) : MetricRegistry.name(bean.getPackageName(), metric, defaultName(element, type));
+        return absolute ? MetricRegistry.name(metric, defaultName(element, type))
+                : MetricRegistry.name(bean.getPackageName(), metric, defaultName(element, type));
     }
 
     private String defaultName(MemberInfo element, Class<? extends Annotation> type) {

@@ -37,12 +37,13 @@ public class RawBeanInfo implements BeanInfo {
 
     }
 
-    public RawBeanInfo(String simpleName, String packageName, Collection<AnnotationInfo> annotationInfos, BeanInfo superClassInfo) {
+    public RawBeanInfo(String simpleName, String packageName, Collection<AnnotationInfo> annotationInfos,
+            BeanInfo superClassInfo) {
         this.simpleName = simpleName;
         this.packageName = packageName;
         this.annotationInfos.addAll(annotationInfos);
         this.superClassInfo = superClassInfo;
-        this.infosArray = annotationInfos.toArray(new AnnotationInfo[]{});
+        this.infosArray = annotationInfos.toArray(new AnnotationInfo[] {});
     }
 
     public void setSimpleName(String simpleName) {
@@ -89,7 +90,8 @@ public class RawBeanInfo implements BeanInfo {
 
     @Override
     public <T extends Annotation> AnnotationInfo getAnnotation(Class<T> metric) {
-        return annotationInfos.stream().filter(annotation -> annotation.annotationName().equals(metric.getName())).findFirst().orElse(null);
+        return annotationInfos.stream().filter(annotation -> annotation.annotationName().equals(metric.getName())).findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -104,10 +106,10 @@ public class RawBeanInfo implements BeanInfo {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof BeanInfo)) {
+        if (!(obj instanceof BeanInfo)) {
             return false;
         } else {
-            return this.getSimpleName().equals(((BeanInfo)obj).getSimpleName());
+            return this.getSimpleName().equals(((BeanInfo) obj).getSimpleName());
         }
     }
 }

@@ -15,9 +15,10 @@
  */
 package io.smallrye.metrics.tck.rest;
 
-import io.smallrye.config.SmallRyeConfigProviderResolver;
-import io.smallrye.config.inject.ConfigExtension;
-import io.smallrye.metrics.testsuite.MetricsInitializer;
+import java.io.File;
+
+import javax.enterprise.inject.spi.Extension;
+
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.arquillian.container.test.spi.TestDeployment;
 import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
@@ -26,18 +27,19 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.weld.environment.deployment.discovery.BeanArchiveHandler;
 
-import javax.enterprise.inject.spi.Extension;
-import java.io.File;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
+import io.smallrye.config.inject.ConfigExtension;
+import io.smallrye.metrics.testsuite.MetricsInitializer;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
- * <br>
- * Date: 6/19/18
+ *         <br>
+ *         Date: 6/19/18
  */
 public class ArchiveProcessor implements ProtocolArchiveProcessor {
     @Override
     public void process(TestDeployment testDeployment, Archive<?> protocolArchive) {
-        WebArchive war = (WebArchive)protocolArchive;
+        WebArchive war = (WebArchive) protocolArchive;
         war.addAsWebInfResource("WEB-INF/jboss-web.xml", "jboss-web.xml");
         String[] deps = {
                 "io.smallrye:smallrye-config-1.3",

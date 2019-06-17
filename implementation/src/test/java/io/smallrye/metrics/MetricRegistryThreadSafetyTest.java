@@ -17,14 +17,7 @@
 
 package io.smallrye.metrics;
 
-import io.smallrye.metrics.app.CounterImpl;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricFilter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
-import org.junit.After;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -36,7 +29,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.junit.After;
+import org.junit.Test;
+
+import io.smallrye.metrics.app.CounterImpl;
 
 public class MetricRegistryThreadSafetyTest {
 

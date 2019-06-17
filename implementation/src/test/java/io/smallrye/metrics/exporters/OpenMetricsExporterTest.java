@@ -17,14 +17,21 @@
 
 package io.smallrye.metrics.exporters;
 
-import io.smallrye.metrics.ExtendedMetadata;
-import io.smallrye.metrics.JmxWorker;
-import io.smallrye.metrics.MetricRegistries;
-import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
-import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.MeterImpl;
-import io.smallrye.metrics.app.TimerImpl;
-import io.smallrye.metrics.mbean.MGaugeImpl;
+import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMetricName;
+import static java.util.regex.Pattern.quote;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.lang.management.ManagementFactory;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -41,20 +48,14 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.management.ManagementFactory;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMetricName;
-import static java.util.regex.Pattern.quote;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import io.smallrye.metrics.ExtendedMetadata;
+import io.smallrye.metrics.JmxWorker;
+import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
+import io.smallrye.metrics.app.HistogramImpl;
+import io.smallrye.metrics.app.MeterImpl;
+import io.smallrye.metrics.app.TimerImpl;
+import io.smallrye.metrics.mbean.MGaugeImpl;
 
 public class OpenMetricsExporterTest {
 
@@ -66,7 +67,6 @@ public class OpenMetricsExporterTest {
     private Tag QUANTILE_0_98 = new Tag("quantile", "0.98");
     private Tag QUANTILE_0_99 = new Tag("quantile", "0.99");
     private Tag QUANTILE_0_999 = new Tag("quantile", "0.999");
-
 
     @After
     public void cleanupApplicationMetrics() {
@@ -91,10 +91,11 @@ public class OpenMetricsExporterTest {
         double valueFromOpenMetrics = -1;
         for (String line : out.toString().split(System.getProperty("line.separator"))) {
             if (line.startsWith("base_jvm_uptime_seconds")) {
-                valueFromOpenMetrics /* in seconds */ = Double.valueOf(line.substring("base:jvm_uptime_seconds".length()).trim());
+                valueFromOpenMetrics /* in seconds */ = Double
+                        .valueOf(line.substring("base:jvm_uptime_seconds".length()).trim());
             }
         }
-        assertTrue("Value should not be -1", valueFromOpenMetrics != -1) ;
+        assertTrue("Value should not be -1", valueFromOpenMetrics != -1);
         assertTrue(valueFromOpenMetrics >= actualUptimeInSeconds);
     }
 
@@ -165,7 +166,6 @@ public class OpenMetricsExporterTest {
         }
     }
 
-
     @Test
     public void testTagValueQuoting() {
         OpenMetricsExporter exporter = new OpenMetricsExporter();
@@ -205,19 +205,25 @@ public class OpenMetricsExporterTest {
                 .withName("counter_with_complicated_description")
                 .withDescription("hhh\\ggg\\nfff\\").build();
         registry.counter(metadata);
-        String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_complicated_description")).toString();
+        String export = exporter
+                .exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_complicated_description"))
+                .toString();
 
         // hhh\ggg\nfff\ should become hhh\\ggg\nfff\\
-        assertThat(export, containsString("# HELP application_counter_with_complicated_description_total hhh\\\\ggg\\nfff\\\\"));
+        assertThat(export,
+                containsString("# HELP application_counter_with_complicated_description_total hhh\\\\ggg\\nfff\\\\"));
 
         metadata = Metadata.builder()
                 .withName("counter_with_complicated_description_2")
                 .withDescription("description with \"quotes\"").build();
         registry.counter(metadata);
-        export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_complicated_description_2")).toString();
+        export = exporter
+                .exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_complicated_description_2"))
+                .toString();
 
         // double quotes should stay unchanged
-        assertThat(export, containsString("# HELP application_counter_with_complicated_description_2_total description with \"quotes\""));
+        assertThat(export,
+                containsString("# HELP application_counter_with_complicated_description_2_total description with \"quotes\""));
     }
 
     /**
@@ -232,13 +238,14 @@ public class OpenMetricsExporterTest {
                 .withName("counter_with_empty_description")
                 .withDescription("").build();
         registry.counter(metadata);
-        String export = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_empty_description")).toString();
+        String export = exporter
+                .exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("counter_with_empty_description")).toString();
         assertThat(export, not(containsString("HELP")));
     }
 
-
     /**
-     * In OpenMetrics exporter and counters, if the metric name does not end with _total, then _total should be appended automatically.
+     * In OpenMetrics exporter and counters, if the metric name does not end with _total, then _total should be appended
+     * automatically.
      * If it ends with _total, nothing extra will be appended.
      */
     @Test
@@ -382,7 +389,7 @@ public class OpenMetricsExporterTest {
                 .withType(MetricType.CONCURRENT_GAUGE)
                 .withName("myconcurrentgauge")
                 .withDescription("awesome")
-                .withUnit("dollars")  // this should get ignored and should not be reflected in the output
+                .withUnit("dollars") // this should get ignored and should not be reflected in the output
                 .build();
         Tag blueTag = new Tag("color", "blue");
         ConcurrentGauge blueCGauge = registry.concurrentGauge(metadata, blueTag);
@@ -528,12 +535,12 @@ public class OpenMetricsExporterTest {
 
     private void assertHasValueLineExactlyOnce(String output, String metricName, String value, Tag... tags) {
         List<String> foundLines = getLines(output, metricName, value, tags);
-        if(foundLines.isEmpty())
+        if (foundLines.isEmpty())
             Assert.fail("Couldn't find a line with metricName=" + metricName
-                + ", value=" + value
-                + ", tags=" + Arrays.toString(tags)
-                + " in the OpenMetrics output: \n" + output);
-        if(foundLines.size() > 1)
+                    + ", value=" + value
+                    + ", tags=" + Arrays.toString(tags)
+                    + " in the OpenMetrics output: \n" + output);
+        if (foundLines.size() > 1)
             Assert.fail("Found metricName=" + metricName
                     + ", value=" + value
                     + ", tags=" + Arrays.toString(tags)
@@ -542,11 +549,11 @@ public class OpenMetricsExporterTest {
 
     private void assertHasTypeLineExactlyOnce(String output, String metricName, String type) {
         List<String> foundLines = getLinesByRegex(output, "# TYPE " + quote(metricName) + " " + quote(type));
-        if(foundLines.isEmpty())
+        if (foundLines.isEmpty())
             Assert.fail("Couldn't find a TYPE line with metricName=" + metricName
                     + " and type=" + type
                     + " in the OpenMetrics output: \n" + output);
-        if(foundLines.size() > 1)
+        if (foundLines.size() > 1)
             Assert.fail("Found TYPE line with metricName=" + metricName
                     + " and type=" + type
                     + " in the OpenMetrics output more than once! Output: \n" + output);
@@ -554,11 +561,11 @@ public class OpenMetricsExporterTest {
 
     private void assertHasHelpLineExactlyOnce(String output, String metricName, String help) {
         List<String> foundLines = getLinesByRegex(output, "# HELP " + quote(metricName) + " " + quote(help));
-        if(foundLines.isEmpty())
+        if (foundLines.isEmpty())
             Assert.fail("Couldn't find a HELP line with metricName=" + metricName
                     + " and help=" + help
                     + " in the OpenMetrics output: \n" + output);
-        if(foundLines.size() > 1)
+        if (foundLines.size() > 1)
             Assert.fail("Found HELP line with metricName=" + metricName
                     + " and help=" + help
                     + " in the OpenMetrics output more than once! Output: \n" + output);
@@ -577,8 +584,8 @@ public class OpenMetricsExporterTest {
                 // filter by present tags
                 .filter(line -> {
                     boolean matches = true;
-                    for(Tag tag : tags) {
-                        if(!line.matches(".+" + quote(tag.getTagName()) + "=\"" + quote(tag.getTagValue()) +"\".+"))
+                    for (Tag tag : tags) {
+                        if (!line.matches(".+" + quote(tag.getTagName()) + "=\"" + quote(tag.getTagValue()) + "\".+"))
                             matches = false;
                     }
                     return matches;

@@ -17,7 +17,12 @@
  */
 package io.smallrye.metrics;
 
-import io.smallrye.metrics.interceptors.MetricName;
+import java.util.SortedMap;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.InjectionPoint;
+import javax.inject.Inject;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
@@ -34,11 +39,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.inject.Inject;
-import java.util.SortedMap;
+import io.smallrye.metrics.interceptors.MetricName;
 
 /**
  * @author hrupp
@@ -47,7 +48,7 @@ import java.util.SortedMap;
 public class MetricProducer {
 
     @Inject
-    @RegistryType(type=MetricRegistry.Type.APPLICATION)
+    @RegistryType(type = MetricRegistry.Type.APPLICATION)
     MetricRegistry applicationRegistry;
 
     @Inject
@@ -103,7 +104,7 @@ public class MetricProducer {
     private Metadata getMetadata(InjectionPoint ip, MetricType type) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         Metadata metadata;
-        if (metric!= null) {
+        if (metric != null) {
             Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip))
                     .withType(type)
                     .withUnit(metric.unit())

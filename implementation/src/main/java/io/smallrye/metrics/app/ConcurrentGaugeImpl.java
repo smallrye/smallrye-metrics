@@ -31,9 +31,9 @@
  */
 package io.smallrye.metrics.app;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
-
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 
 /**
  * @author Jan Martiska
@@ -70,7 +70,7 @@ public class ConcurrentGaugeImpl implements ConcurrentGauge {
         maybeStartNewMinute();
         synchronized (this) {
             long newCount = count.incrementAndGet();
-            if(newCount > max_thisMinute.get()) {
+            if (newCount > max_thisMinute.get()) {
                 max_thisMinute.set(newCount);
             }
         }
@@ -81,7 +81,7 @@ public class ConcurrentGaugeImpl implements ConcurrentGauge {
         maybeStartNewMinute();
         synchronized (this) {
             long newCount = count.decrementAndGet();
-            if(newCount < min_thisMinute.get()) {
+            if (newCount < min_thisMinute.get()) {
                 min_thisMinute.set(newCount);
             }
         }
@@ -105,11 +105,13 @@ public class ConcurrentGaugeImpl implements ConcurrentGauge {
         return min_previousMinute.get();
     }
 
-    /* If a new minute has started, move the data for 'this' minute to 'previous' minute and start
-       collecting new data for the 'this' minute */
+    /*
+     * If a new minute has started, move the data for 'this' minute to 'previous' minute and start
+     * collecting new data for the 'this' minute
+     */
     private void maybeStartNewMinute() {
         long newMinute = getCurrentMinuteFromSystem();
-        if(newMinute > thisMinute.get()) {
+        if (newMinute > thisMinute.get()) {
             synchronized (this) {
                 if (newMinute > thisMinute.get()) {
                     thisMinute.set(newMinute);

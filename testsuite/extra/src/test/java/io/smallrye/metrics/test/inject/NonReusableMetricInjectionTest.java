@@ -17,6 +17,9 @@
 
 package io.smallrye.metrics.test.inject;
 
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
@@ -28,9 +31,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 
 /**
  * Test that it is possible to inject a metric using an annotated method parameter.

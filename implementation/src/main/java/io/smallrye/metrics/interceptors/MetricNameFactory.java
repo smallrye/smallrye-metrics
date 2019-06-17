@@ -15,11 +15,11 @@
  */
 package io.smallrye.metrics.interceptors;
 
+import java.util.Collections;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.BeanManager;
-import java.util.Collections;
 
 @ApplicationScoped
 public class MetricNameFactory {

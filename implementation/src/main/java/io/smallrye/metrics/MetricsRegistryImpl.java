@@ -16,12 +16,18 @@
  */
 package io.smallrye.metrics;
 
-import io.smallrye.metrics.app.ConcurrentGaugeImpl;
-import io.smallrye.metrics.app.CounterImpl;
-import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
-import io.smallrye.metrics.app.HistogramImpl;
-import io.smallrye.metrics.app.MeterImpl;
-import io.smallrye.metrics.app.TimerImpl;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.enterprise.inject.Vetoed;
+import javax.enterprise.inject.spi.InjectionPoint;
+
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -37,16 +43,12 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
-import javax.enterprise.inject.Vetoed;
-import javax.enterprise.inject.spi.InjectionPoint;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
+import io.smallrye.metrics.app.ConcurrentGaugeImpl;
+import io.smallrye.metrics.app.CounterImpl;
+import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
+import io.smallrye.metrics.app.HistogramImpl;
+import io.smallrye.metrics.app.MeterImpl;
+import io.smallrye.metrics.app.TimerImpl;
 
 /**
  * @author hrupp
@@ -62,9 +64,10 @@ public class MetricsRegistryImpl extends MetricRegistry {
     // Other maps are accessed only in synchronized methods.
     private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
 
-    /* this is for storing origins. until 2.0, origins were stored using OriginTrackedMetadata instead of regular metadata, but
-        since 2.0 we have to keep track of the origin per each MetricID separately, while Metadata itself
-        is only tracked per Metric Name, that's why we need two maps for that now.
+    /*
+     * this is for storing origins. until 2.0, origins were stored using OriginTrackedMetadata instead of regular metadata, but
+     * since 2.0 we have to keep track of the origin per each MetricID separately, while Metadata itself
+     * is only tracked per Metric Name, that's why we need two maps for that now.
      */
     private Map<MetricID, Object> originMap = new HashMap<>();
 
@@ -88,7 +91,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
             tname = tname.toLowerCase();
             type = MetricType.from(tname);
         } else if (metricCls.isAnonymousClass()) {
-            type = MetricType.from(metricCls.getInterfaces().length == 0 ? metricCls.getSuperclass().getInterfaces()[0] : metricCls.getInterfaces()[0]);
+            type = MetricType.from(metricCls.getInterfaces().length == 0 ? metricCls.getSuperclass().getInterfaces()[0]
+                    : metricCls.getInterfaces()[0]);
         } else {
             if (!metricCls.isInterface()) {
                 // [0] is ok, as all our Impl classes implement exactly the one matching interface
@@ -110,7 +114,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags)
+            throws IllegalArgumentException {
         String name = metadata.getName();
         if (name == null) {
             throw new IllegalArgumentException("Metric name must not be null");
@@ -129,17 +134,20 @@ public class MetricsRegistryImpl extends MetricRegistry {
             throw new IllegalArgumentException("A metric with metricID " + metricID + " already exists");
         }
 
-        /* if metadata for this name already exists:
-               - if no metadata was specified for this registration, check that this metric has the same type, then reuse the existing metadata instance
-               - if metadata was specified for this registration, verify that it's the same as the existing one
-           if no metadata for this name exists:
-               - if no metadata was specified for this registration, create a reasonable default
-               - if metadata was specified for this registration, use it
-             */
+        /*
+         * if metadata for this name already exists:
+         * - if no metadata was specified for this registration, check that this metric has the same type, then reuse the
+         * existing metadata instance
+         * - if metadata was specified for this registration, verify that it's the same as the existing one
+         * if no metadata for this name exists:
+         * - if no metadata was specified for this registration, create a reasonable default
+         * - if metadata was specified for this registration, use it
+         */
         if (existingMetadata != null) {
             if (metadata instanceof UnspecifiedMetadata) {
                 if (!metadata.getType().equals(existingMetadata.getType())) {
-                    throw new IllegalArgumentException("There is an existing metric with name " + name + " but of different type (" + existingMetadata.getType() + ")");
+                    throw new IllegalArgumentException("There is an existing metric with name " + name
+                            + " but of different type (" + existingMetadata.getType() + ")");
                 }
                 metricMap.put(metricID, metric);
             } else {
@@ -169,8 +177,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     private void verifyMetadataEquality(Metadata newMetadata, Metadata existingMetadata) {
         /*
-            we could use simply an equals() call but inspecting the objects in detail allows us to
-            throw a more user-friendly error if the metadata objects are not equal
+         * we could use simply an equals() call but inspecting the objects in detail allows us to
+         * throw a more user-friendly error if the metadata objects are not equal
          */
         if (!existingMetadata.getTypeRaw().equals(newMetadata.getTypeRaw())) {
             throw new IllegalStateException("Passed metric type does not match existing type");
@@ -347,12 +355,13 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     throw new IllegalStateException("Must not happen");
             }
             if (metadata instanceof OriginAndMetadata) {
-                log.debugf("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type, ((OriginAndMetadata) metadata).getOrigin());
+                log.debugf("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type,
+                        ((OriginAndMetadata) metadata).getOrigin());
             } else {
                 log.debugf("Register metric [metricId: %s, type: %s]", metricID, type);
             }
 
-            register(metadata, m, metricID.getTagsAsList().toArray(new Tag[]{}));
+            register(metadata, m, metricID.getTagsAsList().toArray(new Tag[] {}));
         } else if (!previousMetadata.getTypeRaw().equals(metadata.getTypeRaw())) {
             throw new IllegalArgumentException("Previously registered metric " + name + " is of type "
                     + previousMetadata.getType() + ", expected " + metadata.getType());
@@ -361,7 +370,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 areCompatibleOrigins(originMap.get(metricID), ((OriginAndMetadata) metadata).getOrigin())) {
             // stop caring, same thing.
         } else if (previousMetadata.isReusable() && (!(metadata instanceof UnspecifiedMetadata) && !metadata.isReusable())) {
-            throw new IllegalArgumentException("Previously registered metric " + name + " was flagged as reusable, while current request is not.");
+            throw new IllegalArgumentException(
+                    "Previously registered metric " + name + " was flagged as reusable, while current request is not.");
         } else if (!previousMetadata.isReusable()) {
             throw new IllegalArgumentException("Previously registered metric " + name + " was not flagged as reusable");
         } else {
@@ -532,7 +542,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     private boolean isSameType(Metric metricInstance, MetricType type) {
-        switch(type) {
+        switch (type) {
             case CONCURRENT_GAUGE:
                 return metricInstance instanceof ConcurrentGauge;
             case GAUGE:

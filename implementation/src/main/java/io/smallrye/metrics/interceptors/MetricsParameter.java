@@ -15,7 +15,6 @@
  */
 package io.smallrye.metrics.interceptors;
 
-
 /* package-private */ enum MetricsParameter {
 
     useAbsoluteName

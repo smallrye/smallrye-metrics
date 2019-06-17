@@ -17,8 +17,9 @@
  */
 package io.smallrye.metrics.mbean;
 
-import io.smallrye.metrics.JmxWorker;
 import org.eclipse.microprofile.metrics.Counter;
+
+import io.smallrye.metrics.JmxWorker;
 
 /**
  * @author hrupp
@@ -27,7 +28,6 @@ public class MCounterImpl implements Counter {
     private static final String MUST_NOT_BE_CALLED = "Must not be called";
     private final String mbeanExpression;
     private final JmxWorker worker;
-
 
     public MCounterImpl(JmxWorker worker, String mbeanExpression) {
         this.mbeanExpression = mbeanExpression;

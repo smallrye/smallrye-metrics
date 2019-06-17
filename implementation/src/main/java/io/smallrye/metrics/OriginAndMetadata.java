@@ -17,10 +17,10 @@
 
 package io.smallrye.metrics;
 
+import java.util.Optional;
+
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricType;
-
-import java.util.Optional;
 
 /**
  * Created by bob on 2/5/18.
@@ -42,7 +42,6 @@ public class OriginAndMetadata implements Metadata {
     public Metadata getMetadata() {
         return metadata;
     }
-
 
     @Override
     public String getName() {

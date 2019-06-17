@@ -17,14 +17,14 @@
  */
 package io.smallrye.metrics.mbean;
 
-import io.smallrye.metrics.JmxWorker;
 import org.eclipse.microprofile.metrics.Gauge;
+
+import io.smallrye.metrics.JmxWorker;
 
 /**
  * @author hrupp
  */
 public class MGaugeImpl implements Gauge {
-
 
     private final String mBeanExpression;
     private final JmxWorker worker;

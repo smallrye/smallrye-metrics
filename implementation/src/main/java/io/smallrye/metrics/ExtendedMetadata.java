@@ -28,14 +28,15 @@ public class ExtendedMetadata extends DefaultMetadata {
     boolean multi;
 
     public ExtendedMetadata(String name, MetricType type) {
-        this(name,null,null,type,null, null, false);
+        this(name, null, null, type, null, null, false);
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) {
         this(name, displayName, description, typeRaw, unit, null, false);
     }
 
-    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean, boolean multi) {
+    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
+            boolean multi) {
         super(name, displayName, description, typeRaw, unit, false);
         this.mbean = mbean;
         this.multi = multi;

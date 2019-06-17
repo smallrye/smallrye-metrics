@@ -16,17 +16,18 @@
 
 package io.smallrye.metrics.interceptors;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Metric;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Set;
 
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedParameter;
 import javax.enterprise.inject.spi.InjectionPoint;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Set;
+
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 
 @Vetoed
 /* package-private */ class SeMetricName implements MetricName {
@@ -45,7 +46,8 @@ import java.util.Set;
         } else if (annotated instanceof AnnotatedParameter) {
             return of((AnnotatedParameter<?>) annotated);
         } else {
-            throw new IllegalArgumentException("Unable to retrieve metric name for injection point [" + ip + "], only members and parameters are supported");
+            throw new IllegalArgumentException("Unable to retrieve metric name for injection point [" + ip
+                    + "], only members and parameters are supported");
         }
     }
 
@@ -54,9 +56,11 @@ import java.util.Set;
         if (member.isAnnotationPresent(Metric.class)) {
             Metric metric = member.getAnnotation(Metric.class);
             String name = (metric.name().isEmpty()) ? member.getJavaMember().getName() : of(metric.name());
-            return metric.absolute() | parameters.contains(MetricsParameter.useAbsoluteName) ? name : MetricRegistry.name(member.getJavaMember().getDeclaringClass(), name);
+            return metric.absolute() | parameters.contains(MetricsParameter.useAbsoluteName) ? name
+                    : MetricRegistry.name(member.getJavaMember().getDeclaringClass(), name);
         } else {
-            return parameters.contains(MetricsParameter.useAbsoluteName) ? member.getJavaMember().getName() : MetricRegistry.name(member.getJavaMember().getDeclaringClass(), member.getJavaMember().getName());
+            return parameters.contains(MetricsParameter.useAbsoluteName) ? member.getJavaMember().getName()
+                    : MetricRegistry.name(member.getJavaMember().getDeclaringClass(), member.getJavaMember().getName());
         }
     }
 
@@ -69,9 +73,12 @@ import java.util.Set;
         if (parameter.isAnnotationPresent(Metric.class)) {
             Metric metric = parameter.getAnnotation(Metric.class);
             String name = (metric.name().isEmpty()) ? getParameterName(parameter) : of(metric.name());
-            return metric.absolute() | parameters.contains(MetricsParameter.useAbsoluteName) ? name : MetricRegistry.name(parameter.getDeclaringCallable().getJavaMember().getDeclaringClass(), name);
+            return metric.absolute() | parameters.contains(MetricsParameter.useAbsoluteName) ? name
+                    : MetricRegistry.name(parameter.getDeclaringCallable().getJavaMember().getDeclaringClass(), name);
         } else {
-            return parameters.contains(MetricsParameter.useAbsoluteName) ? getParameterName(parameter) : MetricRegistry.name(parameter.getDeclaringCallable().getJavaMember().getDeclaringClass(), getParameterName(parameter));
+            return parameters.contains(MetricsParameter.useAbsoluteName) ? getParameterName(parameter)
+                    : MetricRegistry.name(parameter.getDeclaringCallable().getJavaMember().getDeclaringClass(),
+                            getParameterName(parameter));
         }
     }
 
@@ -89,10 +96,12 @@ import java.util.Set;
             if ((Boolean) Parameter.getMethod("isNamePresent").invoke(param)) {
                 return (String) Parameter.getMethod("getName").invoke(param);
             } else {
-                throw new UnsupportedOperationException("Unable to retrieve name for parameter [" + parameter + "], activate the -parameters compiler argument or annotate the injected parameter with the @Metric annotation");
+                throw new UnsupportedOperationException("Unable to retrieve name for parameter [" + parameter
+                        + "], activate the -parameters compiler argument or annotate the injected parameter with the @Metric annotation");
             }
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException cause) {
-            throw new UnsupportedOperationException("Unable to retrieve name for parameter [" + parameter + "], @Metric annotation on injected parameter is required before Java 8");
+            throw new UnsupportedOperationException("Unable to retrieve name for parameter [" + parameter
+                    + "], @Metric annotation on injected parameter is required before Java 8");
         }
     }
 }

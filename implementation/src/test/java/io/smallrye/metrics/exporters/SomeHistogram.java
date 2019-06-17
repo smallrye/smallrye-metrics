@@ -39,6 +39,6 @@ public class SomeHistogram implements Histogram {
 
     @Override
     public Snapshot getSnapshot() {
-        return snapshot ;
+        return snapshot;
     }
 }

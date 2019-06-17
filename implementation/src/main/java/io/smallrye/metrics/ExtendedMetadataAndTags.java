@@ -17,9 +17,9 @@
 
 package io.smallrye.metrics;
 
-import org.eclipse.microprofile.metrics.Tag;
-
 import java.util.List;
+
+import org.eclipse.microprofile.metrics.Tag;
 
 public class ExtendedMetadataAndTags {
 

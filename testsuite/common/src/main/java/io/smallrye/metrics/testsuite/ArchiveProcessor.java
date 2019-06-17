@@ -22,16 +22,17 @@ import org.jboss.shrinkwrap.api.container.ResourceContainer;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
- * <br>
- * Date: 6/19/18
+ *         <br>
+ *         Date: 6/19/18
  */
 public class ArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> applicationArchive, TestClass testClass) {
         if (applicationArchive instanceof ResourceContainer) {
-            ResourceContainer archive = (ResourceContainer)applicationArchive;
-            archive.addAsResource("io/smallrye/metrics/base-metrics.properties", "/io/smallrye/metrics/base-metrics.properties");
+            ResourceContainer archive = (ResourceContainer) applicationArchive;
+            archive.addAsResource("io/smallrye/metrics/base-metrics.properties",
+                    "/io/smallrye/metrics/base-metrics.properties");
         } else {
             throw new IllegalStateException(this.getClass().getCanonicalName() + " works only with ResourceContainers");
         }

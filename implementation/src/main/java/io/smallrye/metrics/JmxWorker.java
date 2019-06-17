@@ -18,7 +18,6 @@ package io.smallrye.metrics;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,15 +25,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Tag;
-import org.jboss.logging.Logger;
-
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 
+import org.eclipse.microprofile.metrics.Tag;
+import org.jboss.logging.Logger;
 
 /**
  * @author hrupp
@@ -47,8 +44,8 @@ public class JmxWorker {
     private static MBeanServer mbs;
     private static JmxWorker worker;
 
-    private JmxWorker() { /* singleton */ }
-
+    private JmxWorker() {
+        /* singleton */ }
 
     public static JmxWorker instance() {
         if (worker == null) {
@@ -58,6 +55,7 @@ public class JmxWorker {
 
         return worker;
     }
+
     /**
      * Read a value from the MBeanServer
      *
@@ -99,7 +97,6 @@ public class JmxWorker {
         }
     }
 
-
     /**
      * We need to expand entries that are marked with the <b>multi</b> flag
      * into the actual MBeans. This is done by replacing a placeholder of <b>%s</b>
@@ -128,8 +125,8 @@ public class JmxWorker {
                 attName = name.substring(slashIndex + 1);
 
                 try {
-                	ObjectName objectNameWithPlaceholders = new ObjectName(queryableName);
-                    final Map<String,String> keyHolders = findKeyForValueToBeReplaced(objectNameWithPlaceholders);
+                    ObjectName objectNameWithPlaceholders = new ObjectName(queryableName);
+                    final Map<String, String> keyHolders = findKeyForValueToBeReplaced(objectNameWithPlaceholders);
 
                     ObjectName objectName = new ObjectName(queryableName.replaceAll(PLACEHOLDER + "(\\d)?+", "*"));
 
@@ -137,29 +134,29 @@ public class JmxWorker {
                     for (ObjectName oName : objNames) {
                         String newName = entry.getMetadata().getName();
                         if (!newName.contains(PLACEHOLDER) && entry.getTags().isEmpty()) {
-                            log.warn("Name [" + newName + "] did not contain a %s or any tags, no replacement will be done, check" +
+                            log.warn("Name [" + newName
+                                    + "] did not contain a %s or any tags, no replacement will be done, check" +
                                     " the configuration");
                         }
                         String newDisplayName = entry.getMetadata().getDisplayName();
                         String newDescription = entry.getMetadata().getDescription().orElse("");
                         List<Tag> newTags = new ArrayList<>(entry.getTags());
-                       	for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
+                        for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
                             String keyValue = oName.getKeyPropertyList().get(keyHolder.getValue());
                             newName = newName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDisplayName = newDisplayName.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newDescription = newDescription.replaceAll(Pattern.quote(keyHolder.getKey()), keyValue);
                             newTags = newTags.stream()
-                                    .map(originalTag ->
-                                                new Tag(originalTag.getTagName(),
-                                                        originalTag.getTagValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue)))
+                                    .map(originalTag -> new Tag(originalTag.getTagName(),
+                                            originalTag.getTagValue().replaceAll(Pattern.quote(keyHolder.getKey()), keyValue)))
                                     .collect(Collectors.toList());
-                      	}
+                        }
 
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
 
                         ExtendedMetadata newEntryMetadata = new ExtendedMetadata(newName, newDisplayName, newDescription,
                                 entry.getMetadata().getTypeRaw(), entry.getMetadata().getUnit().get(), newObjectName, true);
-                       	ExtendedMetadataAndTags newEntry = new ExtendedMetadataAndTags(newEntryMetadata, newTags);
+                        ExtendedMetadataAndTags newEntry = new ExtendedMetadataAndTags(newEntryMetadata, newTags);
                         result.add(newEntry);
                     }
                     toBeRemoved.add(entry);
@@ -173,12 +170,11 @@ public class JmxWorker {
         log.debug("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
     }
 
-    private Map<String,String> findKeyForValueToBeReplaced(ObjectName objectName) {
-    	return objectName.getKeyPropertyList().entrySet().stream()
-        	.filter((entry) -> entry.getValue().matches(PLACEHOLDER + "(\\d)?+"))
-        	.collect(Collectors.toMap(
-                    e -> e.getValue(),
-                    e -> e.getKey()
-                ));
+    private Map<String, String> findKeyForValueToBeReplaced(ObjectName objectName) {
+        return objectName.getKeyPropertyList().entrySet().stream()
+                .filter((entry) -> entry.getValue().matches(PLACEHOLDER + "(\\d)?+"))
+                .collect(Collectors.toMap(
+                        e -> e.getValue(),
+                        e -> e.getKey()));
     }
 }
