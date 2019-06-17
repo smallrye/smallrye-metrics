@@ -19,7 +19,10 @@ package io.smallrye.metrics.exporters;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author hrupp
@@ -30,66 +33,66 @@ public class OpenMetricsUnitScalingTest {
     public void testScaleToSecondsForNanos() {
         String foo = MetricUnits.NANOSECONDS;
         double out = OpenMetricsUnit.scaleToBase(foo, 3.0);
-        assert out == 0.000_000_003 : "Out was " + out;
+        assertEquals("Out was " + out, 0.000_000_003, out, 0.001);
     }
 
     @Test
     public void testScaleToSeconds() {
         String foo = MetricUnits.SECONDS;
         double out = OpenMetricsUnit.scaleToBase(foo, 3.0);
-        assert out == 3 : "Out was " + out;
+        assertEquals("Out was " + out, 3, out, 0.001);
     }
 
     @Test
     public void testScaleToSecondsForDays() {
         String foo = MetricUnits.DAYS;
         double out = OpenMetricsUnit.scaleToBase(foo, 3.0);
-        assert out == 3 * 24 * 60 * 60 : "Out was " + out;
+        assertEquals("Out was " + out, 3 * 24 * 60 * 60, out, 0.001);
     }
 
     @Test
     public void testScaleMegabyteToByte() {
         String foo = MetricUnits.MEGABYTES;
         double out = OpenMetricsUnit.scaleToBase(foo, 1.0);
-        assert out == 1000 * 1000 : out;
+        assertEquals("Out was " + out, 1_000_000, out, 0.001);
     }
 
     @Test
     public void testScaleBitsToByte() {
         String foo = MetricUnits.BITS;
         double out = OpenMetricsUnit.scaleToBase(foo, 13.0);
-        assert out == 13.0 / 8.0 : out;
+        assertEquals("Out was " + out, 13.0 / 8.0, out, 0.001);
     }
 
     @Test
     public void testFindBaseUnit1() {
         String foo = MetricUnits.HOURS;
         String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
-        assert out.equals(MetricUnits.SECONDS);
+        assertEquals(MetricUnits.SECONDS, out);
         String promUnit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(out));
-        assert promUnit.equals("seconds");
+        assertEquals("seconds", promUnit);
     }
 
     @Test
     public void testFindBaseUnit2() {
         String foo = MetricUnits.MILLISECONDS;
         String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
-        assert out.equals(MetricUnits.SECONDS);
+        assertEquals(MetricUnits.SECONDS, out);
         String promUnit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(out));
-        assert promUnit.equals("seconds");
+        assertEquals("seconds", promUnit);
     }
 
     @Test
     public void testFindBaseUnit3() {
         String foo = MetricUnits.PERCENT;
         String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
-        assert out.equals(MetricUnits.PERCENT);
+        assertEquals(MetricUnits.PERCENT, out);
     }
 
     @Test
     public void testFindBaseUnit4() {
         String foo = MetricUnits.NONE;
         String out = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(Optional.ofNullable(foo));
-        assert out.equals(MetricUnits.NONE);
+        assertEquals(MetricUnits.NONE, out);
     }
 }
