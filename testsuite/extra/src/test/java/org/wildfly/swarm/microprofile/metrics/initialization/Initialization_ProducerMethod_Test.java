@@ -17,7 +17,12 @@
 
 package org.wildfly.swarm.microprofile.metrics.initialization;
 
-import io.smallrye.metrics.app.CounterImpl;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -30,11 +35,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import io.smallrye.metrics.app.CounterImpl;
 
 @RunWith(Arquillian.class)
 public class Initialization_ProducerMethod_Test {

@@ -15,15 +15,8 @@
  */
 package io.smallrye.metrics.interceptors;
 
-import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.jboss.logging.Logger;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
@@ -34,8 +27,17 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.jboss.logging.Logger;
+
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
 @Counted
@@ -73,13 +75,14 @@ public class CountedInterceptor {
         return countedCallable(context, context.getMethod());
     }
 
-    private <E extends Member & AnnotatedElement> Object countedCallable(InvocationContext context, E element) throws Exception {
+    private <E extends Member & AnnotatedElement> Object countedCallable(InvocationContext context, E element)
+            throws Exception {
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
         MetricResolver.Of<Counted> counted = resolver.counted(
-                bean != null ? beanInfoAdapter.convert(bean.getBeanClass()) : beanInfoAdapter.convert(element.getDeclaringClass()),
-                memberInfoAdapter.convert(element)
-        );
+                bean != null ? beanInfoAdapter.convert(bean.getBeanClass())
+                        : beanInfoAdapter.convert(element.getDeclaringClass()),
+                memberInfoAdapter.convert(element));
         String name = counted.metricName();
         Tag[] tags = counted.tags();
         MetricID metricID = new MetricID(name, tags);

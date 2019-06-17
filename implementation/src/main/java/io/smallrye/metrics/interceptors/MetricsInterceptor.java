@@ -16,6 +16,22 @@
 
 package io.smallrye.metrics.interceptors;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
+import javax.annotation.Priority;
+import javax.inject.Inject;
+import javax.interceptor.AroundConstruct;
+import javax.interceptor.Interceptor;
+import javax.interceptor.InvocationContext;
+
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
+import org.jboss.logging.Logger;
+
 import io.smallrye.metrics.TagsUtils;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
@@ -23,20 +39,6 @@ import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.setup.MetricsMetadata;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.jboss.logging.Logger;
-
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
 
 @SuppressWarnings("unused")
 @Interceptor
@@ -70,11 +72,14 @@ public class MetricsInterceptor {
         do {
             // TODO: discover annotations declared on implemented interfaces
             for (Method method : type.getDeclaredMethods()) {
-                MetricResolver.Of<Gauge> gauge = resolver.gauge(beanInfoAdapter.convert(type), memberInfoAdapter.convert(method));
+                MetricResolver.Of<Gauge> gauge = resolver.gauge(beanInfoAdapter.convert(type),
+                        memberInfoAdapter.convert(method));
                 if (gauge.isPresent()) {
                     AnnotationInfo g = gauge.metricAnnotation();
-                    Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(), g.displayName(), MetricType.GAUGE, false);
-                    registry.register(metadata, new ForwardingGauge(method, context.getTarget()), TagsUtils.parseTagsAsArray(g.tags()));
+                    Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
+                            g.displayName(), MetricType.GAUGE, false);
+                    registry.register(metadata, new ForwardingGauge(method, context.getTarget()),
+                            TagsUtils.parseTagsAsArray(g.tags()));
                 }
             }
             type = type.getSuperclass();

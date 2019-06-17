@@ -17,33 +17,13 @@
  */
 package io.smallrye.metrics.setup;
 
-import io.smallrye.metrics.MetricProducer;
-import io.smallrye.metrics.MetricRegistries;
-import io.smallrye.metrics.MetricsRequestHandler;
-import io.smallrye.metrics.TagsUtils;
-import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
-import io.smallrye.metrics.interceptors.ConcurrentGaugeInterceptor;
-import io.smallrye.metrics.interceptors.CountedInterceptor;
-import io.smallrye.metrics.interceptors.MeteredInterceptor;
-import io.smallrye.metrics.interceptors.MetricName;
-import io.smallrye.metrics.interceptors.MetricNameFactory;
-import io.smallrye.metrics.interceptors.MetricResolver;
-import io.smallrye.metrics.interceptors.MetricsBinding;
-import io.smallrye.metrics.interceptors.MetricsInterceptor;
-import io.smallrye.metrics.interceptors.TimedInterceptor;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-import org.jboss.logging.Logger;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -62,13 +42,35 @@ import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.jboss.logging.Logger;
+
+import io.smallrye.metrics.MetricProducer;
+import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.MetricsRequestHandler;
+import io.smallrye.metrics.TagsUtils;
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
+import io.smallrye.metrics.interceptors.ConcurrentGaugeInterceptor;
+import io.smallrye.metrics.interceptors.CountedInterceptor;
+import io.smallrye.metrics.interceptors.MeteredInterceptor;
+import io.smallrye.metrics.interceptors.MetricName;
+import io.smallrye.metrics.interceptors.MetricNameFactory;
+import io.smallrye.metrics.interceptors.MetricResolver;
+import io.smallrye.metrics.interceptors.MetricsBinding;
+import io.smallrye.metrics.interceptors.MetricsInterceptor;
+import io.smallrye.metrics.interceptors.TimedInterceptor;
 
 /**
  * @author hrupp
@@ -100,7 +102,7 @@ public class MetricCdiInjectionExtension implements Extension {
         String extensionName = MetricCdiInjectionExtension.class.getName();
 
         // It seems that fraction deployment module cannot be picked up as a CDI bean archive - see also SWARM-1725
-        for (Class clazz : new Class[]{
+        for (Class clazz : new Class[] {
                 MetricProducer.class,
                 MetricNameFactory.class,
                 MetricsInterceptor.class,
@@ -117,7 +119,8 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     // THORN-2068: MicroProfile Rest Client basic support
-    private <X> void findAnnotatedInterfaces(@Observes @WithAnnotations({Counted.class, Gauge.class, Metered.class, Timed.class, ConcurrentGauge.class}) ProcessAnnotatedType<X> pat) {
+    private <X> void findAnnotatedInterfaces(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class,
+            Timed.class, ConcurrentGauge.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
         if (pack != null && pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
@@ -130,7 +133,7 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     // for classes with at least one gauge, apply @MetricsBinding which serves for gauge registration
-    private <X> void applyMetricsBinding(@Observes @WithAnnotations({Gauge.class}) ProcessAnnotatedType<X> pat) {
+    private <X> void applyMetricsBinding(@Observes @WithAnnotations({ Gauge.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
         if (pack == null || !pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
@@ -183,14 +186,15 @@ public class MetricCdiInjectionExtension implements Extension {
 
         for (Map.Entry<Bean<?>, AnnotatedMember<?>> bean : metricsFromProducers.entrySet()) {
             if (// skip non @Default beans
-                    !bean.getKey().getQualifiers().contains(DEFAULT)
-                            // skip producer methods with injection point metadata
-                            || hasInjectionPointMetadata(bean.getValue())) {
+            !bean.getKey().getQualifiers().contains(DEFAULT)
+                    // skip producer methods with injection point metadata
+                    || hasInjectionPointMetadata(bean.getValue())) {
                 continue;
             }
 
             String metricName = name.of(bean.getValue());
-            org.eclipse.microprofile.metrics.annotation.Metric metricAnnotation = bean.getValue().getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class);
+            org.eclipse.microprofile.metrics.annotation.Metric metricAnnotation = bean.getValue()
+                    .getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class);
             if (metricAnnotation != null) {
                 Object reference = getReference(manager, bean.getValue().getBaseType(), bean.getKey());
                 if (reference == null) {
@@ -198,7 +202,8 @@ public class MetricCdiInjectionExtension implements Extension {
                     return;
                 }
                 Class<?> clazz = reference.getClass();
-                MetricType type = MetricType.from(clazz.getInterfaces().length == 0 ? clazz.getSuperclass().getInterfaces()[0] : clazz.getInterfaces()[0]);
+                MetricType type = MetricType.from(clazz.getInterfaces().length == 0 ? clazz.getSuperclass().getInterfaces()[0]
+                        : clazz.getInterfaces()[0]);
                 Metadata metadata = MetricsMetadata.getMetadata(metricAnnotation,
                         metricName,
                         metricAnnotation.unit(),
@@ -229,7 +234,8 @@ public class MetricCdiInjectionExtension implements Extension {
             for (Class<?> metricsInterface : metricsInterfaces) {
                 for (Method method : metricsInterface.getDeclaredMethods()) {
                     if (!method.isDefault() && !Modifier.isStatic(method.getModifiers())) {
-                        MetricsMetadata.registerMetrics(registry, resolver, beanInfoAdapter.convert(metricsInterface), memberInfoAdapter.convert(method));
+                        MetricsMetadata.registerMetrics(registry, resolver, beanInfoAdapter.convert(metricsInterface),
+                                memberInfoAdapter.convert(method));
                     }
                 }
             }

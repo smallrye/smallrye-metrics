@@ -31,18 +31,18 @@
  */
 package io.smallrye.metrics.app;
 
+import static java.lang.Math.exp;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-
-import static java.lang.Math.exp;
 
 /**
  * An exponentially-weighted moving average.
  *
  * @see <a href="http://www.teamquest.com/pdfs/whitepaper/ldavg1.pdf">UNIX Load Average Part 1: How
- * It Works</a>
+ *      It Works</a>
  * @see <a href="http://www.teamquest.com/pdfs/whitepaper/ldavg2.pdf">UNIX Load Average Part 2: Not
- * Your Average Average</a>
+ *      Your Average Average</a>
  * @see <a href="http://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average">EMA</a>
  */
 public class EWMA {
@@ -94,8 +94,8 @@ public class EWMA {
     /**
      * Create a new EWMA with a specific smoothing constant.
      *
-     * @param alpha        the smoothing constant
-     * @param interval     the expected tick interval
+     * @param alpha the smoothing constant
+     * @param interval the expected tick interval
      * @param intervalUnit the time unit of the tick interval
      */
     public EWMA(double alpha, long interval, TimeUnit intervalUnit) {

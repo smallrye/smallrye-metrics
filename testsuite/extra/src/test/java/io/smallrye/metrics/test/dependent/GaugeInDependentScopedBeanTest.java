@@ -16,7 +16,9 @@
 
 package io.smallrye.metrics.test.dependent;
 
-import io.smallrye.metrics.MetricRegistries;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -29,8 +31,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import io.smallrye.metrics.MetricRegistries;
 
 /**
  * Gauges can only be used with AnnotationScoped beans. If we place a gauge on a bean that creates multiple
@@ -62,7 +63,7 @@ public class GaugeInDependentScopedBeanTest {
             DependentScopedBeanWithGauge instance1 = beanInstance.get();
             DependentScopedBeanWithGauge instance2 = beanInstance.get();
             Assert.fail("Shouldn't be able to create multiple instances of a bean that contains a gauge");
-        } catch(Exception e) {
+        } catch (Exception e) {
 
         }
     }

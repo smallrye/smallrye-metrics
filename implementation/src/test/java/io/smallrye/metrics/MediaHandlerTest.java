@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,107 +29,105 @@ import org.junit.Test;
  */
 public class MediaHandlerTest {
 
-  MetricsRequestHandler requestHandler;
+    MetricsRequestHandler requestHandler;
 
-  @Before
-  public void setUp()  {
+    @Before
+    public void setUp() {
 
-    requestHandler = new MetricsRequestHandler();
-  }
+        requestHandler = new MetricsRequestHandler();
+    }
 
-  @Test
-  public void testNotSamePrio() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1",
-                                                                             "text/plain;q=0.9"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
+    @Test
+    public void testNotSamePrio() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1",
+                "text/plain;q=0.9"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
-  @Test
-  public void testNotSamePrio2() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1,text/plain;q=0.9"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
+    @Test
+    public void testNotSamePrio2() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1,text/plain;q=0.9"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
-  @Test
-  public void testSamePrio() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.5",
-                                                                             "text/plain;q=0.5"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
+    @Test
+    public void testSamePrio() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.5",
+                "text/plain;q=0.5"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
-  @Test
-  public void testSamePrio2() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("text/plain;q=0.5",
-                                                                             "application/json;q=0.5"
-                                                                             ));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
+    @Test
+    public void testSamePrio2() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("text/plain;q=0.5",
+                "application/json;q=0.5"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
+    @Test
+    public void testNoMatch() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("image/png",
+                "image/jpeg "));
+        assertThat(res.isPresent()).isFalse();
+    }
 
-  @Test
-  public void testNoMatch() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("image/png",
-                                                                             "image/jpeg "));
-    assertThat(res.isPresent()).isFalse();
-  }
+    @Test
+    public void testBoth() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1",
+                "text/plain;q=0.9"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo(("text/plain"));
+    }
 
-  @Test
-  public void testBoth() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1",
-                                                                             "text/plain;q=0.9"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo(("text/plain"));
-  }
+    @Test
+    public void testBoth2() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1,text/plain;q=0.9"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo(("text/plain"));
+    }
 
-  @Test
-  public void testBoth2() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.1,text/plain;q=0.9"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo(("text/plain"));
-  }
+    @Test
+    public void testBoth3() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.8",
+                "text/plain;q=0.1"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("application/json");
+    }
 
-  @Test
-  public void testBoth3() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.8",
-                                                                             "text/plain;q=0.1"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("application/json");
-  }
+    @Test
+    public void testBoth4() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.8",
+                "text/plain;q=0.5",
+                "*/*;q=0.1"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("application/json");
+    }
 
-  @Test
-  public void testBoth4() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;q=0.8",
-                                                                             "text/plain;q=0.5",
-                                                                             "*/*;q=0.1"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("application/json");
-  }
+    @Test
+    public void testStarStarOnly() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("*/*"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
-  @Test
-  public void testStarStarOnly() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("*/*"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
+    @Test
+    public void testStarMix() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("*/*;q=0.1",
+                "image/png;q=1"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
-  @Test
-  public void testStarMix() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("*/*;q=0.1",
-                                                                             "image/png;q=1"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
-
-  @Test
-  public void testStarMix2() {
-    Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("image/png;q=1",
-                                                                             "*/*;q=0.1"));
-    assertThat(res.isPresent()).isTrue();
-    assertThat(res.get()).isEqualTo("text/plain");
-  }
+    @Test
+    public void testStarMix2() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("image/png;q=1",
+                "*/*;q=0.1"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
 
 }

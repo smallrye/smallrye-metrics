@@ -38,7 +38,8 @@ public class RawMemberInfo implements MemberInfo {
 
     }
 
-    public RawMemberInfo(MemberType memberType, String declaringClassName, String declaringClassSimpleName, String name, Collection<AnnotationInfo> annotationInfos) {
+    public RawMemberInfo(MemberType memberType, String declaringClassName, String declaringClassSimpleName, String name,
+            Collection<AnnotationInfo> annotationInfos) {
         this.memberType = memberType;
         this.declaringClassName = declaringClassName;
         this.declaringClassSimpleName = declaringClassSimpleName;
@@ -70,7 +71,6 @@ public class RawMemberInfo implements MemberInfo {
         return annotationInfos;
     }
 
-
     @Override
     public MemberType getMemberType() {
         return memberType;
@@ -93,7 +93,8 @@ public class RawMemberInfo implements MemberInfo {
 
     @Override
     public <T extends Annotation> AnnotationInfo getAnnotation(Class<T> metricClass) {
-        return annotationInfos.stream().filter(annotation -> annotation.annotationName().equals(metricClass.getName())).findFirst().orElse(null);
+        return annotationInfos.stream().filter(annotation -> annotation.annotationName().equals(metricClass.getName()))
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -103,10 +104,10 @@ public class RawMemberInfo implements MemberInfo {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof MemberInfo)) {
+        if (!(obj instanceof MemberInfo)) {
             return false;
         }
-        MemberInfo other = (MemberInfo)obj;
+        MemberInfo other = (MemberInfo) obj;
         return other.getDeclaringClassName().equals(this.getDeclaringClassName()) &&
                 other.getName().equals(this.getName());
     }

@@ -17,6 +17,11 @@
 
 package org.wildfly.swarm.microprofile.metrics.initialization;
 
+import static org.junit.Assert.assertTrue;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -29,12 +34,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Arquillian.class)
 public class Initialization_Gauge_Method_Test {
@@ -51,7 +50,6 @@ public class Initialization_Gauge_Method_Test {
 
     @Inject
     BeanWithGauge_ApplicationScoped applicationScopedBean;
-
 
     /**
      * With a gauge in an application-scoped bean, the metric will be registered once the bean is instantiated.

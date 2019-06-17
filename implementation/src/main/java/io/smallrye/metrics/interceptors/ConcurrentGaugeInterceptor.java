@@ -15,14 +15,8 @@
  */
 package io.smallrye.metrics.interceptors;
 
-import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
-import org.jboss.logging.Logger;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Intercepted;
@@ -33,8 +27,16 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
+import org.jboss.logging.Logger;
+
+import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
 @ConcurrentGauge
@@ -72,18 +74,21 @@ public class ConcurrentGaugeInterceptor {
         return concurrentCallable(context, context.getMethod());
     }
 
-    private <E extends Member & AnnotatedElement> Object concurrentCallable(InvocationContext context, E element) throws Exception {
+    private <E extends Member & AnnotatedElement> Object concurrentCallable(InvocationContext context, E element)
+            throws Exception {
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
         MetricResolver.Of<ConcurrentGauge> concurrentGaugeResolver = resolver.concurrentGauge(
-                bean != null ? beanInfoAdapter.convert(bean.getBeanClass()) : beanInfoAdapter.convert(element.getDeclaringClass()),
+                bean != null ? beanInfoAdapter.convert(bean.getBeanClass())
+                        : beanInfoAdapter.convert(element.getDeclaringClass()),
                 memberInfoAdapter.convert(element));
         String name = concurrentGaugeResolver.metricName();
         Tag[] tags = concurrentGaugeResolver.tags();
         MetricID metricID = new MetricID(name, tags);
         org.eclipse.microprofile.metrics.ConcurrentGauge concurrentGauge = registry.getConcurrentGauges().get(metricID);
         if (concurrentGauge == null) {
-            throw new IllegalStateException("No concurrent gauge with metricID [" + metricID + "] found in registry [" + registry + "]");
+            throw new IllegalStateException(
+                    "No concurrent gauge with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
         log.debugf("Increment concurrent gauge [metricId: %s]", metricID);
         concurrentGauge.inc();

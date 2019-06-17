@@ -31,7 +31,7 @@
  */
 package io.smallrye.metrics.app;
 
-import org.eclipse.microprofile.metrics.Snapshot;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
  * A statistical snapshot of a {@link WeightedSnapshot}.
@@ -51,14 +51,13 @@ public class WeightedSnapshot extends Snapshot {
     private final double[] normWeights;
     private final double[] quantiles;
 
-
     /**
      * Create a new {@link Snapshot} with the given values.
      *
      * @param values an unordered set of values in the reservoir
      */
     public WeightedSnapshot(Collection<WeightedSample> values) {
-        final WeightedSample[] copy = values.toArray(new WeightedSample[]{});
+        final WeightedSample[] copy = values.toArray(new WeightedSample[] {});
 
         Arrays.sort(copy, Comparator.comparing(w -> w.value));
 

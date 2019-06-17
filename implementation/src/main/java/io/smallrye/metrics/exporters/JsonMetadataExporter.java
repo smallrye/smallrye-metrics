@@ -17,10 +17,12 @@
 
 package io.smallrye.metrics.exporters;
 
-import io.smallrye.metrics.MetricRegistries;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import java.io.StringWriter;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -28,12 +30,12 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
-import java.io.StringWriter;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+import io.smallrye.metrics.MetricRegistries;
 
 /**
  * Created by bob on 1/22/18.
@@ -64,7 +66,8 @@ public class JsonMetadataExporter implements Exporter {
 
     @Override
     public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
-        throw new UnsupportedOperationException("Exporting metadata of one metricID is currently not implemented because it is not possible to perform such export according to specification.");
+        throw new UnsupportedOperationException(
+                "Exporting metadata of one metricID is currently not implemented because it is not possible to perform such export according to specification.");
     }
 
     @Override
@@ -86,9 +89,11 @@ public class JsonMetadataExporter implements Exporter {
 
     }
 
-    private static final Map<String, ?> JSON_CONFIG = new HashMap<String, Object>() {{
-        put(JsonGenerator.PRETTY_PRINTING, true);
-    }};
+    private static final Map<String, ?> JSON_CONFIG = new HashMap<String, Object>() {
+        {
+            put(JsonGenerator.PRETTY_PRINTING, true);
+        }
+    };
 
     StringBuffer stringify(JsonObject obj) {
         StringWriter out = new StringWriter();
@@ -97,7 +102,6 @@ public class JsonMetadataExporter implements Exporter {
         }
         return out.getBuffer();
     }
-
 
     private JsonObject rootJSON() {
         JsonObjectBuilder root = Json.createObjectBuilder();
@@ -115,7 +119,8 @@ public class JsonMetadataExporter implements Exporter {
 
         metrics.entrySet().stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
-                .forEach(e -> metricJSON(registryJSON, e.getKey(), e.getValue(), getKnownTagsByMetricName(registry, e.getKey())));
+                .forEach(e -> metricJSON(registryJSON, e.getKey(), e.getValue(),
+                        getKnownTagsByMetricName(registry, e.getKey())));
         return registryJSON.build();
     }
 
@@ -164,8 +169,7 @@ public class JsonMetadataExporter implements Exporter {
                 .map(id -> id.getTagsAsList()
                         .stream()
                         .map(tag -> tag.getTagName() + "=" + tag.getTagValue())
-                        .collect(Collectors.toList())
-                )
+                        .collect(Collectors.toList()))
                 .collect(Collectors.toList());
     }
 }

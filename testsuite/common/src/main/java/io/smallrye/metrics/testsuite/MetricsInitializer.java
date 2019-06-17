@@ -15,17 +15,18 @@
  */
 package io.smallrye.metrics.testsuite;
 
-import io.smallrye.metrics.setup.JmxRegistrar;
+import java.io.IOException;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import java.io.IOException;
+
+import io.smallrye.metrics.setup.JmxRegistrar;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
- * <br>
- * Date: 6/29/18
+ *         <br>
+ *         Date: 6/29/18
  */
 @ApplicationScoped
 public class MetricsInitializer {

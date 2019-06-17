@@ -19,8 +19,6 @@ package io.smallrye.metrics.elementdesc.adapter;
 
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 
-import java.lang.annotation.Annotation;
-
 public interface AnnotationInfoAdapter<I> {
 
     AnnotationInfo convert(I input);

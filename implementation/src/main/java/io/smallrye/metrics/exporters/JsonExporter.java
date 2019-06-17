@@ -17,7 +17,11 @@
 
 package io.smallrye.metrics.exporters;
 
-import io.smallrye.metrics.MetricRegistries;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -32,10 +36,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import io.smallrye.metrics.MetricRegistries;
 
 /**
  * @author hrupp
@@ -86,7 +87,6 @@ public class JsonExporter implements Exporter {
         Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
-
         Metric m = metricMap.get(metricID);
 
         Map<MetricID, Metric> outMap = new HashMap<>(1);
@@ -110,8 +110,7 @@ public class JsonExporter implements Exporter {
                 .filter(e -> e.getKey().getName().equals(name))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
+                        Map.Entry::getValue));
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
         StringBuffer sb = new StringBuffer();
@@ -129,7 +128,6 @@ public class JsonExporter implements Exporter {
     public String getContentType() {
         return "application/json";
     }
-
 
     private StringBuffer writeMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
         StringBuffer sb = new StringBuffer();
@@ -225,7 +223,8 @@ public class JsonExporter implements Exporter {
                     .map(e -> {
                         String tags = createTagsString(e.getKey().getTagsAsList());
                         long count = ((Histogram) e.getValue()).getCount();
-                        return new StringBuffer().append("    \"count").append(tags).append("\": ").append(count).append(COMMA_LF)
+                        return new StringBuffer().append("    \"count").append(tags).append("\": ").append(count)
+                                .append(COMMA_LF)
                                 .append(writeSnapshotValues(((Histogram) e.getValue()).getSnapshot(), tags));
                     })
                     .collect(Collectors.joining(COMMA_LF));
@@ -241,7 +240,8 @@ public class JsonExporter implements Exporter {
             writeStartLine(sb, metadata.getName());
             String values = metricMap.entrySet()
                     .stream()
-                    .map(e -> writeConcurrentGaugeValues((ConcurrentGauge) e.getValue(), createTagsString(e.getKey().getTagsAsList())))
+                    .map(e -> writeConcurrentGaugeValues((ConcurrentGauge) e.getValue(),
+                            createTagsString(e.getKey().getTagsAsList())))
                     .collect(Collectors.joining(COMMA_LF));
             sb.append(values).append(LF);
             writeEndLine(sb);
@@ -313,7 +313,8 @@ public class JsonExporter implements Exporter {
         sb.append("    \"p95").append(tags).append("\": ").append(toBase(snapshot.get95thPercentile(), unit)).append(COMMA_LF);
         sb.append("    \"p98").append(tags).append("\": ").append(toBase(snapshot.get98thPercentile(), unit)).append(COMMA_LF);
         sb.append("    \"p99").append(tags).append("\": ").append(toBase(snapshot.get99thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p999").append(tags).append("\": ").append(toBase(snapshot.get999thPercentile(), unit)).append(COMMA_LF);
+        sb.append("    \"p999").append(tags).append("\": ").append(toBase(snapshot.get999thPercentile(), unit))
+                .append(COMMA_LF);
         sb.append("    \"min").append(tags).append("\": ").append(toBase(snapshot.getMin(), unit)).append(COMMA_LF);
         sb.append("    \"mean").append(tags).append("\": ").append(toBase(snapshot.getMean(), unit)).append(COMMA_LF);
         sb.append("    \"max").append(tags).append("\": ").append(toBase(snapshot.getMax(), unit)).append(COMMA_LF);
@@ -353,9 +354,9 @@ public class JsonExporter implements Exporter {
             return ";" + tagsAsList.stream()
                     .map(tag -> tag.getTagName() + "=" + tag.getTagValue()
                             .replaceAll(";", "_")
-                            .replaceAll("\"", "\\\\\"" )
-                            .replaceAll("\n", "\\\\n" )
-                    ).collect(Collectors.joining(";"));
+                            .replaceAll("\"", "\\\\\"")
+                            .replaceAll("\n", "\\\\n"))
+                    .collect(Collectors.joining(";"));
         }
     }
 

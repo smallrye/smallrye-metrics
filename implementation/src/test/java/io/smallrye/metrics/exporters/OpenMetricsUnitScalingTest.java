@@ -17,6 +17,7 @@
 package io.smallrye.metrics.exporters;
 
 import java.util.Optional;
+
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.Test;
 

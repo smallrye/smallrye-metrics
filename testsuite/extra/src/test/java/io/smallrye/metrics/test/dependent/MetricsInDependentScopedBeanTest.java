@@ -16,7 +16,11 @@
 
 package io.smallrye.metrics.test.dependent;
 
-import io.smallrye.metrics.MetricRegistries;
+import static org.junit.Assert.assertEquals;
+
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -25,15 +29,11 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertEquals;
+import io.smallrye.metrics.MetricRegistries;
 
 /**
  * Verify that it is possible to have metrics (except gauges) in beans with other scope than just ApplicationScope.

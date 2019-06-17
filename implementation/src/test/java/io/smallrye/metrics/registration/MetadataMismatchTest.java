@@ -16,7 +16,13 @@
  */
 package io.smallrye.metrics.registration;
 
-import io.smallrye.metrics.MetricRegistries;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -25,12 +31,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.junit.After;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import io.smallrye.metrics.MetricRegistries;
 
 public class MetadataMismatchTest {
 
@@ -67,7 +68,6 @@ public class MetadataMismatchTest {
         assertEquals(2, registry.getMetrics().size());
         assertThat(registry.getMetadata().get("myhistogram").getDescription().get(), equalTo("description1"));
     }
-
 
     @Test
     public void metricsWithSameTypeAndMetadata() {

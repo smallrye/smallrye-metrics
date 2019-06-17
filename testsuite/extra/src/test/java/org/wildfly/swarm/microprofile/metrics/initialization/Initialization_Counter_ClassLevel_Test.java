@@ -17,6 +17,11 @@
 
 package org.wildfly.swarm.microprofile.metrics.initialization;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
@@ -28,11 +33,6 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Arquillian.class)
 public class Initialization_Counter_ClassLevel_Test {
@@ -50,14 +50,16 @@ public class Initialization_Counter_ClassLevel_Test {
     @Test
     public void test() {
         // metric should be created for the constructor
-        assertTrue(registry.getCounters().containsKey(new MetricID("customName.BeanWithCounter_ClassLevel", new Tag("t1", "v1"))));
+        assertTrue(
+                registry.getCounters().containsKey(new MetricID("customName.BeanWithCounter_ClassLevel", new Tag("t1", "v1"))));
 
         // metrics should be created for public methods
         assertTrue(registry.getCounters().containsKey(new MetricID("customName.publicMethod", new Tag("t1", "v1"))));
         assertTrue(registry.getCounters().containsKey(new MetricID("customName.publicMethod2", new Tag("t1", "v1"))));
 
         // but not for private methods
-        assertFalse(registry.getCounters().keySet().stream().anyMatch(metricID -> metricID.getName().toLowerCase().contains("private")));
+        assertFalse(registry.getCounters().keySet().stream()
+                .anyMatch(metricID -> metricID.getName().toLowerCase().contains("private")));
     }
 
     @Counted(name = "customName", tags = "t1=v1", absolute = true)

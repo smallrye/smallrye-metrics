@@ -52,7 +52,6 @@ public class MetadataList {
         this.vendor = vendor;
     }
 
-
     public List<ExtendedMetadata> get(String domain) {
         switch (domain) {
             case "base":

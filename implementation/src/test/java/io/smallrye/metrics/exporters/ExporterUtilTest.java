@@ -20,12 +20,11 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 /**
  *
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
- * <br>
- * Date: 3/23/18
+ *         <br>
+ *         Date: 3/23/18
  */
 public class ExporterUtilTest {
     @Test

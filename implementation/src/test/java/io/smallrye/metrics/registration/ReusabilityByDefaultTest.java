@@ -17,7 +17,10 @@
 
 package io.smallrye.metrics.registration;
 
-import io.smallrye.metrics.MetricRegistries;
+import static org.junit.Assert.assertEquals;
+
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -29,9 +32,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
+import io.smallrye.metrics.MetricRegistries;
 
 /**
  * Verify that programmatically created metrics can be reused by default.
@@ -104,7 +105,7 @@ public class ReusabilityByDefaultTest {
         try {
             registry.register(metadata, (Gauge<Long>) () -> 43L);
             Assert.fail("Should not be able to re-register a gauge");
-        } catch(IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ex) {
             // OK
         }
 

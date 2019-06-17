@@ -31,11 +31,11 @@
  */
 package io.smallrye.metrics.app;
 
-import org.eclipse.microprofile.metrics.Snapshot;
-import org.eclipse.microprofile.metrics.Timer;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * A timer metric which aggregates timing durations and provides duration statistics, plus
@@ -46,7 +46,6 @@ public class TimerImpl implements Timer {
     private final MeterImpl meter;
     private final HistogramImpl histogram;
     private final Clock clock;
-
 
     /**
      * Creates a new {@link TimerImpl} using an {@link ExponentiallyDecayingReservoir} and the default
@@ -69,7 +68,7 @@ public class TimerImpl implements Timer {
      * Creates a new {@link TimerImpl} that uses the given {@link Reservoir} and {@link Clock}.
      *
      * @param reservoir the {@link Reservoir} implementation the timer should use
-     * @param clock     the {@link Clock} implementation the timer should use
+     * @param clock the {@link Clock} implementation the timer should use
      */
     public TimerImpl(Reservoir reservoir, Clock clock) {
         this.meter = new MeterImpl(clock);
@@ -81,7 +80,7 @@ public class TimerImpl implements Timer {
      * Adds a recorded duration.
      *
      * @param duration the length of the duration
-     * @param unit     the scale unit of {@code duration}
+     * @param unit the scale unit of {@code duration}
      */
     public void update(long duration, TimeUnit unit) {
         update(unit.toNanos(duration));
@@ -91,8 +90,8 @@ public class TimerImpl implements Timer {
      * Times and records the duration of event.
      *
      * @param event a {@link Callable} whose {@link Callable#call()} method implements a process
-     *              whose duration should be timed
-     * @param <T>   the type of the value returned by {@code event}
+     *        whose duration should be timed
+     * @param <T> the type of the value returned by {@code event}
      * @return the value returned by {@code event}
      * @throws Exception if {@code event} throws an {@link Exception}
      */
@@ -109,7 +108,7 @@ public class TimerImpl implements Timer {
      * Times and records the duration of event.
      *
      * @param event a {@link Runnable} whose {@link Runnable#run()} method implements a process
-     *              whose duration should be timed
+     *        whose duration should be timed
      */
     public void time(Runnable event) {
         final long startTime = clock.getTick();

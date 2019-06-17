@@ -17,14 +17,15 @@
 
 package io.smallrye.metrics.elementdesc.adapter.cdi;
 
-import io.smallrye.metrics.elementdesc.AnnotationInfo;
+import java.lang.annotation.Annotation;
+
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import java.lang.annotation.Annotation;
+import io.smallrye.metrics.elementdesc.AnnotationInfo;
 
 public class CDIAnnotationInfo implements AnnotationInfo {
 
@@ -157,7 +158,6 @@ public class CDIAnnotationInfo implements AnnotationInfo {
     public String annotationName() {
         return annotation.annotationType().getName();
     }
-
 
     @Override
     public String toString() {

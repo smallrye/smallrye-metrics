@@ -21,8 +21,8 @@ import org.jboss.arquillian.core.spi.LoadableExtension;
 /**
  *
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
- * <br>
- * Date: 6/25/18
+ *         <br>
+ *         Date: 6/25/18
  */
 public class MetricsExtension implements LoadableExtension {
 

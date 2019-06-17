@@ -31,16 +31,16 @@
  */
 package io.smallrye.metrics.app;
 
+import java.util.concurrent.atomic.LongAdder;
+
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
-
-import java.util.concurrent.atomic.LongAdder;
 
 /**
  * A metric which calculates the distribution of a value.
  *
  * @see <a href="http://www.johndcook.com/standard_deviation.html">Accurately computing running
- * variance</a>
+ *      variance</a>
  */
 public class HistogramImpl implements Histogram {
     private final Reservoir reservoir;

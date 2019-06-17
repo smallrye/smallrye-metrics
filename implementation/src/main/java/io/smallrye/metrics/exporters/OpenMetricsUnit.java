@@ -25,6 +25,7 @@ import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_MINUTE;
 import static io.smallrye.metrics.exporters.ExporterUtil.NANOS_PER_SECOND;
 
 import java.util.Optional;
+
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
@@ -32,10 +33,8 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  */
 public class OpenMetricsUnit {
 
-
     private OpenMetricsUnit() {
     }
-
 
     /**
      * Determines the basic unit to be used by OpenMetrics exporter based on the input unit from parameter.
@@ -55,44 +54,44 @@ public class OpenMetricsUnit {
         String out;
         switch (unit) {
 
-      /* Represents bits. Not defined by SI, but by IEC 60027 */
+            /* Represents bits. Not defined by SI, but by IEC 60027 */
             case MetricUnits.BITS:
-      /* 1000 {@link #BITS} */
+                /* 1000 {@link #BITS} */
             case MetricUnits.KILOBITS:
-      /* 1000 {@link #KIBIBITS} */
+                /* 1000 {@link #KIBIBITS} */
             case MetricUnits.MEGABITS:
-      /* 1000 {@link #MEGABITS} */
+                /* 1000 {@link #MEGABITS} */
             case MetricUnits.GIGABITS:
-      /* 1024 {@link #BITS} */
+                /* 1024 {@link #BITS} */
             case MetricUnits.KIBIBITS:
-      /* 1024 {@link #KIBIBITS}  */
+                /* 1024 {@link #KIBIBITS} */
             case MetricUnits.MEBIBITS:
-      /* 1024 {@link #MEBIBITS} */
+                /* 1024 {@link #MEBIBITS} */
             case MetricUnits.GIBIBITS:
-      /* 8 {@link #BITS} */
+                /* 8 {@link #BITS} */
             case MetricUnits.BYTES:
-      /* 1000 {@link #BYTES} */
+                /* 1000 {@link #BYTES} */
             case MetricUnits.KILOBYTES:
-      /* 1000 {@link #KILOBYTES} */
+                /* 1000 {@link #KILOBYTES} */
             case MetricUnits.MEGABYTES:
-      /* 1000 {@link #MEGABYTES} */
+                /* 1000 {@link #MEGABYTES} */
             case MetricUnits.GIGABYTES:
                 out = "bytes";
                 break;
 
-      /* 1/1000 {@link #MICROSECONDS} */
+            /* 1/1000 {@link #MICROSECONDS} */
             case MetricUnits.NANOSECONDS:
-      /* 1/1000 {@link #MILLISECONDS} */
+                /* 1/1000 {@link #MILLISECONDS} */
             case MetricUnits.MICROSECONDS:
-      /* 1/1000 {@link #SECONDS} */
+                /* 1/1000 {@link #SECONDS} */
             case MetricUnits.MILLISECONDS:
-      /* Represents seconds */
+                /* Represents seconds */
             case MetricUnits.SECONDS:
-      /* 60 {@link #SECONDS} */
+                /* 60 {@link #SECONDS} */
             case MetricUnits.MINUTES:
-      /* 60 {@link #MINUTES} */
+                /* 60 {@link #MINUTES} */
             case MetricUnits.HOURS:
-      /* 24 {@link #HOURS} */
+                /* 24 {@link #HOURS} */
             case MetricUnits.DAYS:
                 out = "seconds";
                 break;
@@ -127,7 +126,7 @@ public class OpenMetricsUnit {
             case MetricUnits.GIGABITS:
                 out = value * 1_000_000_000 / 8;
                 break;
-      /* 1024 {@link #BITS} */
+            /* 1024 {@link #BITS} */
             case MetricUnits.KIBIBITS:
                 out = value * 128;
                 break;

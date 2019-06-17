@@ -15,16 +15,17 @@
  */
 package io.smallrye.metrics.tck.rest;
 
-import org.jboss.weld.environment.deployment.discovery.BeanArchiveBuilder;
-import org.jboss.weld.environment.deployment.discovery.BeanArchiveHandler;
-import org.jboss.weld.environment.util.Files;
-
-import javax.annotation.Priority;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import javax.annotation.Priority;
+
+import org.jboss.weld.environment.deployment.discovery.BeanArchiveBuilder;
+import org.jboss.weld.environment.deployment.discovery.BeanArchiveHandler;
+import org.jboss.weld.environment.util.Files;
 
 /**
  * Copied from SmallRye Rest Client

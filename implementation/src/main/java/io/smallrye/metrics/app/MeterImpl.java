@@ -31,11 +31,11 @@
  */
 package io.smallrye.metrics.app;
 
-import org.eclipse.microprofile.metrics.Meter;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+
+import org.eclipse.microprofile.metrics.Meter;
 
 /**
  * A meter metric which measures mean throughput and one-, five-, and fifteen-minute

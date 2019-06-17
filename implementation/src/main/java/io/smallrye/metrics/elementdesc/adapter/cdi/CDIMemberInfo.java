@@ -17,16 +17,16 @@
 
 package io.smallrye.metrics.elementdesc.adapter.cdi;
 
-import io.smallrye.metrics.elementdesc.AnnotationInfo;
-import io.smallrye.metrics.elementdesc.MemberInfo;
-import io.smallrye.metrics.elementdesc.MemberType;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+
+import io.smallrye.metrics.elementdesc.AnnotationInfo;
+import io.smallrye.metrics.elementdesc.MemberInfo;
+import io.smallrye.metrics.elementdesc.MemberType;
 
 public class CDIMemberInfo implements MemberInfo {
 
@@ -38,11 +38,11 @@ public class CDIMemberInfo implements MemberInfo {
 
     @Override
     public MemberType getMemberType() {
-        if(input instanceof Constructor) {
+        if (input instanceof Constructor) {
             return MemberType.CONSTRUCTOR;
-        } else if(input instanceof Method) {
+        } else if (input instanceof Method) {
             return MemberType.METHOD;
-        } else if(input instanceof Field) {
+        } else if (input instanceof Field) {
             return MemberType.FIELD;
         } else {
             throw new Error("Unknown/unsupported member type");
@@ -51,28 +51,28 @@ public class CDIMemberInfo implements MemberInfo {
 
     @Override
     public String getDeclaringClassName() {
-        return ((Member)input).getDeclaringClass().getName();
+        return ((Member) input).getDeclaringClass().getName();
     }
 
     @Override
     public String getDeclaringClassSimpleName() {
-        return ((Member)input).getDeclaringClass().getSimpleName();
+        return ((Member) input).getDeclaringClass().getSimpleName();
     }
 
     @Override
     public String getName() {
-        return ((Member)input).getName();
+        return ((Member) input).getName();
     }
 
     @Override
     public <X extends Annotation> boolean isAnnotationPresent(Class<X> metric) {
-        return ((AnnotatedElement)input).isAnnotationPresent(metric);
+        return ((AnnotatedElement) input).isAnnotationPresent(metric);
     }
 
     @Override
     public <X extends Annotation> AnnotationInfo getAnnotation(Class<X> metric) {
-        X annotation = ((AnnotatedElement)input).getAnnotation(metric);
-        if(annotation != null) {
+        X annotation = ((AnnotatedElement) input).getAnnotation(metric);
+        if (annotation != null) {
             return new CDIAnnotationInfoAdapter().convert(annotation);
         } else {
             return null;
@@ -81,10 +81,10 @@ public class CDIMemberInfo implements MemberInfo {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof MemberInfo)) {
+        if (!(obj instanceof MemberInfo)) {
             return false;
         }
-        MemberInfo other = (MemberInfo)obj;
+        MemberInfo other = (MemberInfo) obj;
         return other.getDeclaringClassName().equals(this.getDeclaringClassName()) &&
                 other.getName().equals(this.getName());
     }

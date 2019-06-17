@@ -25,6 +25,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -47,9 +50,6 @@ import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
 import io.smallrye.metrics.app.TimerImpl;
-
-import javax.json.Json;
-import javax.json.JsonObject;
 
 public class JsonExporterTest {
 
@@ -400,7 +400,8 @@ public class JsonExporterTest {
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "counter1").toString();
         JsonObject json = Json.createReader(new StringReader(result)).read().asJsonObject();
 
-        assertEquals("Double quotes in tag values should be escaped", "counter1;tag1=i_have\"quotes\"", json.keySet().stream().findFirst().get());
+        assertEquals("Double quotes in tag values should be escaped", "counter1;tag1=i_have\"quotes\"",
+                json.keySet().stream().findFirst().get());
     }
 
     @Test

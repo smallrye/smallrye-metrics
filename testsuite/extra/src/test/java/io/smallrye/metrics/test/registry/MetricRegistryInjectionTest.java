@@ -15,6 +15,12 @@
  */
 package io.smallrye.metrics.test.registry;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.Counting;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -25,14 +31,9 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import io.smallrye.metrics.test.HelloService;
 import io.smallrye.metrics.test.MetricsSummary;
-
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -49,7 +50,8 @@ public class MetricRegistryInjectionTest {
 
     @Deployment
     public static WebArchive createTestArchive() {
-        return ShrinkWrap.create(WebArchive.class).addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml").addPackage(MetricsSummary.class.getPackage())
+        return ShrinkWrap.create(WebArchive.class).addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addPackage(MetricsSummary.class.getPackage())
                 .addPackage(MetricRegistryInjectionTest.class.getPackage());
     }
 

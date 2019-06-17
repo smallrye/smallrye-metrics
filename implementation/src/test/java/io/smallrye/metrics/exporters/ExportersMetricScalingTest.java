@@ -17,7 +17,16 @@
 
 package io.smallrye.metrics.exporters;
 
-import io.smallrye.metrics.MetricRegistries;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertEquals;
+
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -33,14 +42,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertEquals;
+import io.smallrye.metrics.MetricRegistries;
 
 public class ExportersMetricScalingTest {
 
@@ -173,7 +175,6 @@ public class ExportersMetricScalingTest {
 
         JsonExporter exporter = new JsonExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
-
 
         JsonObject json = Json.createReader(new StringReader(exported)).read().asJsonObject().getJsonObject("timer1");
         assertEquals(120.0, json.getJsonNumber("p50").doubleValue(), 0.001);

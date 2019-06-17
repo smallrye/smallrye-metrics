@@ -31,7 +31,8 @@
  */
 package io.smallrye.metrics.app;
 
-import org.eclipse.microprofile.metrics.Snapshot;
+import static java.lang.Math.exp;
+import static java.lang.Math.min;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -40,8 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.min;
+import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
  * An exponentially-decaying random reservoir of {@code long}s. Uses Cormode et al's
@@ -49,8 +49,8 @@ import static java.lang.Math.min;
  * sampling reservoir, exponentially biased towards newer entries.
  *
  * @see <a href="http://dimacs.rutgers.edu/~graham/pubs/papers/fwddecay.pdf">
- * Cormode et al. Forward Decay: A Practical Time Decay Model for Streaming Systems. ICDE '09:
- * Proceedings of the 2009 IEEE International Conference on Data Engineering (2009)</a>
+ *      Cormode et al. Forward Decay: A Practical Time Decay Model for Streaming Systems. ICDE '09:
+ *      Proceedings of the 2009 IEEE International Conference on Data Engineering (2009)</a>
  */
 public class ExponentiallyDecayingReservoir implements Reservoir {
     private static final int DEFAULT_SIZE = 1028;
@@ -78,9 +78,9 @@ public class ExponentiallyDecayingReservoir implements Reservoir {
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir}.
      *
-     * @param size  the number of samples to keep in the sampling reservoir
+     * @param size the number of samples to keep in the sampling reservoir
      * @param alpha the exponential decay factor; the higher this is, the more biased the reservoir
-     *              will be towards newer values
+     *        will be towards newer values
      */
     public ExponentiallyDecayingReservoir(int size, double alpha) {
         this(size, alpha, Clock.defaultClock());
@@ -89,9 +89,9 @@ public class ExponentiallyDecayingReservoir implements Reservoir {
     /**
      * Creates a new {@link ExponentiallyDecayingReservoir}.
      *
-     * @param size  the number of samples to keep in the sampling reservoir
+     * @param size the number of samples to keep in the sampling reservoir
      * @param alpha the exponential decay factor; the higher this is, the more biased the reservoir
-     *              will be towards newer values
+     *        will be towards newer values
      * @param clock the clock used to timestamp samples and track rescaling
      */
     public ExponentiallyDecayingReservoir(int size, double alpha, Clock clock) {
@@ -118,7 +118,7 @@ public class ExponentiallyDecayingReservoir implements Reservoir {
     /**
      * Adds an old value with a fixed timestamp to the reservoir.
      *
-     * @param value     the value to be added
+     * @param value the value to be added
      * @param timestamp the epoch timestamp of {@code value} in seconds
      */
     public void update(long value, long timestamp) {
@@ -173,7 +173,8 @@ public class ExponentiallyDecayingReservoir implements Reservoir {
         return exp(alpha * t);
     }
 
-    /* "A common feature of the above techniques—indeed, the key technique that
+    /*
+     * "A common feature of the above techniques—indeed, the key technique that
      * allows us to track the decayed weights efficiently—is that they maintain
      * counts and other quantities based on g(ti − L), and only scale by g(t − L)
      * at query time. But while g(ti −L)/g(t−L) is guaranteed to lie between zero
@@ -204,7 +205,8 @@ public class ExponentiallyDecayingReservoir implements Reservoir {
                     final ArrayList<Double> keys = new ArrayList<>(values.keySet());
                     for (Double key : keys) {
                         final WeightedSnapshot.WeightedSample sample = values.remove(key);
-                        final WeightedSnapshot.WeightedSample newSample = new WeightedSnapshot.WeightedSample(sample.value, sample.weight * scalingFactor);
+                        final WeightedSnapshot.WeightedSample newSample = new WeightedSnapshot.WeightedSample(sample.value,
+                                sample.weight * scalingFactor);
                         values.put(key * scalingFactor, newSample);
                     }
                 }

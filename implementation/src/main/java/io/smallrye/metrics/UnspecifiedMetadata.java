@@ -17,15 +17,16 @@
 
 package io.smallrye.metrics;
 
+import java.util.Optional;
+
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricType;
-
-import java.util.Optional;
 
 /**
  * This is a special class to internally mark that no metadata was specified for a metric registration. We can't simply use null
  * instead of this because we still need to keep track of the metric name and type somewhere.
- * Instances of this class MUST NOT be actually stored in the MetricsRegistry, it needs to be converted to real metadata first!!!
+ * Instances of this class MUST NOT be actually stored in the MetricsRegistry, it needs to be converted to real metadata
+ * first!!!
  */
 public class UnspecifiedMetadata implements Metadata {
 

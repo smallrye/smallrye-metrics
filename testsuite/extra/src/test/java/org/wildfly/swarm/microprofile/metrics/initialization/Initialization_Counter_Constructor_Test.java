@@ -1,5 +1,10 @@
 package org.wildfly.swarm.microprofile.metrics.initialization;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import javax.inject.Inject;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -11,11 +16,6 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.inject.Inject;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(Arquillian.class)
 public class Initialization_Counter_Constructor_Test {
@@ -33,8 +33,9 @@ public class Initialization_Counter_Constructor_Test {
     @Test
     public void test() {
         Counter metricFromConstructor = registry.getCounters()
-                .get(new MetricID("org.wildfly.swarm.microprofile.metrics.initialization.Initialization_Counter_Constructor_Test" +
-                        "$BeanWithCounter_Constructor.BeanWithCounter_Constructor"));
+                .get(new MetricID(
+                        "org.wildfly.swarm.microprofile.metrics.initialization.Initialization_Counter_Constructor_Test" +
+                                "$BeanWithCounter_Constructor.BeanWithCounter_Constructor"));
         assertNotNull(metricFromConstructor);
         assertEquals(1, registry.getCounters().size());
     }
@@ -47,6 +48,5 @@ public class Initialization_Counter_Constructor_Test {
         }
 
     }
-
 
 }

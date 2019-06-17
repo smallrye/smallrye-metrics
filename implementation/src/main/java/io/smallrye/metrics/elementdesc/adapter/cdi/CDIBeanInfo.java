@@ -17,10 +17,10 @@
 
 package io.smallrye.metrics.elementdesc.adapter.cdi;
 
+import java.lang.annotation.Annotation;
+
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
-
-import java.lang.annotation.Annotation;
 
 public class CDIBeanInfo implements BeanInfo {
 
@@ -43,7 +43,7 @@ public class CDIBeanInfo implements BeanInfo {
     @Override
     public <T extends Annotation> AnnotationInfo getAnnotation(Class<T> metric) {
         T annotation = input.getAnnotation(metric);
-        if(annotation != null) {
+        if (annotation != null) {
             return new CDIAnnotationInfoAdapter().convert(annotation);
         } else {
             return null;

@@ -40,7 +40,7 @@ public class RawAnnotationInfo implements AnnotationInfo {
     }
 
     public RawAnnotationInfo(String name, boolean absolute, String[] tags, String unit,
-                             String description, String displayName, boolean reusable, String annotationName) {
+            String description, String displayName, boolean reusable, String annotationName) {
         this.name = name;
         this.absolute = absolute;
         this.tags = tags;
@@ -154,6 +154,5 @@ public class RawAnnotationInfo implements AnnotationInfo {
     public String annotationName() {
         return annotationName;
     }
-
 
 }
