@@ -16,6 +16,8 @@
  */
 package io.smallrye.metrics;
 
+import java.util.Objects;
+
 import org.eclipse.microprofile.metrics.DefaultMetadata;
 import org.eclipse.microprofile.metrics.MetricType;
 
@@ -50,4 +52,24 @@ public class ExtendedMetadata extends DefaultMetadata {
         return multi;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        ExtendedMetadata that = (ExtendedMetadata) o;
+        return multi == that.multi &&
+                Objects.equals(mbean, that.mbean);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), mbean, multi);
+    }
 }

@@ -39,6 +39,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Objects;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 
@@ -57,6 +58,7 @@ public class WeightedSnapshot extends Snapshot {
      * @param values an unordered set of values in the reservoir
      */
     public WeightedSnapshot(Collection<WeightedSample> values) {
+        Objects.requireNonNull(values);
         final WeightedSample[] copy = values.toArray(new WeightedSample[] {});
 
         Arrays.sort(copy, Comparator.comparing(w -> w.value));

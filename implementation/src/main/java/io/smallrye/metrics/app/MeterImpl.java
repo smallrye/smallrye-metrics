@@ -132,8 +132,8 @@ public class MeterImpl implements Meter {
         if (getCount() == 0) {
             return 0.0;
         } else {
-            final double elapsed = clock.getTick() - startTime;
-            return getCount() / elapsed * TimeUnit.SECONDS.toNanos(1);
+            final long elapsed = clock.getTick() - startTime;
+            return getCount() / (double) elapsed * TimeUnit.SECONDS.toNanos(1);
         }
     }
 

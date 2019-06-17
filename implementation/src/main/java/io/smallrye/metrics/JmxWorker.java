@@ -107,7 +107,6 @@ public class JmxWorker {
     public void expandMultiValueEntries(List<ExtendedMetadataAndTags> entries) {
         List<ExtendedMetadataAndTags> result = new ArrayList<>();
         List<ExtendedMetadataAndTags> toBeRemoved = new ArrayList<>(entries.size());
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         for (ExtendedMetadataAndTags entry : entries) {
             if (entry.getMetadata().isMulti()) {
                 String name = entry.getMetadata().getMbean();
@@ -155,7 +154,8 @@ public class JmxWorker {
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
 
                         ExtendedMetadata newEntryMetadata = new ExtendedMetadata(newName, newDisplayName, newDescription,
-                                entry.getMetadata().getTypeRaw(), entry.getMetadata().getUnit().get(), newObjectName, true);
+                                entry.getMetadata().getTypeRaw(), entry.getMetadata().getUnit().orElse(null), newObjectName,
+                                true);
                         ExtendedMetadataAndTags newEntry = new ExtendedMetadataAndTags(newEntryMetadata, newTags);
                         result.add(newEntry);
                     }
@@ -172,9 +172,9 @@ public class JmxWorker {
 
     private Map<String, String> findKeyForValueToBeReplaced(ObjectName objectName) {
         return objectName.getKeyPropertyList().entrySet().stream()
-                .filter((entry) -> entry.getValue().matches(PLACEHOLDER + "(\\d)?+"))
+                .filter(entry -> entry.getValue().matches(PLACEHOLDER + "(\\d)?+"))
                 .collect(Collectors.toMap(
-                        e -> e.getValue(),
-                        e -> e.getKey()));
+                        Entry::getValue,
+                        Entry::getKey));
     }
 }

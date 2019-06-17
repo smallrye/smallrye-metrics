@@ -49,9 +49,9 @@ public class JsonExporter implements Exporter {
     private static final String LF = "\n";
 
     @Override
-    public StringBuffer exportOneScope(MetricRegistry.Type scope) {
+    public StringBuilder exportOneScope(MetricRegistry.Type scope) {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         getMetricsForAScope(sb, scope);
 
@@ -59,8 +59,8 @@ public class JsonExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportAllScopes() {
-        StringBuffer sb = new StringBuffer();
+    public StringBuilder exportAllScopes() {
+        StringBuilder sb = new StringBuilder();
         sb.append("{");
 
         boolean first = true;
@@ -82,7 +82,7 @@ public class JsonExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
+    public StringBuilder exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
@@ -92,7 +92,7 @@ public class JsonExporter implements Exporter {
         Map<MetricID, Metric> outMap = new HashMap<>(1);
         outMap.put(metricID, m);
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("{");
         writeMetricsForMap(sb, outMap, metadataMap);
         sb.append("}");
@@ -102,7 +102,7 @@ public class JsonExporter implements Exporter {
     }
 
     @Override
-    public StringBuffer exportMetricsByName(MetricRegistry.Type scope, String name) {
+    public StringBuilder exportMetricsByName(MetricRegistry.Type scope, String name) {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics()
                 .entrySet()
@@ -113,7 +113,7 @@ public class JsonExporter implements Exporter {
                         Map.Entry::getValue));
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("{");
         sb.append(JsonExporter.LF);
         writeMetricsForMap(sb, metricMap, metadataMap);
@@ -129,8 +129,8 @@ public class JsonExporter implements Exporter {
         return "application/json";
     }
 
-    private StringBuffer writeMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuilder sb = new StringBuilder();
         switch (metadata.getTypeRaw()) {
             case GAUGE:
             case COUNTER:
@@ -158,7 +158,7 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private void getMetricsForAScope(StringBuffer sb, MetricRegistry.Type scope) {
+    private void getMetricsForAScope(StringBuilder sb, MetricRegistry.Type scope) {
 
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
@@ -171,12 +171,12 @@ public class JsonExporter implements Exporter {
         sb.append(LF).append("}");
     }
 
-    private void writeMetricsForMap(StringBuffer outSb, Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
+    private void writeMetricsForMap(StringBuilder outSb, Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
         // split into groups by metric name
         Map<String, Map<MetricID, Metric>> metricsGroupedByName = metricMap.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         entry -> entry.getKey().getName(),
-                        Collectors.mapping(e -> e, Collectors.toMap(e -> e.getKey(), e -> e.getValue()))));
+                        Collectors.mapping(e -> e, Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
         // and then for each group, perform the export
         String result = metricsGroupedByName.entrySet().stream()
                 .map(entry -> writeMetricsByName(entry.getValue(), metadataMap.get(entry.getKey())))
@@ -184,24 +184,24 @@ public class JsonExporter implements Exporter {
         outSb.append(result);
     }
 
-    private void writeEndLine(StringBuffer sb) {
+    private void writeEndLine(StringBuilder sb) {
         sb.append("  }");
     }
 
-    private void writeStartLine(StringBuffer sb, String key) {
+    private void writeStartLine(StringBuilder sb, String key) {
         sb.append("  ").append('"').append(key).append('"').append(" : ").append("{\n");
     }
 
-    private StringBuffer writeOneSimpleMetric(MetricID metricID, Metric metric, Metadata metadata) {
-        StringBuffer result = new StringBuffer();
+    private StringBuilder writeOneSimpleMetric(MetricID metricID, Metric metric, Metadata metadata) {
+        StringBuilder result = new StringBuilder();
         Number val = getValueFromMetric(metric, metricID.getName());
         String tags = createTagsString(metricID.getTagsAsList());
         result.append("  ").append('"').append(metricID.getName()).append(tags).append('"').append(" : ").append(val);
         return result;
     }
 
-    private StringBuffer writeMeters(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeMeters(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuilder sb = new StringBuilder();
         if (metricMap.size() > 0) {
             writeStartLine(sb, metadata.getName());
             String values = metricMap.entrySet()
@@ -214,8 +214,8 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private StringBuffer writeHistograms(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeHistograms(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuilder sb = new StringBuilder();
         if (metricMap.size() > 0) {
             writeStartLine(sb, metadata.getName());
             String values = metricMap.entrySet()
@@ -223,7 +223,7 @@ public class JsonExporter implements Exporter {
                     .map(e -> {
                         String tags = createTagsString(e.getKey().getTagsAsList());
                         long count = ((Histogram) e.getValue()).getCount();
-                        return new StringBuffer().append("    \"count").append(tags).append("\": ").append(count)
+                        return new StringBuilder().append("    \"count").append(tags).append("\": ").append(count)
                                 .append(COMMA_LF)
                                 .append(writeSnapshotValues(((Histogram) e.getValue()).getSnapshot(), tags));
                     })
@@ -234,8 +234,8 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private StringBuffer writeConcurrentGauges(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeConcurrentGauges(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuilder sb = new StringBuilder();
         if (metricMap.size() > 0) {
             writeStartLine(sb, metadata.getName());
             String values = metricMap.entrySet()
@@ -249,14 +249,14 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private StringBuffer writeTimers(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeTimers(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        StringBuilder sb = new StringBuilder();
         if (metricMap.size() > 0) {
             writeStartLine(sb, metadata.getName());
             String values = metricMap.entrySet()
                     .stream()
                     .map(e -> writeTimerValues((Timer) e.getValue(),
-                            metadata.getUnit().get(),
+                            metadata.getUnit().orElse(null),
                             createTagsString(e.getKey().getTagsAsList())))
                     .collect(Collectors.joining(COMMA_LF));
             sb.append(values).append(LF);
@@ -265,8 +265,8 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private StringBuffer writeMeterValues(Metered meter, String tags) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeMeterValues(Metered meter, String tags) {
+        StringBuilder sb = new StringBuilder();
         sb.append("    \"count").append(tags).append("\": ").append(meter.getCount()).append(COMMA_LF);
         sb.append("    \"meanRate").append(tags).append("\": ").append(meter.getMeanRate()).append(COMMA_LF);
         sb.append("    \"oneMinRate").append(tags).append("\": ").append(meter.getOneMinuteRate()).append(COMMA_LF);
@@ -275,24 +275,24 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private StringBuffer writeConcurrentGaugeValues(ConcurrentGauge concurrentGauge, String tags) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeConcurrentGaugeValues(ConcurrentGauge concurrentGauge, String tags) {
+        StringBuilder sb = new StringBuilder();
         sb.append("    \"current").append(tags).append("\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
         sb.append("    \"max").append(tags).append("\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
         sb.append("    \"min").append(tags).append("\": ").append(concurrentGauge.getMin());
         return sb;
     }
 
-    private StringBuffer writeTimerValues(Timer timer, String unit, String tags) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeTimerValues(Timer timer, String unit, String tags) {
+        StringBuilder sb = new StringBuilder();
         sb.append(writeSnapshotValues(timer.getSnapshot(), unit, tags));
         sb.append(COMMA_LF);
         sb.append(writeMeterValues(timer, tags));
         return sb;
     }
 
-    private StringBuffer writeSnapshotValues(Snapshot snapshot, String tags) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeSnapshotValues(Snapshot snapshot, String tags) {
+        StringBuilder sb = new StringBuilder();
         sb.append("    \"p50").append(tags).append("\": ").append(snapshot.getMedian()).append(COMMA_LF);
         sb.append("    \"p75").append(tags).append("\": ").append(snapshot.get75thPercentile()).append(COMMA_LF);
         sb.append("    \"p95").append(tags).append("\": ").append(snapshot.get95thPercentile()).append(COMMA_LF);
@@ -306,8 +306,8 @@ public class JsonExporter implements Exporter {
         return sb;
     }
 
-    private StringBuffer writeSnapshotValues(Snapshot snapshot, String unit, String tags) {
-        StringBuffer sb = new StringBuffer();
+    private StringBuilder writeSnapshotValues(Snapshot snapshot, String unit, String tags) {
+        StringBuilder sb = new StringBuilder();
         sb.append("    \"p50").append(tags).append("\": ").append(toBase(snapshot.getMedian(), unit)).append(COMMA_LF);
         sb.append("    \"p75").append(tags).append("\": ").append(toBase(snapshot.get75thPercentile(), unit)).append(COMMA_LF);
         sb.append("    \"p95").append(tags).append("\": ").append(toBase(snapshot.get95thPercentile(), unit)).append(COMMA_LF);

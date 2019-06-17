@@ -74,7 +74,7 @@ public class JsonExporterTest {
         for (Meter m : meters) {
             String name = "meter_" + idx++;
             applicationRegistry.register(name, m);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
+            StringBuilder out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
             assertNotNull(out);
             List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
             assertEquals(1, lines.stream().filter(line -> line.contains("\"" + name + "\"")).count());
@@ -94,7 +94,7 @@ public class JsonExporterTest {
         for (Histogram h : histograms) {
             String name = "histo_" + idx++;
             applicationRegistry.register(name, h);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
+            StringBuilder out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
             assertNotNull(out);
             System.out.println(out.toString());
             List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
@@ -115,7 +115,7 @@ public class JsonExporterTest {
         for (Timer t : timers) {
             String name = "json_timer_" + idx++;
             applicationRegistry.register(name, t);
-            StringBuffer out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
+            StringBuilder out = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID(name));
             assertNotNull(out);
             List<String> lines = Arrays.asList(out.toString().split(LINE_SEPARATOR));
             assertEquals(1, lines.stream().filter(line -> line.contains("\"" + name + "\"")).count());
