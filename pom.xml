@@ -33,7 +33,7 @@
 
   <properties>
     <version.microprofile-config>1.3</version.microprofile-config>
-    <version.microprofile-metrics>2.0.0</version.microprofile-metrics>
+    <version.microprofile-metrics>2.0.1</version.microprofile-metrics>
 
     <version.smallrye.config>1.0.0</version.smallrye.config>
 
