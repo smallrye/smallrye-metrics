@@ -17,10 +17,19 @@
 
 package io.smallrye.metrics.exporters;
 
+import java.io.StringWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
+import javax.json.JsonWriter;
+import javax.json.stream.JsonGenerator;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
@@ -45,40 +54,21 @@ public class JsonExporter implements Exporter {
 
     private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
-    private static final String COMMA_LF = ",\n";
-    private static final String LF = "\n";
-
     @Override
     public StringBuilder exportOneScope(MetricRegistry.Type scope) {
-
-        StringBuilder sb = new StringBuilder();
-
-        getMetricsForAScope(sb, scope);
-
-        return sb;
+        return stringify(exportOneRegistry(MetricRegistries.get(scope)));
     }
 
     @Override
     public StringBuilder exportAllScopes() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
 
-        boolean first = true;
-        for (MetricRegistry.Type scope : MetricRegistry.Type.values()) {
-            MetricRegistry registry = MetricRegistries.get(scope);
-            if (registry.getNames().size() > 0) {
-                if (!first) {
-                    sb.append(",");
-                }
-                sb.append('"').append(scope.getName().toLowerCase()).append('"').append(" :\n");
-                getMetricsForAScope(sb, scope);
-                sb.append(JsonExporter.LF);
-                first = false;
-            }
-        }
+        JsonObjectBuilder root = Json.createObjectBuilder();
 
-        sb.append("}");
-        return sb;
+        root.add("base", exportOneRegistry(MetricRegistries.get(MetricRegistry.Type.BASE)));
+        root.add("vendor", exportOneRegistry(MetricRegistries.get(MetricRegistry.Type.VENDOR)));
+        root.add("application", exportOneRegistry(MetricRegistries.get(MetricRegistry.Type.APPLICATION)));
+
+        return stringify(root.build());
     }
 
     @Override
@@ -92,13 +82,10 @@ public class JsonExporter implements Exporter {
         Map<MetricID, Metric> outMap = new HashMap<>(1);
         outMap.put(metricID, m);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        writeMetricsForMap(sb, outMap, metadataMap);
-        sb.append("}");
-        sb.append(JsonExporter.LF);
-
-        return sb;
+        JsonObjectBuilder root = Json.createObjectBuilder();
+        exportMetricsForMap(outMap, metadataMap)
+                .forEach(root::add);
+        return stringify(root.build());
     }
 
     @Override
@@ -113,15 +100,10 @@ public class JsonExporter implements Exporter {
                         Map.Entry::getValue));
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append(JsonExporter.LF);
-        writeMetricsForMap(sb, metricMap, metadataMap);
-        sb.append(JsonExporter.LF);
-        sb.append("}");
-        sb.append(JsonExporter.LF);
-
-        return sb;
+        JsonObjectBuilder root = Json.createObjectBuilder();
+        exportMetricsForMap(metricMap, metadataMap)
+                .forEach(root::add);
+        return stringify(root.build());
     }
 
     @Override
@@ -129,200 +111,173 @@ public class JsonExporter implements Exporter {
         return "application/json";
     }
 
-    private StringBuilder writeMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuilder sb = new StringBuilder();
+    private static final Map<String, ?> JSON_CONFIG = Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true);
+
+    StringBuilder stringify(JsonObject obj) {
+        StringWriter out = new StringWriter();
+        try (JsonWriter writer = Json.createWriterFactory(JSON_CONFIG).createWriter(out)) {
+            writer.writeObject(obj);
+        }
+        return new StringBuilder(out.toString());
+    }
+
+    private Map<String, JsonValue> exportMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
+        Map<String, JsonValue> result = new HashMap<>();
+        JsonObjectBuilder builder = Json.createObjectBuilder();
         switch (metadata.getTypeRaw()) {
             case GAUGE:
             case COUNTER:
-                String metricsString = metricMap.entrySet()
-                        .stream()
-                        .map(metric -> writeOneSimpleMetric(metric.getKey(), metric.getValue(), metadata))
-                        .collect(Collectors.joining(COMMA_LF));
-                sb.append(metricsString);
+                metricMap.forEach((metricID, metric) -> {
+                    result.put(metricID.getName() + createTagsString(metricID.getTagsAsList()),
+                            exportSimpleMetric(metricID, metric));
+                });
                 break;
             case METERED:
-                sb.append(writeMeters(metricMap, metadata));
+                metricMap.forEach((metricID, value) -> {
+                    Metered metric = (Metered) value;
+                    meterValues(metric, createTagsString(metricID.getTagsAsList()))
+                            .forEach(builder::add);
+                });
+                result.put(metadata.getName(), builder.build());
                 break;
             case CONCURRENT_GAUGE:
-                sb.append(writeConcurrentGauges(metricMap, metadata));
+                metricMap.forEach((metricID, value) -> {
+                    ConcurrentGauge metric = (ConcurrentGauge) value;
+                    exportConcurrentGauge(metric, createTagsString(metricID.getTagsAsList()))
+                            .forEach(builder::add);
+                });
+                result.put(metadata.getName(), builder.build());
                 break;
             case TIMER:
-                sb.append(writeTimers(metricMap, metadata));
+                metricMap.forEach((metricID, value) -> {
+                    Timer metric = (Timer) value;
+                    exportTimer(metric, metadata.getUnit().orElse(null), createTagsString(metricID.getTagsAsList()))
+                            .forEach(builder::add);
+                });
+                result.put(metadata.getName(), builder.build());
                 break;
             case HISTOGRAM:
-                sb.append(writeHistograms(metricMap, metadata));
+                metricMap.forEach((metricID, value) -> {
+                    Histogram metric = (Histogram) value;
+                    exportHistogram(metric, createTagsString(metricID.getTagsAsList()))
+                            .forEach(builder::add);
+                });
+                result.put(metadata.getName(), builder.build());
                 break;
             default:
                 throw new IllegalArgumentException("Not supported: " + metadata.getTypeRaw());
         }
-        return sb;
+        return result;
     }
 
-    private void getMetricsForAScope(StringBuilder sb, MetricRegistry.Type scope) {
-
-        MetricRegistry registry = MetricRegistries.get(scope);
+    private JsonObject exportOneRegistry(MetricRegistry registry) {
         Map<MetricID, Metric> metricMap = registry.getMetrics();
         Map<String, Metadata> metadataMap = registry.getMetadata();
 
-        sb.append("{\n");
-
-        writeMetricsForMap(sb, metricMap, metadataMap);
-
-        sb.append(LF).append("}");
+        JsonObjectBuilder root = Json.createObjectBuilder();
+        exportMetricsForMap(metricMap, metadataMap)
+                .forEach(root::add);
+        return root.build();
     }
 
-    private void writeMetricsForMap(StringBuilder outSb, Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
+    private Map<String, JsonValue> exportMetricsForMap(Map<MetricID, Metric> metricMap, Map<String, Metadata> metadataMap) {
+        Map<String, JsonValue> result = new HashMap<>();
+
         // split into groups by metric name
         Map<String, Map<MetricID, Metric>> metricsGroupedByName = metricMap.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         entry -> entry.getKey().getName(),
                         Collectors.mapping(e -> e, Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
         // and then for each group, perform the export
-        String result = metricsGroupedByName.entrySet().stream()
-                .map(entry -> writeMetricsByName(entry.getValue(), metadataMap.get(entry.getKey())))
-                .collect(Collectors.joining(COMMA_LF));
-        outSb.append(result);
-    }
-
-    private void writeEndLine(StringBuilder sb) {
-        sb.append("  }");
-    }
-
-    private void writeStartLine(StringBuilder sb, String key) {
-        sb.append("  ").append('"').append(key).append('"').append(" : ").append("{\n");
-    }
-
-    private StringBuilder writeOneSimpleMetric(MetricID metricID, Metric metric, Metadata metadata) {
-        StringBuilder result = new StringBuilder();
-        Number val = getValueFromMetric(metric, metricID.getName());
-        String tags = createTagsString(metricID.getTagsAsList());
-        result.append("  ").append('"').append(metricID.getName()).append(tags).append('"').append(" : ").append(val);
+        metricsGroupedByName.entrySet().stream()
+                .map(entry -> exportMetricsByName(entry.getValue(), metadataMap.get(entry.getKey())))
+                .forEach(map -> {
+                    map.forEach(result::put);
+                });
         return result;
     }
 
-    private StringBuilder writeMeters(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuilder sb = new StringBuilder();
-        if (metricMap.size() > 0) {
-            writeStartLine(sb, metadata.getName());
-            String values = metricMap.entrySet()
-                    .stream()
-                    .map(e -> writeMeterValues((Metered) e.getValue(), createTagsString(e.getKey().getTagsAsList())))
-                    .collect(Collectors.joining(COMMA_LF));
-            sb.append(values).append(LF);
-            writeEndLine(sb);
+    private JsonValue exportSimpleMetric(MetricID metricID, Metric metric) {
+        Number val = getValueFromMetric(metric, metricID.getName());
+        if (val instanceof Double) {
+            return Json.createValue((Double) val);
+        } else if (val instanceof Float) {
+            return Json.createValue((Float) val);
+        } else if (val instanceof Integer) {
+            return Json.createValue((Integer) val);
+        } else if (val instanceof Long) {
+            return Json.createValue((Long) val);
+        } else {
+            throw new IllegalStateException();
         }
-        return sb;
     }
 
-    private StringBuilder writeHistograms(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuilder sb = new StringBuilder();
-        if (metricMap.size() > 0) {
-            writeStartLine(sb, metadata.getName());
-            String values = metricMap.entrySet()
-                    .stream()
-                    .map(e -> {
-                        String tags = createTagsString(e.getKey().getTagsAsList());
-                        long count = ((Histogram) e.getValue()).getCount();
-                        return new StringBuilder().append("    \"count").append(tags).append("\": ").append(count)
-                                .append(COMMA_LF)
-                                .append(writeSnapshotValues(((Histogram) e.getValue()).getSnapshot(), tags));
-                    })
-                    .collect(Collectors.joining(COMMA_LF));
-            sb.append(values).append(LF);
-            writeEndLine(sb);
-        }
-        return sb;
+    private Map<String, JsonValue> meterValues(Metered meter, String tags) {
+        Map<String, JsonValue> map = new HashMap<>();
+        map.put("count" + tags, Json.createValue(meter.getCount()));
+        map.put("meanRate" + tags, Json.createValue(meter.getMeanRate()));
+        map.put("oneMinRate" + tags, Json.createValue(meter.getOneMinuteRate()));
+        map.put("fiveMinRate" + tags, Json.createValue(meter.getFiveMinuteRate()));
+        map.put("fifteenMinRate" + tags, Json.createValue(meter.getFifteenMinuteRate()));
+        return map;
     }
 
-    private StringBuilder writeConcurrentGauges(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuilder sb = new StringBuilder();
-        if (metricMap.size() > 0) {
-            writeStartLine(sb, metadata.getName());
-            String values = metricMap.entrySet()
-                    .stream()
-                    .map(e -> writeConcurrentGaugeValues((ConcurrentGauge) e.getValue(),
-                            createTagsString(e.getKey().getTagsAsList())))
-                    .collect(Collectors.joining(COMMA_LF));
-            sb.append(values).append(LF);
-            writeEndLine(sb);
-        }
-        return sb;
+    private Map<String, JsonValue> exportConcurrentGauge(ConcurrentGauge concurrentGauge, String tags) {
+        Map<String, JsonValue> map = new HashMap<>();
+        map.put("current" + tags, Json.createValue(concurrentGauge.getCount()));
+        map.put("max" + tags, Json.createValue(concurrentGauge.getMax()));
+        map.put("min" + tags, Json.createValue(concurrentGauge.getMin()));
+        return map;
     }
 
-    private StringBuilder writeTimers(Map<MetricID, Metric> metricMap, Metadata metadata) {
-        StringBuilder sb = new StringBuilder();
-        if (metricMap.size() > 0) {
-            writeStartLine(sb, metadata.getName());
-            String values = metricMap.entrySet()
-                    .stream()
-                    .map(e -> writeTimerValues((Timer) e.getValue(),
-                            metadata.getUnit().orElse(null),
-                            createTagsString(e.getKey().getTagsAsList())))
-                    .collect(Collectors.joining(COMMA_LF));
-            sb.append(values).append(LF);
-            writeEndLine(sb);
-        }
-        return sb;
+    private JsonObject exportTimer(Timer timer, String unit, String tags) {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        snapshotValues(timer.getSnapshot(), unit, tags)
+                .forEach(builder::add);
+        meterValues(timer, tags)
+                .forEach(builder::add);
+        return builder.build();
     }
 
-    private StringBuilder writeMeterValues(Metered meter, String tags) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    \"count").append(tags).append("\": ").append(meter.getCount()).append(COMMA_LF);
-        sb.append("    \"meanRate").append(tags).append("\": ").append(meter.getMeanRate()).append(COMMA_LF);
-        sb.append("    \"oneMinRate").append(tags).append("\": ").append(meter.getOneMinuteRate()).append(COMMA_LF);
-        sb.append("    \"fiveMinRate").append(tags).append("\": ").append(meter.getFiveMinuteRate()).append(COMMA_LF);
-        sb.append("    \"fifteenMinRate").append(tags).append("\": ").append(meter.getFifteenMinuteRate());
-        return sb;
+    private Map<String, JsonValue> exportHistogram(Histogram histogram, String tags) {
+        Map<String, JsonValue> map = new HashMap<>();
+        map.put("count" + tags, Json.createValue(histogram.getCount()));
+        snapshotValues(histogram.getSnapshot(), tags)
+                .forEach((map::put));
+        return map;
     }
 
-    private StringBuilder writeConcurrentGaugeValues(ConcurrentGauge concurrentGauge, String tags) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    \"current").append(tags).append("\": ").append(concurrentGauge.getCount()).append(COMMA_LF);
-        sb.append("    \"max").append(tags).append("\": ").append(concurrentGauge.getMax()).append(COMMA_LF);
-        sb.append("    \"min").append(tags).append("\": ").append(concurrentGauge.getMin());
-        return sb;
+    private Map<String, JsonValue> snapshotValues(Snapshot snapshot, String tags) {
+        Map<String, JsonValue> map = new HashMap<>();
+        map.put("p50" + tags, Json.createValue(snapshot.getMedian()));
+        map.put("p75" + tags, Json.createValue(snapshot.get75thPercentile()));
+        map.put("p95" + tags, Json.createValue(snapshot.get95thPercentile()));
+        map.put("p98" + tags, Json.createValue(snapshot.get98thPercentile()));
+        map.put("p99" + tags, Json.createValue(snapshot.get99thPercentile()));
+        map.put("p999" + tags, Json.createValue(snapshot.get999thPercentile()));
+        map.put("min" + tags, Json.createValue(snapshot.getMin()));
+        map.put("mean" + tags, Json.createValue(snapshot.getMean()));
+        map.put("max" + tags, Json.createValue(snapshot.getMax()));
+        map.put("stddev" + tags, Json.createValue(snapshot.getStdDev()));
+        return map;
     }
 
-    private StringBuilder writeTimerValues(Timer timer, String unit, String tags) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(writeSnapshotValues(timer.getSnapshot(), unit, tags));
-        sb.append(COMMA_LF);
-        sb.append(writeMeterValues(timer, tags));
-        return sb;
+    private Map<String, JsonValue> snapshotValues(Snapshot snapshot, String unit, String tags) {
+        Map<String, JsonValue> map = new HashMap<>();
+        map.put("p50" + tags, Json.createValue(toBase(snapshot.getMedian(), unit)));
+        map.put("p75" + tags, Json.createValue(toBase(snapshot.get75thPercentile(), unit)));
+        map.put("p95" + tags, Json.createValue(toBase(snapshot.get95thPercentile(), unit)));
+        map.put("p98" + tags, Json.createValue(toBase(snapshot.get98thPercentile(), unit)));
+        map.put("p99" + tags, Json.createValue(toBase(snapshot.get99thPercentile(), unit)));
+        map.put("p999" + tags, Json.createValue(toBase(snapshot.get999thPercentile(), unit)));
+        map.put("min" + tags, Json.createValue(toBase(snapshot.getMin(), unit)));
+        map.put("mean" + tags, Json.createValue(toBase(snapshot.getMean(), unit)));
+        map.put("max" + tags, Json.createValue(toBase(snapshot.getMax(), unit)));
+        map.put("stddev" + tags, Json.createValue(toBase(snapshot.getStdDev(), unit)));
+        return map;
     }
 
-    private StringBuilder writeSnapshotValues(Snapshot snapshot, String tags) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    \"p50").append(tags).append("\": ").append(snapshot.getMedian()).append(COMMA_LF);
-        sb.append("    \"p75").append(tags).append("\": ").append(snapshot.get75thPercentile()).append(COMMA_LF);
-        sb.append("    \"p95").append(tags).append("\": ").append(snapshot.get95thPercentile()).append(COMMA_LF);
-        sb.append("    \"p98").append(tags).append("\": ").append(snapshot.get98thPercentile()).append(COMMA_LF);
-        sb.append("    \"p99").append(tags).append("\": ").append(snapshot.get99thPercentile()).append(COMMA_LF);
-        sb.append("    \"p999").append(tags).append("\": ").append(snapshot.get999thPercentile()).append(COMMA_LF);
-        sb.append("    \"min").append(tags).append("\": ").append(snapshot.getMin()).append(COMMA_LF);
-        sb.append("    \"mean").append(tags).append("\": ").append(snapshot.getMean()).append(COMMA_LF);
-        sb.append("    \"max").append(tags).append("\": ").append(snapshot.getMax()).append(COMMA_LF);
-        sb.append("    \"stddev").append(tags).append("\": ").append(snapshot.getStdDev());
-        return sb;
-    }
-
-    private StringBuilder writeSnapshotValues(Snapshot snapshot, String unit, String tags) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    \"p50").append(tags).append("\": ").append(toBase(snapshot.getMedian(), unit)).append(COMMA_LF);
-        sb.append("    \"p75").append(tags).append("\": ").append(toBase(snapshot.get75thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p95").append(tags).append("\": ").append(toBase(snapshot.get95thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p98").append(tags).append("\": ").append(toBase(snapshot.get98thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p99").append(tags).append("\": ").append(toBase(snapshot.get99thPercentile(), unit)).append(COMMA_LF);
-        sb.append("    \"p999").append(tags).append("\": ").append(toBase(snapshot.get999thPercentile(), unit))
-                .append(COMMA_LF);
-        sb.append("    \"min").append(tags).append("\": ").append(toBase(snapshot.getMin(), unit)).append(COMMA_LF);
-        sb.append("    \"mean").append(tags).append("\": ").append(toBase(snapshot.getMean(), unit)).append(COMMA_LF);
-        sb.append("    \"max").append(tags).append("\": ").append(toBase(snapshot.getMax(), unit)).append(COMMA_LF);
-        sb.append("    \"stddev").append(tags).append("\": ").append(toBase(snapshot.getStdDev(), unit));
-        return sb;
-    }
-
-    private Number toBase(Number count, String unit) {
+    private Double toBase(Number count, String unit) {
         return ExporterUtil.convertNanosTo(count.doubleValue(), unit);
     }
 
@@ -348,14 +303,14 @@ public class JsonExporter implements Exporter {
      * If there are no tags, this returns an empty string.
      */
     private String createTagsString(List<Tag> tagsAsList) {
-        if (tagsAsList == null || tagsAsList.isEmpty())
+        if (tagsAsList == null || tagsAsList.isEmpty()) {
             return "";
-        else {
+        } else {
             return ";" + tagsAsList.stream()
                     .map(tag -> tag.getTagName() + "=" + tag.getTagValue()
-                            .replaceAll(";", "_")
-                            .replaceAll("\"", "\\\\\"")
-                            .replaceAll("\n", "\\\\n"))
+                            .replaceAll(";", "_"))
+                    //                            .replaceAll("\"", "\\\\\""))  // this is done by JSON-P automatically
+                    //                            .replaceAll("\n", "\\\\n"))  // this is done by JSON-P automatically
                     .collect(Collectors.joining(";"));
         }
     }
