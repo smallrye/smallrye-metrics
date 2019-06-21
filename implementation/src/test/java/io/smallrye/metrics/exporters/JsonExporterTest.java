@@ -423,15 +423,15 @@ public class JsonExporterTest {
     public void testAllScopes() {
         JsonExporter exporter = new JsonExporter();
         MetricRegistries.get(MetricRegistry.Type.APPLICATION).counter("c1");
-        MetricRegistries.get(MetricRegistry.Type.BASE).counter("c1");
-        MetricRegistries.get(MetricRegistry.Type.VENDOR).counter("c1");
+        MetricRegistries.get(MetricRegistry.Type.BASE).counter("b1");
+        MetricRegistries.get(MetricRegistry.Type.VENDOR).counter("a1");
 
         String result = exporter.exportAllScopes().toString();
         JsonObject json = Json.createReader(new StringReader(result)).read().asJsonObject();
 
         assertEquals(0, json.getJsonObject("application").getInt("c1"));
-        assertEquals(0, json.getJsonObject("base").getInt("c1"));
-        assertEquals(0, json.getJsonObject("vendor").getInt("c1"));
+        assertEquals(0, json.getJsonObject("base").getInt("b1"));
+        assertEquals(0, json.getJsonObject("vendor").getInt("a1"));
     }
 
     @Test
