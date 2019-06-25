@@ -17,13 +17,19 @@
  */
 package io.smallrye.metrics.setup;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -97,7 +103,8 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private void addInterceptorBindings(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
-        log.info("MicroProfile: Metrics activated");
+        log.info("MicroProfile: Metrics activated (SmallRye Metrics 2.1 version: "
+                + getImplementationVersion().orElse("unknown") + ")");
 
         String extensionName = MetricCdiInjectionExtension.class.getName();
 
@@ -268,5 +275,24 @@ public class MetricCdiInjectionExtension implements Extension {
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager manager, Type type, Bean<?> bean) {
         return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
+    }
+
+    private Optional<String> getImplementationVersion() {
+        return AccessController.doPrivileged(new PrivilegedAction<Optional<String>>() {
+            @Override
+            public Optional<String> run() {
+                Properties properties = new Properties();
+                try {
+                    final InputStream resource = this.getClass().getClassLoader().getResourceAsStream("project.properties");
+                    if (resource != null) {
+                        properties.load(resource);
+                        return Optional.ofNullable(properties.getProperty("smallrye.metrics.version"));
+                    }
+                } catch (IOException e) {
+                    log.warn("Couldn't determine version of SmallRye Metrics", e);
+                }
+                return Optional.empty();
+            }
+        });
     }
 }
