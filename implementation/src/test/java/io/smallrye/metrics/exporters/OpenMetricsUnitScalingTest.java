@@ -16,13 +16,12 @@
  */
 package io.smallrye.metrics.exporters;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * @author hrupp
