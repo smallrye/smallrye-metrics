@@ -96,7 +96,7 @@ public class MetricsInterceptor {
         }
     }
 
-    private static final class ForwardingGauge implements org.eclipse.microprofile.metrics.Gauge<Object> {
+    private static final class ForwardingGauge implements org.eclipse.microprofile.metrics.Gauge<Number> {
 
         private final Method method;
 
@@ -109,8 +109,8 @@ public class MetricsInterceptor {
         }
 
         @Override
-        public Object getValue() {
-            return invokeMethod(method, object);
+        public Number getValue() {
+            return (Number) invokeMethod(method, object);
         }
     }
 

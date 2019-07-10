@@ -55,7 +55,7 @@ public class MetricProducer {
     private MetricName metricName;
 
     @Produces
-    <T> Gauge<T> getGauge(InjectionPoint ip) {
+    <T extends Number> Gauge<T> getGauge(InjectionPoint ip) {
         // A forwarding Gauge must be returned as the Gauge creation happens when the declaring bean gets instantiated and the corresponding Gauge can be injected before which leads to producing a null value
         return () -> {
             // TODO: better error report when the gauge doesn't exist
