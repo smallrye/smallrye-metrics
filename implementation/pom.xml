@@ -9,12 +9,12 @@
 
   <parent>
     <groupId>io.smallrye</groupId>
-    <artifactId>smallrye-metrics-parent-2.0</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <artifactId>smallrye-metrics-parent-2.1</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>smallrye-metrics-2.0</artifactId>
+  <artifactId>smallrye-metrics-2.1</artifactId>
 
   <name>SmallRye: MicroProfile Metrics Implementation</name>
 
