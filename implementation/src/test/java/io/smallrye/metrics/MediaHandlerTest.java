@@ -130,4 +130,20 @@ public class MediaHandlerTest {
         assertThat(res.get()).isEqualTo("text/plain");
     }
 
+    @Test
+    public void testWithMissingPrioritySingle() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("application/json;charset=UTF-8"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("application/json");
+    }
+
+    @Test
+    public void testWithMissingPriorityMulti() {
+        // default q=1 so json should be preferred
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.of("text/plain;q=0.8;charset=UTF-8",
+                "application/json;charset=UTF-8"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("application/json");
+    }
+
 }
