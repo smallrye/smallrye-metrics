@@ -244,10 +244,8 @@ public class MetricsRequestHandler {
             String[] headers = h.split(",");
             for (String header : headers) {
                 String[] parts = header.split(";");
-                float prio = 0;
-                if (parts.length == 1) {
-                    prio = 1.0f;
-                } else {
+                float prio = 1.0f;
+                if (parts.length > 1) {
                     for (String x : parts) {
                         if (x.startsWith("q=")) {
                             prio = Float.parseFloat(x.substring(2));
