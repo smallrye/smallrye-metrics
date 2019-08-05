@@ -369,12 +369,13 @@ public class OpenMetricsExporter implements Exporter {
             sb.append(suffix);
     }
 
-    private void writeHelpLine(StringBuilder sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
+    private void writeHelpLine(final StringBuilder sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
         // Only write this line if we actually have a description in metadata
-        if (writeHelpLine && !md.getDescription().orElse("").isEmpty() && !alreadyExportedNames.get().contains(md.getName())) {
+        Optional<String> description = md.getDescription();
+        if (writeHelpLine && description.filter(s -> !s.isEmpty()).isPresent() && !alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# HELP ");
             getNameWithScopeAndSuffix(sb, scope, key, suffix);
-            sb.append(quoteHelpText(md.getDescription().get()));
+            sb.append(quoteHelpText(description.get()));
             sb.append(LF);
         }
 

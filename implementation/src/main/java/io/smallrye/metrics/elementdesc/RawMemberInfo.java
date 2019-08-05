@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class RawMemberInfo implements MemberInfo {
 
@@ -110,5 +111,10 @@ public class RawMemberInfo implements MemberInfo {
         MemberInfo other = (MemberInfo) obj;
         return other.getDeclaringClassName().equals(this.getDeclaringClassName()) &&
                 other.getName().equals(this.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.declaringClassName, this.name);
     }
 }
