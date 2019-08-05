@@ -67,14 +67,18 @@ public class WeightedSnapshot extends Snapshot {
         this.normWeights = new double[copy.length];
         this.quantiles = new double[copy.length];
 
-        double sumWeight = 0;
+        double sumWeight = 0.0D;
         for (WeightedSample sample : copy) {
             sumWeight += sample.weight;
         }
 
         for (int i = 0; i < copy.length; i++) {
             this.values[i] = copy[i].value;
-            this.normWeights[i] = copy[i].weight / sumWeight;
+            if (sumWeight == 0.0D || Double.compare(sumWeight, 0.0D) == 0) {
+                this.normWeights[i] = 0.0D;
+            } else {
+                this.normWeights[i] = copy[i].weight / sumWeight;
+            }
         }
 
         for (int i = 1; i < copy.length; i++) {

@@ -23,6 +23,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.MemberInfo;
@@ -87,6 +88,11 @@ public class CDIMemberInfo implements MemberInfo {
         MemberInfo other = (MemberInfo) obj;
         return other.getDeclaringClassName().equals(this.getDeclaringClassName()) &&
                 other.getName().equals(this.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.getDeclaringClassName(), this.getName());
     }
 
     @Override

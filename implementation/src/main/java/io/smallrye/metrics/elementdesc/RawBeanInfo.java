@@ -112,4 +112,9 @@ public class RawBeanInfo implements BeanInfo {
             return this.getSimpleName().equals(((BeanInfo) obj).getSimpleName());
         }
     }
+
+    @Override
+    public int hashCode() {
+        return this.getSimpleName().hashCode();
+    }
 }
