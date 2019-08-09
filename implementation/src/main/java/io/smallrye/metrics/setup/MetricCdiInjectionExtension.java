@@ -103,7 +103,7 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private void addInterceptorBindings(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
-        log.info("MicroProfile: Metrics activated (SmallRye Metrics 2.1 version: "
+        log.info("MicroProfile: Metrics activated (SmallRye Metrics version: "
                 + getImplementationVersion().orElse("unknown") + ")");
 
         String extensionName = MetricCdiInjectionExtension.class.getName();
