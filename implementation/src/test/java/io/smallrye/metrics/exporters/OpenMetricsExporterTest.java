@@ -17,7 +17,9 @@
 
 package io.smallrye.metrics.exporters;
 
+import static io.smallrye.metrics.exporters.OpenMetricsExporter.SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE;
 import static io.smallrye.metrics.exporters.OpenMetricsExporter.getOpenMetricsMetricName;
+import static java.lang.Boolean.FALSE;
 import static java.util.regex.Pattern.quote;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -529,6 +531,53 @@ public class OpenMetricsExporterTest {
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_98);
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_99);
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_999);
+    }
+
+    /**
+     * Test that setting the config property smallrye.metrics.usePrefixForScope to false put the scope in the tags instead
+     * of prefixing the metric name with it.
+     */
+    @Test
+    public void testMicroProfileScopeInTags() {
+
+        String previousConfigValue = System.getProperty(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE);
+        try {
+            System.setProperty(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE, FALSE.toString());
+
+            OpenMetricsExporter exporter = new OpenMetricsExporter();
+            MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+            Metadata metadata = Metadata
+                    .builder()
+                    .withType(MetricType.COUNTER)
+                    .withName("mycounter")
+                    .withDescription("awesome")
+                    .build();
+            Tag colourTag = new Tag("color", "blue");
+            Counter counterWithTag = registry.counter(metadata, colourTag);
+            Counter counterWithoutTag = registry.counter(metadata);
+
+            counterWithTag.inc(10);
+            counterWithoutTag.inc(20);
+
+            String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mycounter").toString();
+            System.out.println(result);
+
+            Tag microProfileScopeTag = new Tag("microprofile_scope", MetricRegistry.Type.APPLICATION.getName().toLowerCase());
+
+            assertHasTypeLineExactlyOnce(result, "mycounter_total", "counter");
+            assertHasHelpLineExactlyOnce(result, "mycounter_total", "awesome");
+
+            assertHasValueLineExactlyOnce(result, "mycounter_total", "10.0", colourTag, microProfileScopeTag);
+            assertHasValueLineExactlyOnce(result, "mycounter_total", "20.0", microProfileScopeTag);
+
+        } finally {
+            if (previousConfigValue != null) {
+                System.setProperty(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE, previousConfigValue);
+            } else {
+                System.clearProperty(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE);
+            }
+        }
     }
 
     private void assertHasValueLineExactlyOnce(String output, String metricName, String value, Tag... tags) {

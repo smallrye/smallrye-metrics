@@ -54,6 +54,9 @@ public class OpenMetricsExporter implements Exporter {
 
     // This allows to suppress the (noisy) # HELP line
     private static final String MICROPROFILE_METRICS_OMIT_HELP_LINE = "microprofile.metrics.omitHelpLine";
+    // Use a prefix to provide the MicroProfile Metrics scope. If false, the scope will be added to the metrics tag
+    // with the key "microprofile_scope" instead.
+    public static final String SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE = "smallrye.metrics.usePrefixForScope";
 
     private static final String LF = "\n";
     private static final String GAUGE = "gauge";
@@ -65,6 +68,7 @@ public class OpenMetricsExporter implements Exporter {
     private static final String NONE = "none";
 
     private boolean writeHelpLine;
+    private final boolean usePrefixForScope;
 
     // names of metrics for which we have already exported TYPE and HELP lines within one scope
     // this is to prevent writing them multiple times for the same metric name
@@ -74,6 +78,7 @@ public class OpenMetricsExporter implements Exporter {
     public OpenMetricsExporter() {
         Config config = ConfigProvider.getConfig();
         Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
+        usePrefixForScope = config.getOptionalValue(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE, Boolean.class).orElse(true);
         writeHelpLine = !tmp.isPresent() || !tmp.get();
     }
 
@@ -323,7 +328,7 @@ public class OpenMetricsExporter implements Exporter {
         // add tags
 
         if (tags != null) {
-            addTags(sb, tags);
+            addTags(sb, tags, scope);
         }
 
         sb.append(SPACE);
@@ -342,8 +347,12 @@ public class OpenMetricsExporter implements Exporter {
 
     }
 
-    private void addTags(StringBuilder sb, Map<String, String> tags) {
+    private void addTags(StringBuilder sb, Map<String, String> tags, MetricRegistry.Type scope) {
         if (tags == null || tags.isEmpty()) {
+            // always add the microprofile_scope even if there are no other tags
+            if (!usePrefixForScope) {
+                sb.append("{microprofile_scope=\"" + scope.getName().toLowerCase() + "\"}");
+            }
             return;
         } else {
             Iterator<Map.Entry<String, String>> iter = tags.entrySet().iterator();
@@ -355,6 +364,11 @@ public class OpenMetricsExporter implements Exporter {
                     sb.append(",");
                 }
             }
+            // append the microprofile_scope after other tags
+            if (!usePrefixForScope) {
+                sb.append(",microprofile_scope=\"" + scope.getName().toLowerCase() + "\"");
+            }
+
             sb.append("}");
         }
     }
@@ -364,7 +378,10 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     private void fillBaseName(StringBuilder sb, MetricRegistry.Type scope, String key, String suffix) {
-        sb.append(scope.getName().toLowerCase()).append("_").append(key);
+        if (usePrefixForScope) {
+            sb.append(scope.getName().toLowerCase()).append("_");
+        }
+        sb.append(key);
         if (suffix != null)
             sb.append(suffix);
     }
@@ -372,7 +389,8 @@ public class OpenMetricsExporter implements Exporter {
     private void writeHelpLine(final StringBuilder sb, MetricRegistry.Type scope, String key, Metadata md, String suffix) {
         // Only write this line if we actually have a description in metadata
         Optional<String> description = md.getDescription();
-        if (writeHelpLine && description.filter(s -> !s.isEmpty()).isPresent() && !alreadyExportedNames.get().contains(md.getName())) {
+        if (writeHelpLine && description.filter(s -> !s.isEmpty()).isPresent()
+                && !alreadyExportedNames.get().contains(md.getName())) {
             sb.append("# HELP ");
             getNameWithScopeAndSuffix(sb, scope, key, suffix);
             sb.append(quoteHelpText(description.get()));
@@ -400,8 +418,10 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     private void getNameWithScopeAndSuffix(StringBuilder sb, MetricRegistry.Type scope, String key, String suffix) {
-        sb.append(scope.getName().toLowerCase());
-        sb.append('_').append(getOpenMetricsMetricName(key));
+        if (usePrefixForScope) {
+            sb.append(scope.getName().toLowerCase()).append('_');
+        }
+        sb.append(getOpenMetricsMetricName(key));
         if (suffix != null) {
             sb.append(suffix);
         }
@@ -418,7 +438,7 @@ public class OpenMetricsExporter implements Exporter {
             sb.append(USCORE).append(unit);
         }
 
-        addTags(sb, tags);
+        addTags(sb, tags, scope);
 
         double valIn;
         if (md.getTypeRaw().equals(MetricType.GAUGE)) {
