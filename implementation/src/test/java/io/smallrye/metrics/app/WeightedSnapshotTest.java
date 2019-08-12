@@ -1,10 +1,10 @@
 package io.smallrye.metrics.app;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * @author helloween
