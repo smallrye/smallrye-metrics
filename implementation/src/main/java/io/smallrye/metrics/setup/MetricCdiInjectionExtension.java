@@ -155,7 +155,8 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private <X> void findAnnotatedMethods(@Observes ProcessManagedBean<X> bean) {
-        if (bean.getBean().getBeanClass().getPackage().equals(MetricsInterceptor.class.getPackage())) {
+        Package pack = bean.getBean().getBeanClass().getPackage();
+        if (pack != null && pack.equals(MetricsInterceptor.class.getPackage())) {
             return;
         }
         ArrayList<AnnotatedMember<?>> list = new ArrayList<>();
