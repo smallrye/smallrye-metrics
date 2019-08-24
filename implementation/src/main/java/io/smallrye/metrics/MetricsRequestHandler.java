@@ -120,7 +120,7 @@ public class MetricsRequestHandler {
 
             String metricName = scopePath.substring(scopePath.indexOf('/') + 1);
 
-            MetricRegistry.Type scope = getScopeFromPath(responder, scopePath.substring(0, scopePath.indexOf('/')));
+            MetricRegistry.Type scope = getScopeFromPath(scopePath.substring(0, scopePath.indexOf('/')));
             if (scope == null) {
                 responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
                 return;
@@ -138,7 +138,7 @@ public class MetricsRequestHandler {
         } else {
             // A single scope
 
-            MetricRegistry.Type scope = getScopeFromPath(responder, scopePath);
+            MetricRegistry.Type scope = getScopeFromPath(scopePath);
             if (scope == null) {
                 responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
                 return;
@@ -162,12 +162,11 @@ public class MetricsRequestHandler {
 
     }
 
-    private MetricRegistry.Type getScopeFromPath(Responder responder, String scopePath) throws IOException {
+    private MetricRegistry.Type getScopeFromPath(String scopePath) throws IOException {
         MetricRegistry.Type scope;
         try {
             scope = MetricRegistry.Type.valueOf(scopePath.toUpperCase());
         } catch (IllegalArgumentException iae) {
-            responder.respondWith(404, "Bad scope requested: " + scopePath, Collections.emptyMap());
             return null;
         }
         return scope;
