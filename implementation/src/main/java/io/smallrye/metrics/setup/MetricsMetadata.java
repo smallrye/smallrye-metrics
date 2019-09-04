@@ -72,13 +72,14 @@ public class MetricsMetadata {
 
     public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName,
             MetricType type, boolean reusable) {
-        MetadataBuilder builder = Metadata.builder().withName(name)
+        Metadata metadata = Metadata.builder().withName(name)
                 .withType(type)
                 .withUnit(unit)
                 .withDescription(description)
-                .withDisplayName(displayName);
-        Metadata itselfMetadata = reusable ? builder.reusable().build() : builder.notReusable().build();
-        return new OriginAndMetadata(origin, itselfMetadata);
+                .withDisplayName(displayName)
+                .reusable(reusable)
+                .build();
+        return new OriginAndMetadata(origin, metadata);
     }
 
 }
