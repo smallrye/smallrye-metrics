@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -578,6 +579,36 @@ public class OpenMetricsExporterTest {
                 System.clearProperty(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE);
             }
         }
+    }
+
+    /**
+     * Test prependsScopeToOpenMetricsName in the ExtendedMetadata
+     */
+    @Test
+    public void testMicroProfileScopeInTagsWithExtendedMetadata() {
+
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = new ExtendedMetadata("mycounter", "mycounter", "awesome", MetricType.COUNTER,
+                "none", null, false, Optional.of(false));
+        Tag colourTag = new Tag("color", "blue");
+        Counter counterWithTag = registry.counter(metadata, colourTag);
+        Counter counterWithoutTag = registry.counter(metadata);
+
+        counterWithTag.inc(10);
+        counterWithoutTag.inc(20);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mycounter").toString();
+        System.out.println(result);
+
+        Tag microProfileScopeTag = new Tag("microprofile_scope", MetricRegistry.Type.APPLICATION.getName().toLowerCase());
+
+        assertHasTypeLineExactlyOnce(result, "mycounter_total", "counter");
+        assertHasHelpLineExactlyOnce(result, "mycounter_total", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "mycounter_total", "10.0", colourTag, microProfileScopeTag);
+        assertHasValueLineExactlyOnce(result, "mycounter_total", "20.0", microProfileScopeTag);
     }
 
     private void assertHasValueLineExactlyOnce(String output, String metricName, String value, Tag... tags) {
