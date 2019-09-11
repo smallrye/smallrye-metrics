@@ -17,6 +17,7 @@
 package io.smallrye.metrics;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.DefaultMetadata;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -26,22 +27,40 @@ import org.eclipse.microprofile.metrics.MetricType;
  */
 public class ExtendedMetadata extends DefaultMetadata {
 
-    private String mbean;
-    boolean multi;
+    private final String mbean;
+    private final boolean multi;
+    /**
+     * Optional configuration to prepend the microprofile scope to the metric name
+     * when it is exported to the OpenMetrics format.
+     *
+     * By default, the option is empty() and will not be taken into account.
+     * If true, the scope is prepended to the metric name when the OpenMetrics name is generated (e.g. {@code vendor_foo}.
+     * If false, the scope is added to the metric tags instead (e.g. foo{microprofile_scope="vendor"}.
+     *
+     * This option has precedence over the global configuration
+     * {@link io.smallrye.metrics.exporters.OpenMetricsExporter#SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE}.
+     */
+    private final Optional<Boolean> prependsScopeToOpenMetricsName;
 
     public ExtendedMetadata(String name, MetricType type) {
         this(name, null, null, type, null, null, false);
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) {
-        this(name, displayName, description, typeRaw, unit, null, false);
+        this(name, displayName, description, typeRaw, unit, null, false, Optional.empty());
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
             boolean multi) {
+        this(name, displayName, description, typeRaw, unit, mbean, multi, Optional.empty());
+    }
+
+    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
+            boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName) {
         super(name, displayName, description, typeRaw, unit, false);
         this.mbean = mbean;
         this.multi = multi;
+        this.prependsScopeToOpenMetricsName = prependsScopeToOpenMetricsName;
     }
 
     public String getMbean() {
@@ -50,6 +69,10 @@ public class ExtendedMetadata extends DefaultMetadata {
 
     public boolean isMulti() {
         return multi;
+    }
+
+    public Optional<Boolean> prependsScopeToOpenMetricsName() {
+        return prependsScopeToOpenMetricsName;
     }
 
     @Override
@@ -65,11 +88,12 @@ public class ExtendedMetadata extends DefaultMetadata {
         }
         ExtendedMetadata that = (ExtendedMetadata) o;
         return multi == that.multi &&
+                Objects.equals(prependsScopeToOpenMetricsName, that.prependsScopeToOpenMetricsName) &&
                 Objects.equals(mbean, that.mbean);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), mbean, multi);
+        return Objects.hash(super.hashCode(), mbean, multi, prependsScopeToOpenMetricsName);
     }
 }
