@@ -20,7 +20,6 @@ package io.smallrye.metrics.setup;
 import static io.smallrye.metrics.TagsUtils.parseTagsAsArray;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
