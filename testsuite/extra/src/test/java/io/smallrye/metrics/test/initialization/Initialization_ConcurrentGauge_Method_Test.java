@@ -15,61 +15,46 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
 import static org.junit.Assert.assertTrue;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
-public class Initialization_Gauge_Method_Test {
+public class Initialization_ConcurrentGauge_Method_Test {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClasses(BeanWithGauge_ApplicationScoped.class);
+                .addClasses(BeanWithConcurrentGauge_Method.class);
     }
 
     @Inject
     MetricRegistry registry;
 
-    @Inject
-    BeanWithGauge_ApplicationScoped applicationScopedBean;
-
-    /**
-     * With a gauge in an application-scoped bean, the metric will be registered once the bean is instantiated.
-     */
     @Test
-    public void testApplicationScoped() {
-        applicationScopedBean.gauge(); // access the application-scoped bean so that an instance gets created
-        assertTrue(registry.getGauges().containsKey(new MetricID("gaugeApp")));
-        Assert.assertEquals(2L, registry.getGauges().get(new MetricID("gaugeApp")).getValue());
-        Assert.assertEquals(3L, registry.getGauges().get(new MetricID("gaugeApp")).getValue());
+    public void test() {
+        assertTrue(registry.getConcurrentGauges().containsKey(new MetricID("cgauged_method")));
     }
 
-    @ApplicationScoped
-    public static class BeanWithGauge_ApplicationScoped {
+    public static class BeanWithConcurrentGauge_Method {
 
-        Long i = 0L;
+        @ConcurrentGauge(name = "cgauged_method", absolute = true)
+        public void cGaugedMethod() {
 
-        @Gauge(name = "gaugeApp", absolute = true, unit = MetricUnits.NONE)
-        public Long gauge() {
-            return ++i;
         }
 
     }

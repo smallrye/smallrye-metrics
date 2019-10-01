@@ -15,15 +15,18 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -32,29 +35,43 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.metrics.app.CounterImpl;
+
 @RunWith(Arquillian.class)
-public class Initialization_ConcurrentGauge_Method_Test {
+public class Initialization_ProducerMethod_Test {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClasses(BeanWithConcurrentGauge_Method.class);
+                .addClasses(BeanWithMetricProducerMethod.class);
     }
 
     @Inject
     MetricRegistry registry;
 
+    @Inject
+    BeanWithMetricProducerMethod bean;
+
     @Test
     public void test() {
-        assertTrue(registry.getConcurrentGauges().containsKey(new MetricID("cgauged_method")));
+        MetricID metricID = new MetricID("c1");
+        assertTrue(registry.getCounters().containsKey(metricID));
+        assertEquals(111, registry.getCounters().get(metricID).getCount());
     }
 
-    public static class BeanWithConcurrentGauge_Method {
+    public static class BeanWithMetricProducerMethod {
 
-        @ConcurrentGauge(name = "cgauged_method", absolute = true)
-        public void cGaugedMethod() {
-
+        // a Counter that always returns 111
+        @Produces
+        @Metric(name = "c1", absolute = true)
+        public Counter producer() {
+            return new CounterImpl() {
+                @Override
+                public long getCount() {
+                    return 111;
+                }
+            };
         }
 
     }

@@ -1,4 +1,4 @@
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -34,7 +34,7 @@ public class Initialization_Counter_Constructor_Test {
     public void test() {
         Counter metricFromConstructor = registry.getCounters()
                 .get(new MetricID(
-                        "org.wildfly.swarm.microprofile.metrics.initialization.Initialization_Counter_Constructor_Test" +
+                        "io.smallrye.metrics.test.initialization.Initialization_Counter_Constructor_Test" +
                                 "$BeanWithCounter_Constructor.BeanWithCounter_Constructor"));
         assertNotNull(metricFromConstructor);
         assertEquals(1, registry.getCounters().size());
