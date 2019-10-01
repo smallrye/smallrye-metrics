@@ -15,59 +15,61 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Metric;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
-public class Initialization_Injection_Test {
+public class Initialization_Gauge_Method_Test {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClasses(BeanWithMetricInjection.class);
+                .addClasses(BeanWithGauge_ApplicationScoped.class);
     }
 
     @Inject
     MetricRegistry registry;
 
     @Inject
-    BeanWithMetricInjection bean;
+    BeanWithGauge_ApplicationScoped applicationScopedBean;
 
+    /**
+     * With a gauge in an application-scoped bean, the metric will be registered once the bean is instantiated.
+     */
     @Test
-    public void test() {
-        MetricID metricID = new MetricID(
-                "org.wildfly.swarm.microprofile.metrics.initialization.Initialization_Injection_Test$BeanWithMetricInjection.histogram");
-        // check that the injected histogram is registered eagerly
-        assertTrue(registry.getHistograms().containsKey(metricID));
-        bean.addDataToHistogram();
-        assertEquals(10, registry.getHistograms().get(metricID).getSnapshot().getMax());
+    public void testApplicationScoped() {
+        applicationScopedBean.gauge(); // access the application-scoped bean so that an instance gets created
+        assertTrue(registry.getGauges().containsKey(new MetricID("gaugeApp")));
+        Assert.assertEquals(2L, registry.getGauges().get(new MetricID("gaugeApp")).getValue());
+        Assert.assertEquals(3L, registry.getGauges().get(new MetricID("gaugeApp")).getValue());
     }
 
-    public static class BeanWithMetricInjection {
+    @ApplicationScoped
+    public static class BeanWithGauge_ApplicationScoped {
 
-        @Inject
-        @Metric
-        Histogram histogram;
+        Long i = 0L;
 
-        public void addDataToHistogram() {
-            histogram.update(10);
+        @Gauge(name = "gaugeApp", absolute = true, unit = MetricUnits.NONE)
+        public Long gauge() {
+            return ++i;
         }
 
     }

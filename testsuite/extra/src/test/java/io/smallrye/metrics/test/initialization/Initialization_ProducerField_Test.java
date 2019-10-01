@@ -15,17 +15,19 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -34,51 +36,47 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.metrics.app.CounterImpl;
+
 @RunWith(Arquillian.class)
-public class Initialization_Counter_ClassLevel_Test {
+public class Initialization_ProducerField_Test {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClasses(BeanWithCounter_ClassLevel.class);
+                .addClasses(BeanWithMetricProducerField.class);
     }
 
     @Inject
     MetricRegistry registry;
 
+    @Inject
+    BeanWithMetricProducerField bean;
+
     @Test
     public void test() {
-        // metric should be created for the constructor
-        assertTrue(
-                registry.getCounters().containsKey(new MetricID("customName.BeanWithCounter_ClassLevel", new Tag("t1", "v1"))));
-
-        // metrics should be created for public methods
-        assertTrue(registry.getCounters().containsKey(new MetricID("customName.publicMethod", new Tag("t1", "v1"))));
-        assertTrue(registry.getCounters().containsKey(new MetricID("customName.publicMethod2", new Tag("t1", "v1"))));
-
-        // but not for private methods
-        assertFalse(registry.getCounters().keySet().stream()
-                .anyMatch(metricID -> metricID.getName().toLowerCase().contains("private")));
+        MetricID metricID = new MetricID("counter1");
+        // check eager initialization here
+        assertTrue(registry.getCounters().containsKey(metricID));
+        assertEquals(0, registry.getCounters().get(metricID).getCount());
+        bean.addDataToCounter();
+        Counter counter = registry.getCounters().get(metricID);
+        assertEquals(1, counter.getCount());
     }
 
-    @Counted(name = "customName", tags = "t1=v1", absolute = true)
-    private static class BeanWithCounter_ClassLevel {
+    public static class BeanWithMetricProducerField {
 
-        public BeanWithCounter_ClassLevel() {
+        @Inject
+        MetricRegistry registry;
 
-        }
+        @Produces
+        @ApplicationScoped
+        @Metric(name = "counter1", absolute = true)
+        Counter c1 = new CounterImpl();
 
-        public void publicMethod() {
-
-        }
-
-        public void publicMethod2() {
-
-        }
-
-        private void privateMethod() {
-
+        public void addDataToCounter() {
+            registry.getCounters().get(new MetricID("counter1")).inc();
         }
 
     }
