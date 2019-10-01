@@ -15,16 +15,14 @@
  *   limitations under the License.
  */
 
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metric;
@@ -36,47 +34,40 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.smallrye.metrics.app.CounterImpl;
-
 @RunWith(Arquillian.class)
-public class Initialization_ProducerField_Test {
+public class Initialization_Injection_Test {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClasses(BeanWithMetricProducerField.class);
+                .addClasses(BeanWithMetricInjection.class);
     }
 
     @Inject
     MetricRegistry registry;
 
     @Inject
-    BeanWithMetricProducerField bean;
+    BeanWithMetricInjection bean;
 
     @Test
     public void test() {
-        MetricID metricID = new MetricID("counter1");
-        // check eager initialization here
-        assertTrue(registry.getCounters().containsKey(metricID));
-        assertEquals(0, registry.getCounters().get(metricID).getCount());
-        bean.addDataToCounter();
-        Counter counter = registry.getCounters().get(metricID);
-        assertEquals(1, counter.getCount());
+        MetricID metricID = new MetricID(
+                "io.smallrye.metrics.test.initialization.Initialization_Injection_Test$BeanWithMetricInjection.histogram");
+        // check that the injected histogram is registered eagerly
+        assertTrue(registry.getHistograms().containsKey(metricID));
+        bean.addDataToHistogram();
+        assertEquals(10, registry.getHistograms().get(metricID).getSnapshot().getMax());
     }
 
-    public static class BeanWithMetricProducerField {
+    public static class BeanWithMetricInjection {
 
         @Inject
-        MetricRegistry registry;
+        @Metric
+        Histogram histogram;
 
-        @Produces
-        @ApplicationScoped
-        @Metric(name = "counter1", absolute = true)
-        Counter c1 = new CounterImpl();
-
-        public void addDataToCounter() {
-            registry.getCounters().get(new MetricID("counter1")).inc();
+        public void addDataToHistogram() {
+            histogram.update(10);
         }
 
     }

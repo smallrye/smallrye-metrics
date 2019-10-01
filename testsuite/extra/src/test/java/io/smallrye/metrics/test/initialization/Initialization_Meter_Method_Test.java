@@ -1,4 +1,4 @@
-package org.wildfly.swarm.microprofile.metrics.initialization;
+package io.smallrye.metrics.test.initialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
