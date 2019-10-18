@@ -611,40 +611,67 @@ public class OpenMetricsExporterTest {
         assertHasValueLineExactlyOnce(result, "mycounter_total", "20.0", microProfileScopeTag);
     }
 
-    private void assertHasValueLineExactlyOnce(String output, String metricName, String value, Tag... tags) {
-        List<String> foundLines = getLines(output, metricName, value, tags);
+    /**
+     * Test the cases where OpenMetrics keys are different from metric names.
+     * For example, with a counter named gc.time, the dot will be converted to an underscore.
+     * This is mainly to make sure that we don't accidentally log the HELP and TYPE lines multiple times if there are
+     * multiple metrics under such name.
+     */
+    @Test
+    public void testMetricsWhereKeysAreDifferentFromNames() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata.builder()
+                .withName("metric.a")
+                .withType(MetricType.COUNTER)
+                .withDescription("Great")
+                .build();
+        Tag tag1 = new Tag("tag1", "value1");
+        Tag tag2 = new Tag("tag1", "value2");
+        registry.counter(metadata, tag1);
+        registry.counter(metadata, tag2);
+
+        String result = exporter.exportAllScopes().toString();
+        System.out.println(result);
+        assertHasHelpLineExactlyOnce(result, "application_metric_a_total", "Great");
+        assertHasTypeLineExactlyOnce(result, "application_metric_a_total", "counter");
+    }
+
+    private void assertHasValueLineExactlyOnce(String output, String key, String value, Tag... tags) {
+        List<String> foundLines = getLines(output, key, value, tags);
         if (foundLines.isEmpty())
-            Assert.fail("Couldn't find a line with metricName=" + metricName
+            Assert.fail("Couldn't find a line with key=" + key
                     + ", value=" + value
                     + ", tags=" + Arrays.toString(tags)
                     + " in the OpenMetrics output: \n" + output);
         if (foundLines.size() > 1)
-            Assert.fail("Found metricName=" + metricName
+            Assert.fail("Found key=" + key
                     + ", value=" + value
                     + ", tags=" + Arrays.toString(tags)
                     + " in the OpenMetrics output more than once! Output: \n" + output);
     }
 
-    private void assertHasTypeLineExactlyOnce(String output, String metricName, String type) {
-        List<String> foundLines = getLinesByRegex(output, "# TYPE " + quote(metricName) + " " + quote(type));
+    private void assertHasTypeLineExactlyOnce(String output, String key, String type) {
+        List<String> foundLines = getLinesByRegex(output, "# TYPE " + quote(key) + " " + quote(type));
         if (foundLines.isEmpty())
-            Assert.fail("Couldn't find a TYPE line with metricName=" + metricName
+            Assert.fail("Couldn't find a TYPE line with key=" + key
                     + " and type=" + type
                     + " in the OpenMetrics output: \n" + output);
         if (foundLines.size() > 1)
-            Assert.fail("Found TYPE line with metricName=" + metricName
+            Assert.fail("Found TYPE line with key=" + key
                     + " and type=" + type
                     + " in the OpenMetrics output more than once! Output: \n" + output);
     }
 
-    private void assertHasHelpLineExactlyOnce(String output, String metricName, String help) {
-        List<String> foundLines = getLinesByRegex(output, "# HELP " + quote(metricName) + " " + quote(help));
+    private void assertHasHelpLineExactlyOnce(String output, String key, String help) {
+        List<String> foundLines = getLinesByRegex(output, "# HELP " + quote(key) + " " + quote(help));
         if (foundLines.isEmpty())
-            Assert.fail("Couldn't find a HELP line with metricName=" + metricName
+            Assert.fail("Couldn't find a HELP line with key=" + key
                     + " and help=" + help
                     + " in the OpenMetrics output: \n" + output);
         if (foundLines.size() > 1)
-            Assert.fail("Found HELP line with metricName=" + metricName
+            Assert.fail("Found HELP line with key=" + key
                     + " and help=" + help
                     + " in the OpenMetrics output more than once! Output: \n" + output);
     }
