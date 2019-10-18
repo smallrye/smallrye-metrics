@@ -205,7 +205,7 @@ public class OpenMetricsExporter implements Exporter {
                         throw new IllegalArgumentException("Not supported: " + key);
                 }
                 sb.append(metricBuf);
-                alreadyExportedNames.get().add(key);
+                alreadyExportedNames.get().add(md.getName());
             } catch (Exception e) {
                 log.warn("Unable to export metric " + key, e);
             }
