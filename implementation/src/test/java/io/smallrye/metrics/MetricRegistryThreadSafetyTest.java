@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
@@ -35,6 +36,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 
 import io.smallrye.metrics.app.CounterImpl;
@@ -131,6 +133,50 @@ public class MetricRegistryThreadSafetyTest {
 
             assertEquals("All threads should finish without exceptions",
                     0, Arrays.stream(futures).filter(CompletableFuture::isCompletedExceptionally).count());
+        }
+    }
+
+    /**
+     * Test concurrent calls of MetricRegistryImpl.register() and MetricRegistryImpl.getMetadata()
+     * at the same time.
+     */
+    @Test
+    public void registerAndGetMetadata() throws InterruptedException, ExecutionException, TimeoutException {
+        final MetricsRegistryImpl registry = new MetricsRegistryImpl();
+        final AtomicReference<Throwable> throwableEncounteredDuringTest = new AtomicReference<>();
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        try {
+            // to store CompletableFutures for all the operations the test will perform
+            CompletableFuture<Void>[] futures = new CompletableFuture[2000];
+            for (int i = 0; i < 1000; i++) {
+                final int finalI = i;
+                futures[2 * i] = CompletableFuture.runAsync(() -> {
+                    try {
+                        registry.counter("metric" + finalI);
+                    } catch (Throwable t) {
+                        throwableEncounteredDuringTest.set(t);
+                    }
+
+                }, executor);
+                futures[2 * i + 1] = CompletableFuture.runAsync(() -> {
+                    try {
+                        registry.getMetadata();
+                    } catch (Throwable t) {
+                        throwableEncounteredDuringTest.set(t);
+                    }
+                }, executor);
+            }
+
+            // wait until all tasks finish
+            CompletableFuture.allOf(futures).get(30, TimeUnit.SECONDS);
+
+            // assert that no task received an error and that the registry contains all required data
+            Assert.assertNull(throwableEncounteredDuringTest.get());
+            Assert.assertEquals(1000, registry.getMetadata().size());
+            Assert.assertEquals(1000, registry.getCounters().size());
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination(10, TimeUnit.SECONDS);
         }
     }
 
