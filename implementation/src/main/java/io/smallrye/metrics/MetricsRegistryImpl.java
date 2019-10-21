@@ -556,7 +556,7 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
-    public Map<String, Metadata> getMetadata() {
+    public synchronized Map<String, Metadata> getMetadata() {
         return new HashMap<>(metadataMap);
     }
 }
