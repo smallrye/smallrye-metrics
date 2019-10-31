@@ -54,7 +54,7 @@ public class TimedInterceptor {
     private final MetricResolver resolver;
 
     @Inject
-    private TimedInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
+    TimedInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
         this.bean = bean;
         this.registry = registry;
         this.resolver = new MetricResolver();
