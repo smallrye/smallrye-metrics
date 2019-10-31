@@ -53,7 +53,7 @@ public class MeteredInterceptor {
     private final MetricResolver resolver;
 
     @Inject
-    private MeteredInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
+    MeteredInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
         this.bean = bean;
         this.registry = registry;
         this.resolver = new MetricResolver();
