@@ -52,7 +52,7 @@ public class MetricProducer {
     MetricRegistry applicationRegistry;
 
     @Inject
-    private MetricName metricName;
+    MetricName metricName;
 
     @Produces
     <T extends Number> Gauge<T> getGauge(InjectionPoint ip) {

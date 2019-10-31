@@ -53,7 +53,7 @@ public class ConcurrentGaugeInterceptor {
     private final MetricResolver resolver;
 
     @Inject
-    private ConcurrentGaugeInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
+    ConcurrentGaugeInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
         this.bean = bean;
         this.registry = registry;
         this.resolver = new MetricResolver();
