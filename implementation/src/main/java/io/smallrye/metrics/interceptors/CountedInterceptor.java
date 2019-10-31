@@ -54,7 +54,7 @@ public class CountedInterceptor {
     private final MetricResolver resolver;
 
     @Inject
-    private CountedInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
+    CountedInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
         this.bean = bean;
         this.registry = registry;
         this.resolver = new MetricResolver();

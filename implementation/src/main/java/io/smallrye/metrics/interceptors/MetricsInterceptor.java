@@ -54,7 +54,7 @@ public class MetricsInterceptor {
     private final MetricResolver resolver;
 
     @Inject
-    private MetricsInterceptor(MetricRegistry registry) {
+    MetricsInterceptor(MetricRegistry registry) {
         this.registry = registry;
         this.resolver = new MetricResolver();
     }
