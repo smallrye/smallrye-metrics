@@ -316,7 +316,6 @@ public class MetricsRegistryImpl extends MetricRegistry {
     private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata) {
         String name = metadata.getName();
         MetricType type = metadata.getTypeRaw();
-        log.debugf("Get metric [id: %s, type: %s]", metricID, type);
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Name must not be null or empty");
         }

@@ -95,6 +95,7 @@
             <configuration>
               <systemProperties>
                 <jboss.options>${jboss.extra.opts}</jboss.options>
+                <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
               </systemProperties>
               <environmentVariables>
                 <JBOSS_HOME>${project.build.directory}/wildfly-servlet-${version.wildfly}</JBOSS_HOME>

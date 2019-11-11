@@ -90,7 +90,7 @@ public class CountedInterceptor {
         if (counter == null) {
             throw new IllegalStateException("No counter with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
-        log.debugf("Increment counter [metricName: %s]", name);
+        log.tracef("Increment counter [metricName: %s]", name);
         counter.inc();
         return context.proceed();
     }
