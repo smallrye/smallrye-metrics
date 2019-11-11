@@ -98,7 +98,6 @@ public class MetricCdiInjectionExtension implements Extension {
     private final List<Class<?>> metricsInterfaces;
 
     public MetricCdiInjectionExtension() {
-        log.debug("MetricCdiInjectionExtension");
         metricsInterfaces = new ArrayList<>();
     }
 
@@ -146,8 +145,6 @@ public class MetricCdiInjectionExtension implements Extension {
         if (pack == null || !pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
             if (!clazz.isInterface()) {
                 AnnotatedTypeDecorator newPAT = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), METRICS_BINDING);
-                log.debugf("annotations: %s", newPAT.getAnnotations());
-                log.debugf("methods: %s", newPAT.getMethods());
                 pat.setAnnotatedType(newPAT);
             }
         }
@@ -173,13 +170,13 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private void findMetricProducerFields(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
-        log.infof("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
+        log.debugf("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
         metricsFromProducers.put(ppf.getBean(), ppf.getAnnotatedProducerField());
     }
 
     private void findMetricProducerMethods(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
         if (!ppm.getBean().getBeanClass().equals(MetricProducer.class)) {
-            log.infof("Metrics producer method discovered: %s", ppm.getAnnotatedProducerMethod());
+            log.debugf("Metrics producer method discovered: %s", ppm.getAnnotatedProducerMethod());
             metricsFromProducers.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
         }
     }

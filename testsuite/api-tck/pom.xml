@@ -75,6 +75,9 @@
           <environmentVariables>
             <MP_METRICS_TAGS>tier=integration</MP_METRICS_TAGS>
           </environmentVariables>
+          <systemPropertyVariables>
+            <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

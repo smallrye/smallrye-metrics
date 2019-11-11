@@ -90,12 +90,12 @@ public class ConcurrentGaugeInterceptor {
             throw new IllegalStateException(
                     "No concurrent gauge with metricID [" + metricID + "] found in registry [" + registry + "]");
         }
-        log.debugf("Increment concurrent gauge [metricId: %s]", metricID);
+        log.tracef("Increment concurrent gauge [metricId: %s]", metricID);
         concurrentGauge.inc();
         try {
             return context.proceed();
         } finally {
-            log.debugf("Decrement concurrent gauge [metricID: %s]", metricID);
+            log.tracef("Decrement concurrent gauge [metricID: %s]", metricID);
             concurrentGauge.dec();
         }
     }
