@@ -638,6 +638,17 @@ public class OpenMetricsExporterTest {
         assertHasTypeLineExactlyOnce(result, "application_metric_a_total", "counter");
     }
 
+    @Test
+    public void testMetricNameQuoting() {
+        assertEquals("zz", getOpenMetricsMetricName("zz"));
+        assertEquals("_", getOpenMetricsMetricName("č"));
+        assertEquals("__", getOpenMetricsMetricName("čž"));
+        assertEquals("___", getOpenMetricsMetricName(":čž"));
+        assertEquals("_", getOpenMetricsMetricName("__"));
+        assertEquals("a__b", getOpenMetricsMetricName("a:_b"));
+        assertEquals("hello_hello", getOpenMetricsMetricName("helloŘhello"));
+    }
+
     private void assertHasValueLineExactlyOnce(String output, String key, String value, Tag... tags) {
         List<String> foundLines = getLines(output, key, value, tags);
         if (foundLines.isEmpty())
