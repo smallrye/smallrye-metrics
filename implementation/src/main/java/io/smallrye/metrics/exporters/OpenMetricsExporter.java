@@ -461,10 +461,9 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     static String getOpenMetricsMetricName(String name) {
-        String out = name.replaceAll("[^\\w]+", USCORE);
+        String out = name;
         out = out.replace("__", USCORE);
-        out = out.replace(":_", ":");
-
+        out = out.replaceAll("[^\\w]", USCORE);
         return out;
     }
 
