@@ -46,6 +46,10 @@
       <version>${version.microprofile-metrics}</version>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.microprofile.metrics</groupId>
+      <artifactId>microprofile-metrics-api</artifactId>
+    </dependency>  
+    <dependency>
       <groupId>io.smallrye</groupId>
       <artifactId>smallrye-metrics-testsuite-common</artifactId>
     </dependency>
