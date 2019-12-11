@@ -45,6 +45,7 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
                 "io.smallrye:smallrye-config",
                 "io.smallrye:smallrye-metrics",
                 "io.smallrye:smallrye-metrics-testsuite-common",
+                "org.eclipse.microprofile.metrics:microprofile-metrics-api",
                 "org.jboss.weld.servlet:weld-servlet-core"
         };
 
