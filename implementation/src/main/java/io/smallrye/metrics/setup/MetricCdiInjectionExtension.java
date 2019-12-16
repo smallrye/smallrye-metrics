@@ -49,6 +49,7 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -124,6 +125,14 @@ public class MetricCdiInjectionExtension implements Extension {
                 MetricsRequestHandler.class
         }) {
             bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
+        }
+    }
+
+    private void logIfConfigNotAvailable(@Observes BeforeBeanDiscovery bbd) {
+        try {
+            ConfigProvider.getConfig();
+        } catch (Throwable t) {
+            log.debug("MicroProfile Config implementation is not available or is not correctly configured");
         }
     }
 
