@@ -40,6 +40,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.After;
@@ -304,6 +305,38 @@ public class JsonExporterTest {
         assertEquals(0.0, myhistogramObject.getJsonNumber("stddev").doubleValue(), 1e-10);
         assertEquals(0.0, myhistogramObject.getJsonNumber("stddev;color=red").doubleValue(), 1e-10);
         assertEquals(0.0, myhistogramObject.getJsonNumber("stddev;color=blue;foo=bar").doubleValue(), 1e-10);
+    }
+
+    @Test
+    public void testSimpleTimers() {
+        JsonExporter exporter = new JsonExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+        Metadata metadata = new MetadataBuilder()
+                .withUnit(MetricUnits.SECONDS)
+                .withName("mysimpletimer")
+                .build();
+
+        SimpleTimer timerWithoutTags = registry.simpleTimer(metadata);
+        SimpleTimer timerRed = registry.simpleTimer(metadata, new Tag("color", "red"));
+        SimpleTimer timerBlue = registry.simpleTimer(metadata, new Tag("color", "blue"), new Tag("foo", "bar"));
+
+        timerWithoutTags.update(1, TimeUnit.SECONDS);
+        timerRed.update(2, TimeUnit.SECONDS);
+        timerBlue.update(3, TimeUnit.SECONDS);
+        timerBlue.update(4, TimeUnit.SECONDS);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mysimpletimer").toString();
+        JsonObject json = Json.createReader(new StringReader(result)).read().asJsonObject();
+
+        JsonObject mytimerObject = json.getJsonObject("mysimpletimer");
+
+        assertEquals(1.0, mytimerObject.getJsonNumber("count").doubleValue(), 1e-10);
+        assertEquals(1.0, mytimerObject.getJsonNumber("count;color=red").doubleValue(), 1e-10);
+        assertEquals(2.0, mytimerObject.getJsonNumber("count;color=blue;foo=bar").doubleValue(), 1e-10);
+
+        assertEquals(1.0, mytimerObject.getJsonNumber("elapsedTime").doubleValue(), 1e-10);
+        assertEquals(2.0, mytimerObject.getJsonNumber("elapsedTime;color=red").doubleValue(), 1e-10);
+        assertEquals(7.0, mytimerObject.getJsonNumber("elapsedTime;color=blue;foo=bar").doubleValue(), 1e-10);
     }
 
     @Test

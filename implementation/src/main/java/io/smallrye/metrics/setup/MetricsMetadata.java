@@ -25,6 +25,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.OriginAndMetadata;
@@ -59,6 +60,13 @@ public class MetricsMetadata {
             Metadata metadata = getMetadata(element, metered.metricName(), t.unit(), t.description(), t.displayName(),
                     MetricType.METERED, t.reusable());
             registry.meter(metadata, parseTagsAsArray(t.tags()));
+        }
+        MetricResolver.Of<SimplyTimed> simplyTimed = resolver.simplyTimed(bean, element);
+        if (simplyTimed.isPresent()) {
+            AnnotationInfo t = simplyTimed.metricAnnotation();
+            Metadata metadata = getMetadata(element, simplyTimed.metricName(), t.unit(), t.description(), t.displayName(),
+                    MetricType.SIMPLE_TIMER, t.reusable());
+            registry.simpleTimer(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
         if (timed.isPresent()) {

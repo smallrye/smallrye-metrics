@@ -23,6 +23,7 @@ import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
@@ -47,6 +48,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).name();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).name();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).name();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
@@ -64,6 +67,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).absolute();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).absolute();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).absolute();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
@@ -81,6 +86,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).tags();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).tags();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).tags();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
@@ -98,6 +105,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).unit();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).unit();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).unit();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
@@ -115,6 +124,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).description();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).description();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).description();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
@@ -132,6 +143,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).displayName();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).displayName();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).displayName();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
@@ -149,6 +162,8 @@ public class CDIAnnotationInfo implements AnnotationInfo {
             return ((Metered) annotation).reusable();
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).reusable();
+        } else if (annotation instanceof SimplyTimed) {
+            return ((SimplyTimed) annotation).reusable();
         } else {
             throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }

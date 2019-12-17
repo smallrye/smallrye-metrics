@@ -40,6 +40,7 @@ import org.eclipse.microprofile.metrics.Metered;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
@@ -148,6 +149,14 @@ public class JsonExporter implements Exporter {
                 });
                 result.put(metadata.getName(), builder.build());
                 break;
+            case SIMPLE_TIMER:
+                metricMap.forEach((metricID, value) -> {
+                    SimpleTimer metric = (SimpleTimer) value;
+                    exportSimpleTimer(metric, metadata.getUnit().orElse(null), createTagsString(metricID.getTagsAsList()))
+                            .forEach(builder::add);
+                });
+                result.put(metadata.getName(), builder.build());
+                break;
             case TIMER:
                 metricMap.forEach((metricID, value) -> {
                     Timer metric = (Timer) value;
@@ -228,6 +237,13 @@ public class JsonExporter implements Exporter {
         map.put("max" + tags, Json.createValue(concurrentGauge.getMax()));
         map.put("min" + tags, Json.createValue(concurrentGauge.getMin()));
         return map;
+    }
+
+    private JsonObject exportSimpleTimer(SimpleTimer timer, String unit, String tags) {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("count" + tags, timer.getCount());
+        builder.add("elapsedTime" + tags, toBase(timer.getElapsedTime(), unit));
+        return builder.build();
     }
 
     private JsonObject exportTimer(Timer timer, String unit, String tags) {

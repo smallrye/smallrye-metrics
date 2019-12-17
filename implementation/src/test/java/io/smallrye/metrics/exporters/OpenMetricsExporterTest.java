@@ -45,6 +45,7 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.After;
@@ -532,6 +533,41 @@ public class OpenMetricsExporterTest {
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_98);
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_99);
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds", "6.0", greenTag, QUANTILE_0_999);
+    }
+
+    @Test
+    public void exportSimpleTimers() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = Metadata
+                .builder()
+                .withType(MetricType.SIMPLE_TIMER)
+                .withName("mysimpletimer")
+                .withDescription("awesome")
+                .build();
+        Tag blueTag = new Tag("color", "blue");
+        SimpleTimer blueTimer = registry.simpleTimer(metadata, blueTag);
+        Tag greenTag = new Tag("color", "green");
+        SimpleTimer greenTimer = registry.simpleTimer(metadata, greenTag);
+
+        blueTimer.update(3, TimeUnit.SECONDS);
+        blueTimer.update(4, TimeUnit.SECONDS);
+        greenTimer.update(5, TimeUnit.SECONDS);
+        greenTimer.update(6, TimeUnit.SECONDS);
+
+        String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mysimpletimer").toString();
+        System.out.println(result);
+
+        assertHasTypeLineExactlyOnce(result, "application_mysimpletimer_total", "counter");
+        assertHasTypeLineExactlyOnce(result, "application_mysimpletimer_elapsedTime_seconds", "gauge");
+        assertHasHelpLineExactlyOnce(result, "application_mysimpletimer_total", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "application_mysimpletimer_total", "2.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mysimpletimer_total", "2.0", greenTag);
+
+        assertHasValueLineExactlyOnce(result, "application_mysimpletimer_elapsedTime_seconds", "7.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mysimpletimer_elapsedTime_seconds", "11.0", greenTag);
     }
 
     /**

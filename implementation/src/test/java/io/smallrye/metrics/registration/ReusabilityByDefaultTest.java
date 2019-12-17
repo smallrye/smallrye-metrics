@@ -61,6 +61,14 @@ public class ReusabilityByDefaultTest {
     }
 
     @Test
+    public void testSimpleTimer() {
+        Metadata metadata = Metadata.builder().withName("mysimpletimer").build();
+        registry.simpleTimer(metadata).update(5, TimeUnit.NANOSECONDS);
+        registry.simpleTimer(metadata).update(7, TimeUnit.NANOSECONDS);
+        assertEquals(2, registry.simpleTimer("mysimpletimer").getCount());
+    }
+
+    @Test
     public void testTimer() {
         Metadata metadata = Metadata.builder().withName("mytimer").build();
         registry.timer(metadata).update(5, TimeUnit.NANOSECONDS);
