@@ -39,6 +39,7 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
@@ -48,6 +49,7 @@ import io.smallrye.metrics.app.CounterImpl;
 import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
 import io.smallrye.metrics.app.HistogramImpl;
 import io.smallrye.metrics.app.MeterImpl;
+import io.smallrye.metrics.app.SimpleTimerImpl;
 import io.smallrye.metrics.app.TimerImpl;
 
 /**
@@ -313,6 +315,28 @@ public class MetricsRegistryImpl extends MetricRegistry {
         return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.TIMER));
     }
 
+    @Override
+    public SimpleTimer simpleTimer(String name) {
+        return get(new MetricID(name),
+                new UnspecifiedMetadata(name, MetricType.SIMPLE_TIMER));
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(String name, Tag... tags) {
+        return get(new MetricID(name, tags),
+                new UnspecifiedMetadata(name, MetricType.SIMPLE_TIMER));
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata) {
+        return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.SIMPLE_TIMER));
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.SIMPLE_TIMER));
+    }
+
     private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata) {
         String name = metadata.getName();
         MetricType type = metadata.getTypeRaw();
@@ -343,6 +367,9 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     break;
                 case CONCURRENT_GAUGE:
                     m = new ConcurrentGaugeImpl();
+                    break;
+                case SIMPLE_TIMER:
+                    m = new SimpleTimerImpl();
                     break;
                 case INVALID:
                 default:
@@ -501,6 +528,17 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers() {
+        return getSimpleTimers(MetricFilter.ALL);
+
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter filter) {
+        return getMetrics(MetricType.SIMPLE_TIMER, filter);
+    }
+
+    @Override
     public Map<MetricID, Metric> getMetrics() {
 
         return new HashMap<>(metricMap);
@@ -549,6 +587,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
                 return metricInstance instanceof Meter;
             case COUNTER:
                 return metricInstance instanceof Counter;
+            case SIMPLE_TIMER:
+                return metricInstance instanceof SimpleTimer;
             default:
                 throw new IllegalArgumentException();
         }

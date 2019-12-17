@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.TagsUtils;
@@ -58,6 +59,10 @@ public class MetricResolver {
 
     public Of<Timed> timed(BeanInfo bean, MemberInfo element) {
         return resolverOf(bean, element, Timed.class);
+    }
+
+    public Of<SimplyTimed> simplyTimed(BeanInfo bean, MemberInfo element) {
+        return resolverOf(bean, element, SimplyTimed.class);
     }
 
     private <T extends Annotation> Of<T> resolverOf(BeanInfo bean, MemberInfo element, Class<T> metric) {

@@ -37,6 +37,7 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
@@ -208,6 +209,10 @@ public class OpenMetricsExporter implements Exporter {
                         Histogram histogram = (Histogram) metric;
                         writeHistogramValues(metricBuf, scope, histogram, md, tagsMap);
                         break;
+                    case SIMPLE_TIMER:
+                        SimpleTimer simpleTimer = (SimpleTimer) metric;
+                        writeSimpleTimerValues(metricBuf, scope, simpleTimer, md, tagsMap);
+                        break;
                     default:
                         throw new IllegalArgumentException("Not supported: " + key);
                 }
@@ -237,6 +242,22 @@ public class OpenMetricsExporter implements Exporter {
         writeValueLine(sb, scope, theUnit + "_count", timer.getCount(), md, tags, false);
 
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
+    }
+
+    private void writeSimpleTimerValues(StringBuilder sb, MetricRegistry.Type scope, SimpleTimer simpleTimer, Metadata md,
+            Map<String, String> tags) {
+        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
+        if (unit.equals(NONE))
+            unit = "seconds";
+
+        String theUnit = USCORE + unit;
+
+        // 'total' value plus the help line
+        writeHelpLine(sb, scope, md.getName(), md, "_total");
+        writeTypeAndValue(sb, scope, "_total", simpleTimer.getCount(), COUNTER, md, false, tags);
+
+        // 'elapsed time' value
+        writeTypeAndValue(sb, scope, "_elapsedTime" + theUnit, simpleTimer.getElapsedTime(), GAUGE, md, true, tags);
     }
 
     private void writeConcurrentGaugeValues(StringBuilder sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge,

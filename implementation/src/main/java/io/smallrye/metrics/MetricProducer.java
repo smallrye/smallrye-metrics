@@ -34,6 +34,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
@@ -99,6 +100,13 @@ public class MetricProducer {
         Metadata metadata = getMetadata(ip, MetricType.TIMER);
         Tag[] tags = getTags(ip);
         return this.applicationRegistry.timer(metadata, tags);
+    }
+
+    @Produces
+    SimpleTimer getSimpleTimer(InjectionPoint ip) {
+        Metadata metadata = getMetadata(ip, MetricType.SIMPLE_TIMER);
+        Tag[] tags = getTags(ip);
+        return this.applicationRegistry.simpleTimer(metadata, tags);
     }
 
     private Metadata getMetadata(InjectionPoint ip, MetricType type) {

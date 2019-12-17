@@ -58,6 +58,7 @@ import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.jboss.logging.Logger;
 
@@ -76,6 +77,7 @@ import io.smallrye.metrics.interceptors.MetricNameFactory;
 import io.smallrye.metrics.interceptors.MetricResolver;
 import io.smallrye.metrics.interceptors.MetricsBinding;
 import io.smallrye.metrics.interceptors.MetricsInterceptor;
+import io.smallrye.metrics.interceptors.SimplyTimedInterceptor;
 import io.smallrye.metrics.interceptors.TimedInterceptor;
 
 /**
@@ -118,6 +120,7 @@ public class MetricCdiInjectionExtension implements Extension {
                 CountedInterceptor.class,
                 ConcurrentGaugeInterceptor.class,
                 TimedInterceptor.class,
+                SimplyTimedInterceptor.class,
                 MetricsRequestHandler.class
         }) {
             bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
@@ -126,7 +129,7 @@ public class MetricCdiInjectionExtension implements Extension {
 
     // THORN-2068: MicroProfile Rest Client basic support
     private <X> void findAnnotatedInterfaces(@Observes @WithAnnotations({ Counted.class, Gauge.class, Metered.class,
-            Timed.class, ConcurrentGauge.class }) ProcessAnnotatedType<X> pat) {
+            SimplyTimed.class, Timed.class, ConcurrentGauge.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
         if (pack != null && pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
