@@ -69,7 +69,7 @@ public class OpenMetricsExporter implements Exporter {
     private static final String NONE = "none";
 
     private boolean writeHelpLine;
-    private final boolean usePrefixForScope;
+    private boolean usePrefixForScope;
 
     // names of metrics for which we have already exported TYPE and HELP lines within one scope
     // this is to prevent writing them multiple times for the same metric name
@@ -77,10 +77,17 @@ public class OpenMetricsExporter implements Exporter {
     private ThreadLocal<Set<String>> alreadyExportedNames = new ThreadLocal<>();
 
     public OpenMetricsExporter() {
-        Config config = ConfigProvider.getConfig();
-        Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
-        usePrefixForScope = config.getOptionalValue(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE, Boolean.class).orElse(true);
-        writeHelpLine = !tmp.isPresent() || !tmp.get();
+        try {
+            Config config = ConfigProvider.getConfig();
+            Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
+            usePrefixForScope = config.getOptionalValue(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE, Boolean.class).orElse(true);
+            writeHelpLine = !tmp.isPresent() || !tmp.get();
+        } catch (IllegalStateException | ExceptionInInitializerError | NoClassDefFoundError t) {
+            // MP Config implementation is probably not available. Resort to default configuration.
+            usePrefixForScope = true;
+            writeHelpLine = true;
+        }
+
     }
 
     @Override
