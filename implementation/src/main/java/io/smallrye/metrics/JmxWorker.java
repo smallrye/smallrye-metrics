@@ -125,7 +125,7 @@ public class JmxWorker {
 
                 try {
                     ObjectName objectNameWithPlaceholders = new ObjectName(queryableName);
-                    final Map<String, String> keyHolders = findKeyForValueToBeReplaced(objectNameWithPlaceholders);
+                    final Map<String, String> keyHolders = findComponentPairsWithPlaceholders(objectNameWithPlaceholders);
 
                     ObjectName objectName = new ObjectName(queryableName.replaceAll(PLACEHOLDER + "(\\d)?+", "*"));
 
@@ -170,7 +170,10 @@ public class JmxWorker {
         log.debug("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
     }
 
-    private Map<String, String> findKeyForValueToBeReplaced(ObjectName objectName) {
+    /**
+     * Takes an ObjectName and returns the name components that contain a placeholder (%s1, %s2,...) in their value.
+     */
+    private Map<String, String> findComponentPairsWithPlaceholders(ObjectName objectName) {
         return objectName.getKeyPropertyList().entrySet().stream()
                 .filter(entry -> entry.getValue().matches(PLACEHOLDER + "(\\d)?+"))
                 .collect(Collectors.toMap(
