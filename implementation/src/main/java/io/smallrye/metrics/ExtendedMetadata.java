@@ -24,6 +24,8 @@ import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * @author hrupp
+ *
+ *         TODO: this constructor hell is calling for implementing a builder that extends the regular MetadataBuilder.
  */
 public class ExtendedMetadata extends DefaultMetadata {
 
@@ -42,8 +44,18 @@ public class ExtendedMetadata extends DefaultMetadata {
      */
     private final Optional<Boolean> prependsScopeToOpenMetricsName;
 
+    /**
+     * If true, the scope in OpenMetrics export will be skipped completely.
+     */
+    private final boolean skipsScopeInOpenMetricsExportCompletely;
+
     public ExtendedMetadata(String name, MetricType type) {
         this(name, null, null, type, null, null, false);
+    }
+
+    public ExtendedMetadata(String name, MetricType type, String unit, String description,
+            boolean skipsScopeInOpenMetricsExportCompletely) {
+        this(name, null, description, type, unit, null, false, Optional.of(true), skipsScopeInOpenMetricsExportCompletely);
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) {
@@ -57,10 +69,16 @@ public class ExtendedMetadata extends DefaultMetadata {
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
             boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName) {
-        super(name, displayName, description, typeRaw, unit, false);
+        this(name, displayName, description, typeRaw, unit, mbean, multi, prependsScopeToOpenMetricsName, false);
+    }
+
+    public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
+            boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName, boolean skipsScopeInOpenMetricsExportCompletely) {
+        super(name, displayName, description, typeRaw, unit, true);
         this.mbean = mbean;
         this.multi = multi;
         this.prependsScopeToOpenMetricsName = prependsScopeToOpenMetricsName;
+        this.skipsScopeInOpenMetricsExportCompletely = skipsScopeInOpenMetricsExportCompletely;
     }
 
     public String getMbean() {
@@ -73,6 +91,10 @@ public class ExtendedMetadata extends DefaultMetadata {
 
     public Optional<Boolean> prependsScopeToOpenMetricsName() {
         return prependsScopeToOpenMetricsName;
+    }
+
+    public boolean isSkipsScopeInOpenMetricsExportCompletely() {
+        return skipsScopeInOpenMetricsExportCompletely;
     }
 
     @Override

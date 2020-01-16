@@ -351,7 +351,7 @@ public class OpenMetricsExporter implements Exporter {
     private void addTags(StringBuilder sb, Map<String, String> tags, MetricRegistry.Type scope, Metadata metadata) {
         if (tags == null || tags.isEmpty()) {
             // always add the microprofile_scope even if there are no other tags
-            if (!writeScopeInPrefix(metadata)) {
+            if (writeScopeInTag(metadata)) {
                 sb.append("{microprofile_scope=\"" + scope.getName().toLowerCase() + "\"}");
             }
             return;
@@ -366,7 +366,7 @@ public class OpenMetricsExporter implements Exporter {
                 }
             }
             // append the microprofile_scope after other tags
-            if (!writeScopeInPrefix(metadata)) {
+            if (writeScopeInTag(metadata)) {
                 sb.append(",microprofile_scope=\"" + scope.getName().toLowerCase() + "\"");
             }
 
@@ -471,10 +471,23 @@ public class OpenMetricsExporter implements Exporter {
     private boolean writeScopeInPrefix(Metadata metadata) {
         if (metadata instanceof ExtendedMetadata) {
             ExtendedMetadata extendedMetadata = (ExtendedMetadata) metadata;
+            if (extendedMetadata.isSkipsScopeInOpenMetricsExportCompletely())
+                return false;
             return extendedMetadata.prependsScopeToOpenMetricsName().orElse(usePrefixForScope);
         } else {
             return usePrefixForScope;
         }
+    }
+
+    private boolean writeScopeInTag(Metadata metadata) {
+        if (metadata instanceof ExtendedMetadata) {
+            ExtendedMetadata extendedMetadata = (ExtendedMetadata) metadata;
+            if (extendedMetadata.isSkipsScopeInOpenMetricsExportCompletely())
+                return false;
+            if (extendedMetadata.prependsScopeToOpenMetricsName().isPresent())
+                return !extendedMetadata.prependsScopeToOpenMetricsName().get();
+        }
+        return !usePrefixForScope;
     }
 
     public static String quoteHelpText(String value) {
