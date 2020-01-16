@@ -90,6 +90,20 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <scope>provided</scope>
+      <version>4.0.3</version>
+    </dependency>
+
+
   </dependencies>
 
   <profiles>
