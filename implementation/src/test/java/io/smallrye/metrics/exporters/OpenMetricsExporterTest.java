@@ -638,6 +638,56 @@ public class OpenMetricsExporterTest {
         assertHasTypeLineExactlyOnce(result, "application_metric_a_total", "counter");
     }
 
+    @Test
+    public void testNameOverride() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = new ExtendedMetadata("voltage1",
+                "Voltage",
+                "Measures your electric potential",
+                MetricType.GAUGE,
+                "volts",
+                null,
+                false,
+                Optional.of(true),
+                false,
+                "baz");
+        Tag tag = new Tag("a", "b");
+        registry.register(metadata, (Gauge<Long>) () -> 3L, tag);
+
+        String result = exporter.exportOneScope(MetricRegistry.Type.APPLICATION).toString();
+        System.out.println(result);
+        assertHasHelpLineExactlyOnce(result, "application_baz", "Measures your electric potential");
+        assertHasTypeLineExactlyOnce(result, "application_baz", "gauge");
+        assertHasValueLineExactlyOnce(result, "application_baz", "3.0", tag);
+    }
+
+    @Test
+    public void testSkippingOfScope() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Metadata metadata = new ExtendedMetadata("foo",
+                "foo",
+                "FooDescription",
+                MetricType.COUNTER,
+                "volts",
+                null,
+                false,
+                Optional.of(true),
+                true,
+                null);
+        Tag tag = new Tag("a", "b");
+        registry.counter(metadata, tag);
+
+        String result = exporter.exportOneScope(MetricRegistry.Type.APPLICATION).toString();
+        System.out.println(result);
+        assertHasHelpLineExactlyOnce(result, "foo_total", "FooDescription");
+        assertHasTypeLineExactlyOnce(result, "foo_total", "counter");
+        assertHasValueLineExactlyOnce(result, "foo_total_volts", "0.0", tag);
+    }
+
     private void assertHasValueLineExactlyOnce(String output, String key, String value, Tag... tags) {
         List<String> foundLines = getLines(output, key, value, tags);
         if (foundLines.isEmpty())
