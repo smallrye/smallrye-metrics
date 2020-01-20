@@ -175,11 +175,17 @@ public class OpenMetricsExporter implements Exporter {
             try {
                 switch (md.getTypeRaw()) {
                     case GAUGE: {
-                        key = getOpenMetricsMetricName(key);
                         String unitSuffix = null;
-                        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
-                        if (!unit.equals(NONE)) {
-                            unitSuffix = "_" + unit;
+                        String unit;
+                        String keyOverride = getOpenMetricsKeyOverride(md);
+                        if (keyOverride != null) {
+                            key = keyOverride;
+                        } else {
+                            key = getOpenMetricsMetricName(key);
+                            unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
+                            if (!unit.equals(NONE)) {
+                                unitSuffix = "_" + unit;
+                            }
                         }
                         writeHelpLine(metricBuf, scope, key, md, unitSuffix);
                         writeTypeLine(metricBuf, scope, key, md, unitSuffix, null);
@@ -187,8 +193,16 @@ public class OpenMetricsExporter implements Exporter {
                         break;
                     }
                     case COUNTER:
-                        key = getOpenMetricsMetricName(key);
-                        String suffix = key.endsWith("_total") ? null : "_total";
+                        String suffix;
+
+                        String keyOverride = getOpenMetricsKeyOverride(md);
+                        if (keyOverride != null) {
+                            key = keyOverride;
+                            suffix = null;
+                        } else {
+                            key = getOpenMetricsMetricName(key);
+                            suffix = key.endsWith("_total") ? null : "_total";
+                        }
                         writeHelpLine(metricBuf, scope, key, md, suffix);
                         writeTypeLine(metricBuf, scope, key, md, suffix, null);
                         createSimpleValueLine(metricBuf, scope, key, md, metric, suffix, tagsMap);
@@ -463,9 +477,12 @@ public class OpenMetricsExporter implements Exporter {
 
         // value line
         fillBaseName(sb, scope, key, suffix, md);
-        String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
-        if (!unit.equals(NONE)) {
-            sb.append(USCORE).append(unit);
+        // append the base unit only in case that the key wasn't overridden
+        if (getOpenMetricsKeyOverride(md) == null) {
+            String unit = OpenMetricsUnit.getBaseUnitAsOpenMetricsString(md.getUnit());
+            if (!unit.equals(NONE)) {
+                sb.append(USCORE).append(unit);
+            }
         }
 
         addTags(sb, tags, scope, md);
@@ -533,6 +550,14 @@ public class OpenMetricsExporter implements Exporter {
                 .replaceAll("\"", "\\\\\"")
                 // replace \ at the end of the value with \\
                 .replaceAll("\\\\$", "\\\\\\\\");
+    }
+
+    private static String getOpenMetricsKeyOverride(Metadata md) {
+        if (md instanceof ExtendedMetadata && ((ExtendedMetadata) md).getOpenMetricsKeyOverride().isPresent()) {
+            return ((ExtendedMetadata) md).getOpenMetricsKeyOverride().get();
+        } else {
+            return null;
+        }
     }
 
 }
