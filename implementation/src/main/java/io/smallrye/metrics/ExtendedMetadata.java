@@ -49,13 +49,26 @@ public class ExtendedMetadata extends DefaultMetadata {
      */
     private final boolean skipsScopeInOpenMetricsExportCompletely;
 
+    /**
+     * Overrides the name under which the metric is presented in OpenMetrics export.
+     * Applies only to non-compound metrics (that means counters and gauges).
+     */
+    private final Optional<String> openMetricsKeyOverride;
+
     public ExtendedMetadata(String name, MetricType type) {
         this(name, null, null, type, null, null, false);
     }
 
     public ExtendedMetadata(String name, MetricType type, String unit, String description,
             boolean skipsScopeInOpenMetricsExportCompletely) {
-        this(name, null, description, type, unit, null, false, Optional.of(true), skipsScopeInOpenMetricsExportCompletely);
+        this(name, null, description, type, unit, null, false, Optional.of(true), skipsScopeInOpenMetricsExportCompletely,
+                null);
+    }
+
+    public ExtendedMetadata(String name, MetricType type, String unit, String description,
+            boolean skipsScopeInOpenMetricsExportCompletely, String openMetricsKey) {
+        this(name, null, description, type, unit, null, false, Optional.of(true), skipsScopeInOpenMetricsExportCompletely,
+                openMetricsKey);
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit) {
@@ -69,16 +82,18 @@ public class ExtendedMetadata extends DefaultMetadata {
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
             boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName) {
-        this(name, displayName, description, typeRaw, unit, mbean, multi, prependsScopeToOpenMetricsName, false);
+        this(name, displayName, description, typeRaw, unit, mbean, multi, prependsScopeToOpenMetricsName, false, null);
     }
 
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
-            boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName, boolean skipsScopeInOpenMetricsExportCompletely) {
+            boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName, boolean skipsScopeInOpenMetricsExportCompletely,
+            String openMetricsKeyOverride) {
         super(name, displayName, description, typeRaw, unit, true);
         this.mbean = mbean;
         this.multi = multi;
         this.prependsScopeToOpenMetricsName = prependsScopeToOpenMetricsName;
         this.skipsScopeInOpenMetricsExportCompletely = skipsScopeInOpenMetricsExportCompletely;
+        this.openMetricsKeyOverride = Optional.ofNullable(openMetricsKeyOverride);
     }
 
     public String getMbean() {
@@ -97,6 +112,10 @@ public class ExtendedMetadata extends DefaultMetadata {
         return skipsScopeInOpenMetricsExportCompletely;
     }
 
+    public Optional<String> getOpenMetricsKeyOverride() {
+        return openMetricsKeyOverride;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -111,11 +130,14 @@ public class ExtendedMetadata extends DefaultMetadata {
         ExtendedMetadata that = (ExtendedMetadata) o;
         return multi == that.multi &&
                 Objects.equals(prependsScopeToOpenMetricsName, that.prependsScopeToOpenMetricsName) &&
+                Objects.equals(skipsScopeInOpenMetricsExportCompletely, that.skipsScopeInOpenMetricsExportCompletely) &&
+                Objects.equals(openMetricsKeyOverride, that.openMetricsKeyOverride) &&
                 Objects.equals(mbean, that.mbean);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), mbean, multi, prependsScopeToOpenMetricsName);
+        return Objects.hash(super.hashCode(), mbean, multi, prependsScopeToOpenMetricsName,
+                skipsScopeInOpenMetricsExportCompletely, openMetricsKeyOverride);
     }
 }
