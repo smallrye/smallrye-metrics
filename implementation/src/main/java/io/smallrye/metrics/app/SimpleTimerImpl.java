@@ -33,7 +33,7 @@ package io.smallrye.metrics.app;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.eclipse.microprofile.metrics.SimpleTimer;
 
@@ -42,10 +42,10 @@ public class SimpleTimerImpl implements SimpleTimer {
     private final Clock clock;
 
     // total number of captured measurements
-    private final AtomicLong count;
+    private final LongAdder count;
 
     // total elapsed time across all measurements
-    private final AtomicLong elapsedTime;
+    private final LongAdder elapsedTime;
 
     /**
      * Creates a new {@link SimpleTimerImpl} using the default {@link Clock}.
@@ -61,8 +61,8 @@ public class SimpleTimerImpl implements SimpleTimer {
      */
     public SimpleTimerImpl(Clock clock) {
         this.clock = clock;
-        this.count = new AtomicLong();
-        this.elapsedTime = new AtomicLong();
+        this.count = new LongAdder();
+        this.elapsedTime = new LongAdder();
     }
 
     /**
@@ -120,18 +120,18 @@ public class SimpleTimerImpl implements SimpleTimer {
 
     @Override
     public long getElapsedTime() {
-        return elapsedTime.get();
+        return elapsedTime.sum();
     }
 
     @Override
     public long getCount() {
-        return count.get();
+        return count.sum();
     }
 
     private void update(long duration) {
         if (duration >= 0) {
-            count.incrementAndGet();
-            elapsedTime.addAndGet(duration);
+            count.increment();
+            elapsedTime.add(duration);
         }
     }
 
