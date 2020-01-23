@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.StringReader;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -320,10 +321,10 @@ public class JsonExporterTest {
         SimpleTimer timerRed = registry.simpleTimer(metadata, new Tag("color", "red"));
         SimpleTimer timerBlue = registry.simpleTimer(metadata, new Tag("color", "blue"), new Tag("foo", "bar"));
 
-        timerWithoutTags.update(1, TimeUnit.SECONDS);
-        timerRed.update(2, TimeUnit.SECONDS);
-        timerBlue.update(3, TimeUnit.SECONDS);
-        timerBlue.update(4, TimeUnit.SECONDS);
+        timerWithoutTags.update(Duration.ofSeconds(1));
+        timerRed.update(Duration.ofSeconds(2));
+        timerBlue.update(Duration.ofSeconds(3));
+        timerBlue.update(Duration.ofSeconds(4));
 
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mysimpletimer").toString();
         JsonObject json = Json.createReader(new StringReader(result)).read().asJsonObject();
