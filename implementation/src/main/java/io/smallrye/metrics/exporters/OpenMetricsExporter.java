@@ -257,7 +257,7 @@ public class OpenMetricsExporter implements Exporter {
         writeTypeAndValue(sb, scope, "_total", simpleTimer.getCount(), COUNTER, md, false, tags);
 
         // 'elapsed time' value
-        writeTypeAndValue(sb, scope, "_elapsedTime" + theUnit, simpleTimer.getElapsedTime(), GAUGE, md, true, tags);
+        writeTypeAndValue(sb, scope, "_elapsedTime" + theUnit, simpleTimer.getElapsedTime().toNanos(), GAUGE, md, true, tags);
     }
 
     private void writeConcurrentGaugeValues(StringBuilder sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge,

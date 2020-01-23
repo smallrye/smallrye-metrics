@@ -31,8 +31,8 @@
  */
 package io.smallrye.metrics.app;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.eclipse.microprofile.metrics.SimpleTimer;
@@ -69,10 +69,9 @@ public class SimpleTimerImpl implements SimpleTimer {
      * Adds a recorded duration.
      *
      * @param duration the length of the duration
-     * @param unit the scale unit of {@code duration}
      */
-    public void update(long duration, TimeUnit unit) {
-        update(unit.toNanos(duration));
+    public void update(Duration duration) {
+        update(duration.toNanos());
     }
 
     /**
@@ -119,8 +118,8 @@ public class SimpleTimerImpl implements SimpleTimer {
     }
 
     @Override
-    public long getElapsedTime() {
-        return elapsedTime.sum();
+    public Duration getElapsedTime() {
+        return Duration.ofNanos(elapsedTime.sum());
     }
 
     @Override
@@ -159,7 +158,7 @@ public class SimpleTimerImpl implements SimpleTimer {
          */
         public long stop() {
             final long elapsed = clock.getTick() - startTime;
-            timer.update(elapsed, TimeUnit.NANOSECONDS);
+            timer.update(Duration.ofNanos(elapsed));
             return elapsed;
         }
 

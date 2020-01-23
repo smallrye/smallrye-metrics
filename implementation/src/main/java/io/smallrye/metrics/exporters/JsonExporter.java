@@ -242,7 +242,7 @@ public class JsonExporter implements Exporter {
     private JsonObject exportSimpleTimer(SimpleTimer timer, String unit, String tags) {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("count" + tags, timer.getCount());
-        builder.add("elapsedTime" + tags, toBase(timer.getElapsedTime(), unit));
+        builder.add("elapsedTime" + tags, toBase(timer.getElapsedTime().toNanos(), unit));
         return builder.build();
     }
 

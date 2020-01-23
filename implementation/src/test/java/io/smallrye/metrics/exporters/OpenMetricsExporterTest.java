@@ -29,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.management.ManagementFactory;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -551,10 +552,10 @@ public class OpenMetricsExporterTest {
         Tag greenTag = new Tag("color", "green");
         SimpleTimer greenTimer = registry.simpleTimer(metadata, greenTag);
 
-        blueTimer.update(3, TimeUnit.SECONDS);
-        blueTimer.update(4, TimeUnit.SECONDS);
-        greenTimer.update(5, TimeUnit.SECONDS);
-        greenTimer.update(6, TimeUnit.SECONDS);
+        blueTimer.update(Duration.ofSeconds(3));
+        blueTimer.update(Duration.ofSeconds(4));
+        greenTimer.update(Duration.ofSeconds(5));
+        greenTimer.update(Duration.ofSeconds(6));
 
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mysimpletimer").toString();
         System.out.println(result);

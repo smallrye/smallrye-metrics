@@ -19,6 +19,7 @@ package io.smallrye.metrics.registration;
 
 import static org.junit.Assert.assertEquals;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.metrics.Gauge;
@@ -63,8 +64,8 @@ public class ReusabilityByDefaultTest {
     @Test
     public void testSimpleTimer() {
         Metadata metadata = Metadata.builder().withName("mysimpletimer").build();
-        registry.simpleTimer(metadata).update(5, TimeUnit.NANOSECONDS);
-        registry.simpleTimer(metadata).update(7, TimeUnit.NANOSECONDS);
+        registry.simpleTimer(metadata).update(Duration.ofNanos(5));
+        registry.simpleTimer(metadata).update(Duration.ofNanos(7));
         assertEquals(2, registry.simpleTimer("mysimpletimer").getCount());
     }
 
