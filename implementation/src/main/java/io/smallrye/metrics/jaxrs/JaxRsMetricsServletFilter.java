@@ -20,6 +20,8 @@ package io.smallrye.metrics.jaxrs;
 import java.io.IOException;
 import java.time.Duration;
 
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -48,13 +50,11 @@ public class JaxRsMetricsServletFilter implements Filter {
             throws IOException, ServletException {
         long start = System.nanoTime();
         filterChain.doFilter(servletRequest, servletResponse);
-        long duration = System.nanoTime() - start;
-
         MetricID metricID = (MetricID) servletRequest.getAttribute("smallrye.metrics.jaxrs.metricID");
         if (metricID != null) {
             MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.BASE);
-            if (!registry.getMetadata().containsKey(metricID.getName())) {
-                // if no metric with this name exists yet, register it
+            if (!registry.getMetricIDs().contains(metricID)) {
+                // if no such metric exists yet, register it
                 Metadata metadata = Metadata.builder()
                         .withName(metricID.getName())
                         .withDescription(
@@ -64,9 +64,39 @@ public class JaxRsMetricsServletFilter implements Filter {
                         .build();
                 registry.simpleTimer(metadata, metricID.getTagsAsArray());
             }
-            registry.simpleTimer(metricID.getName(), metricID.getTagsAsArray())
-                    .update(Duration.ofNanos(duration));
+
+            if (!servletRequest.isAsyncStarted()) {
+                updateMetric(start, metricID);
+            } else { // if response is async, update the metric after it really finishes
+                servletRequest.getAsyncContext().addListener(new AsyncListener() {
+                    @Override
+                    public void onComplete(AsyncEvent event) {
+                        updateMetric(start, metricID);
+                    }
+
+                    @Override
+                    public void onTimeout(AsyncEvent event) {
+                        updateMetric(start, metricID);
+                    }
+
+                    @Override
+                    public void onError(AsyncEvent event) {
+                        updateMetric(start, metricID);
+                    }
+
+                    @Override
+                    public void onStartAsync(AsyncEvent event) {
+                    }
+                });
+            }
         }
+
+    }
+
+    public void updateMetric(long startTimestamp, MetricID metricID) {
+        long duration = System.nanoTime() - startTimestamp;
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.BASE);
+        registry.getSimpleTimers().get(metricID).update(Duration.ofNanos(duration));
     }
 
     @Override
