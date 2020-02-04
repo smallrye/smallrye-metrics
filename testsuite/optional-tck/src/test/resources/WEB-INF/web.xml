@@ -24,6 +24,7 @@
   <filter>
     <filter-name>jaxrsmetrics</filter-name>
     <filter-class>io.smallrye.metrics.jaxrs.JaxRsMetricsServletFilter</filter-class>
+    <async-supported>true</async-supported>
   </filter>
   <filter-mapping>
     <filter-name>jaxrsmetrics</filter-name>
