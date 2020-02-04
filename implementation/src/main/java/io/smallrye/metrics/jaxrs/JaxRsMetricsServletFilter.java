@@ -49,48 +49,50 @@ public class JaxRsMetricsServletFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
         long start = System.nanoTime();
-        filterChain.doFilter(servletRequest, servletResponse);
-        MetricID metricID = (MetricID) servletRequest.getAttribute("smallrye.metrics.jaxrs.metricID");
-        if (metricID != null) {
-            MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.BASE);
-            if (!registry.getMetricIDs().contains(metricID)) {
-                // if no such metric exists yet, register it
-                Metadata metadata = Metadata.builder()
-                        .withName(metricID.getName())
-                        .withDescription(
-                                "The number of invocations and total response time of this RESTful " +
-                                        "resource method since the start of the server.")
-                        .withUnit(MetricUnits.NANOSECONDS)
-                        .build();
-                registry.simpleTimer(metadata, metricID.getTagsAsArray());
-            }
+        try {
+            filterChain.doFilter(servletRequest, servletResponse);
+        } finally {
+            MetricID metricID = (MetricID) servletRequest.getAttribute("smallrye.metrics.jaxrs.metricID");
+            if (metricID != null) {
+                MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.BASE);
+                if (!registry.getMetricIDs().contains(metricID)) {
+                    // if no such metric exists yet, register it
+                    Metadata metadata = Metadata.builder()
+                            .withName(metricID.getName())
+                            .withDescription(
+                                    "The number of invocations and total response time of this RESTful " +
+                                            "resource method since the start of the server.")
+                            .withUnit(MetricUnits.NANOSECONDS)
+                            .build();
+                    registry.simpleTimer(metadata, metricID.getTagsAsArray());
+                }
 
-            if (!servletRequest.isAsyncStarted()) {
-                updateMetric(start, metricID);
-            } else { // if response is async, update the metric after it really finishes
-                servletRequest.getAsyncContext().addListener(new AsyncListener() {
-                    @Override
-                    public void onComplete(AsyncEvent event) {
-                        updateMetric(start, metricID);
-                    }
+                if (!servletRequest.isAsyncStarted()) {
+                    updateMetric(start, metricID);
+                } else { // if response is async, update the metric after it really finishes
+                    servletRequest.getAsyncContext().addListener(new AsyncListener() {
+                        @Override
+                        public void onComplete(AsyncEvent event) {
+                            updateMetric(start, metricID);
+                        }
 
-                    @Override
-                    public void onTimeout(AsyncEvent event) {
-                        updateMetric(start, metricID);
-                    }
+                        @Override
+                        public void onTimeout(AsyncEvent event) {
+                            updateMetric(start, metricID);
+                        }
 
-                    @Override
-                    public void onError(AsyncEvent event) {
-                        updateMetric(start, metricID);
-                    }
+                        @Override
+                        public void onError(AsyncEvent event) {
+                            updateMetric(start, metricID);
+                        }
 
-                    @Override
-                    public void onStartAsync(AsyncEvent event) {
-                    }
-                });
+                        @Override
+                        public void onStartAsync(AsyncEvent event) {
+                        }
+                    });
+                }
             }
         }
-
     }
 
     public void updateMetric(long startTimestamp, MetricID metricID) {
