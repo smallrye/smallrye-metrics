@@ -36,7 +36,7 @@
     <version.microprofile-config>1.4</version.microprofile-config>
     <version.microprofile-metrics>2.3-RC1</version.microprofile-metrics>
 
-    <version.smallrye.config>1.5.1</version.smallrye.config>
+    <version.smallrye.config>1.6.0</version.smallrye.config>
 
     <version.jboss.servlet>1.0.2.Final</version.jboss.servlet>
 
