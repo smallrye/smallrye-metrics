@@ -64,6 +64,26 @@ public class MetricRegistries {
         registries.remove(MetricRegistry.Type.APPLICATION);
     }
 
+    /**
+     * Drops a particular registry. If a reference to the same registry type
+     * is requested later, a new empty registry will be created for that purpose.
+     * 
+     * @param type Type of registry that should be dropped.
+     */
+    public static void drop(MetricRegistry.Type type) {
+        registries.remove(type);
+    }
+
+    /**
+     * Drops all registries. If a reference to a registry
+     * is requested later, a new empty registry will be created for that purpose.
+     */
+    public static void dropAll() {
+        registries.remove(MetricRegistry.Type.APPLICATION);
+        registries.remove(MetricRegistry.Type.BASE);
+        registries.remove(MetricRegistry.Type.VENDOR);
+    }
+
     private static final Map<MetricRegistry.Type, MetricRegistry> registries = new ConcurrentHashMap<>();
 
 }
