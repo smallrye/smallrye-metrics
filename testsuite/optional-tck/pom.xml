@@ -16,13 +16,11 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>smallrye-metrics-testsuite-parent</artifactId>
     <groupId>io.smallrye</groupId>
-    <version>2.4.0-SNAPSHOT</version>
+    <version>2.4.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -107,7 +105,7 @@
             <jboss.options>${jboss.extra.opts}</jboss.options>
             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties
             </java.util.logging.config.file>
-            <context.root/>
+            <context.root />
           </systemProperties>
           <environmentVariables>
             <JBOSS_HOME>${project.build.directory}/wildfly-${version.wildfly}</JBOSS_HOME>
