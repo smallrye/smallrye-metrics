@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.DefaultMetadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
+import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * ExtendedMetadataBuilder.
@@ -34,6 +35,78 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
 
     public ExtendedMetadataBuilder() {
         super();
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withName(String name) {
+        super.withName(name);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withDisplayName(String displayName) {
+        super.withDisplayName(displayName);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withOptionalDisplayName(String displayName) {
+        super.withOptionalDisplayName(displayName);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withDescription(String description) {
+        super.withDescription(description);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withOptionalDescription(String description) {
+        super.withOptionalDescription(description);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withType(MetricType type) {
+        super.withType(type);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withOptionalType(MetricType type) {
+        super.withOptionalType(type);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withUnit(String unit) {
+        super.withUnit(unit);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder withOptionalUnit(String unit) {
+        super.withOptionalUnit(unit);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder reusable() {
+        super.reusable();
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder reusable(boolean value) {
+        super.reusable(value);
+        return this;
+    }
+
+    @Override
+    public ExtendedMetadataBuilder notReusable() {
+        super.notReusable();
+        return this;
     }
 
     public ExtendedMetadataBuilder multi(final boolean multi) {
@@ -61,6 +134,7 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
         return this;
     }
 
+    @Override
     public ExtendedMetadata build() {
         DefaultMetadata metadata = (DefaultMetadata) super.build();
         return new ExtendedMetadata(metadata.getName(),
