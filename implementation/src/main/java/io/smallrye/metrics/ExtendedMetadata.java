@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.DefaultMetadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
