@@ -20,12 +20,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.DefaultMetadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * @author hrupp
  *
- *         TODO: this constructor hell is calling for implementing a builder that extends the regular MetadataBuilder.
  */
 public class ExtendedMetadata extends DefaultMetadata {
 
@@ -114,6 +114,10 @@ public class ExtendedMetadata extends DefaultMetadata {
 
     public Optional<String> getOpenMetricsKeyOverride() {
         return openMetricsKeyOverride;
+    }
+
+    public static ExtendedMetadataBuilder builder() {
+        return new ExtendedMetadataBuilder();
     }
 
     @Override
