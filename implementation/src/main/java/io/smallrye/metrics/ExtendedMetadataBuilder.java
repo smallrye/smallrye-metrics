@@ -124,7 +124,8 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
         return this;
     }
 
-    public ExtendedMetadataBuilder skipsScopeInOpenMetricsExportCompletely(final boolean skipsScopeInOpenMetricsExportCompletely) {
+    public ExtendedMetadataBuilder skipsScopeInOpenMetricsExportCompletely(
+            final boolean skipsScopeInOpenMetricsExportCompletely) {
         this.skipsScopeInOpenMetricsExportCompletely = skipsScopeInOpenMetricsExportCompletely;
         return this;
     }
@@ -138,14 +139,14 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
     public ExtendedMetadata build() {
         DefaultMetadata metadata = (DefaultMetadata) super.build();
         return new ExtendedMetadata(metadata.getName(),
-            metadata.getDisplayName(),
-            metadata.getDescription().orElse(null),
-            metadata.getTypeRaw(),
-            metadata.getUnit().orElse(null),
-            this.mbean,
-            this.multi,
-            Optional.ofNullable(this.prependsScopeToOpenMetricsName),
-            this.skipsScopeInOpenMetricsExportCompletely,
-            this.openMetricsKeyOverride);
+                metadata.getDisplayName(),
+                metadata.getDescription().orElse(null),
+                metadata.getTypeRaw(),
+                metadata.getUnit().orElse(null),
+                this.mbean,
+                this.multi,
+                Optional.ofNullable(this.prependsScopeToOpenMetricsName),
+                this.skipsScopeInOpenMetricsExportCompletely,
+                this.openMetricsKeyOverride);
     }
 }
