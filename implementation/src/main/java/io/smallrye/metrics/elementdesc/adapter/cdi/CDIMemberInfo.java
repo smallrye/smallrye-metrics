@@ -23,6 +23,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Objects;
 
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
@@ -62,7 +63,11 @@ public class CDIMemberInfo implements MemberInfo {
 
     @Override
     public String getName() {
-        return ((Member) input).getName();
+        if (getMemberType().equals(MemberType.CONSTRUCTOR)) {
+            return "<init>";
+        } else {
+            return ((Member) input).getName();
+        }
     }
 
     @Override
@@ -81,18 +86,30 @@ public class CDIMemberInfo implements MemberInfo {
     }
 
     @Override
+    public String[] getParameterTypeNames() {
+        if (input instanceof Constructor) {
+            return Arrays.stream(((Constructor) input).getParameterTypes()).map(Class::getName).toArray(String[]::new);
+        } else if (input instanceof Method) {
+            return Arrays.stream(((Method) input).getParameterTypes()).map(Class::getName).toArray(String[]::new);
+        } else {
+            return new String[0];
+        }
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof MemberInfo)) {
             return false;
         }
         MemberInfo other = (MemberInfo) obj;
         return other.getDeclaringClassName().equals(this.getDeclaringClassName()) &&
-                other.getName().equals(this.getName());
+                other.getName().equals(this.getName()) &&
+                Arrays.equals(other.getParameterTypeNames(), this.getParameterTypeNames());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.getDeclaringClassName(), this.getName());
+        return Objects.hash(this.getDeclaringClassName(), this.getName(), Arrays.hashCode(this.getParameterTypeNames()));
     }
 
     @Override

@@ -44,17 +44,16 @@ import io.smallrye.metrics.setup.MetricsMetadata;
 @Interceptor
 @MetricsBinding
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
-// See http://docs.oracle.com/javaee/7/tutorial/doc/interceptors.htm
-public class MetricsInterceptor {
+public class GaugeRegistrationInterceptor {
 
-    private static final Logger log = Logger.getLogger(MetricsInterceptor.class);
+    private static final Logger log = Logger.getLogger(GaugeRegistrationInterceptor.class);
 
     private final MetricRegistry registry;
 
     private final MetricResolver resolver;
 
     @Inject
-    MetricsInterceptor(MetricRegistry registry) {
+    GaugeRegistrationInterceptor(MetricRegistry registry) {
         this.registry = registry;
         this.resolver = new MetricResolver();
     }

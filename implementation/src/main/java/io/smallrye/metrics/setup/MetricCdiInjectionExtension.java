@@ -71,12 +71,12 @@ import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.interceptors.ConcurrentGaugeInterceptor;
 import io.smallrye.metrics.interceptors.CountedInterceptor;
+import io.smallrye.metrics.interceptors.GaugeRegistrationInterceptor;
 import io.smallrye.metrics.interceptors.MeteredInterceptor;
 import io.smallrye.metrics.interceptors.MetricName;
 import io.smallrye.metrics.interceptors.MetricNameFactory;
 import io.smallrye.metrics.interceptors.MetricResolver;
 import io.smallrye.metrics.interceptors.MetricsBinding;
-import io.smallrye.metrics.interceptors.MetricsInterceptor;
 import io.smallrye.metrics.interceptors.SimplyTimedInterceptor;
 import io.smallrye.metrics.interceptors.TimedInterceptor;
 
@@ -113,7 +113,7 @@ public class MetricCdiInjectionExtension implements Extension {
         for (Class clazz : new Class[] {
                 MetricProducer.class,
                 MetricNameFactory.class,
-                MetricsInterceptor.class,
+                GaugeRegistrationInterceptor.class,
                 MetricRegistries.class,
 
                 MeteredInterceptor.class,
@@ -132,7 +132,7 @@ public class MetricCdiInjectionExtension implements Extension {
             SimplyTimed.class, Timed.class, ConcurrentGauge.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
-        if (pack != null && pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
+        if (pack != null && pack.getName().equals(GaugeRegistrationInterceptor.class.getPackage().getName())) {
             return;
         }
         if (clazz.isInterface()) {
@@ -145,7 +145,7 @@ public class MetricCdiInjectionExtension implements Extension {
     private <X> void applyMetricsBinding(@Observes @WithAnnotations({ Gauge.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
-        if (pack == null || !pack.getName().equals(MetricsInterceptor.class.getPackage().getName())) {
+        if (pack == null || !pack.getName().equals(GaugeRegistrationInterceptor.class.getPackage().getName())) {
             if (!clazz.isInterface()) {
                 AnnotatedTypeDecorator newPAT = new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), METRICS_BINDING);
                 pat.setAnnotatedType(newPAT);
@@ -156,7 +156,7 @@ public class MetricCdiInjectionExtension implements Extension {
 
     private <X> void findAnnotatedMethods(@Observes ProcessManagedBean<X> bean) {
         Package pack = bean.getBean().getBeanClass().getPackage();
-        if (pack != null && pack.equals(MetricsInterceptor.class.getPackage())) {
+        if (pack != null && pack.equals(GaugeRegistrationInterceptor.class.getPackage())) {
             return;
         }
         ArrayList<AnnotatedMember<?>> list = new ArrayList<>();
@@ -187,7 +187,7 @@ public class MetricCdiInjectionExtension implements Extension {
     void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
 
         // Produce and register custom metrics
-        MetricRegistry registry = getReference(manager, MetricRegistry.class);
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         MetricName name = getReference(manager, MetricName.class);
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();

@@ -19,10 +19,11 @@ package io.smallrye.metrics.interceptors;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
-import javax.enterprise.inject.Intercepted;
-import javax.enterprise.inject.spi.Bean;
 import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
@@ -32,13 +33,11 @@ import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
-import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
+import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.MetricsRegistryImpl;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
@@ -47,17 +46,11 @@ import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 public class TimedInterceptor {
 
-    private final Bean<?> bean;
-
     private final MetricRegistry registry;
 
-    private final MetricResolver resolver;
-
     @Inject
-    TimedInterceptor(@Intercepted Bean<?> bean, MetricRegistry registry) {
-        this.bean = bean;
-        this.registry = registry;
-        this.resolver = new MetricResolver();
+    TimedInterceptor() {
+        this.registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
     }
 
     @AroundConstruct
@@ -75,26 +68,31 @@ public class TimedInterceptor {
         return timedCallable(context, context.getMethod());
     }
 
-    private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext context, E element) throws Exception {
-        BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
-        MemberInfoAdapter<Member> memberInfoAdapter = new CDIMemberInfoAdapter();
-        MetricResolver.Of<Timed> meterResolver = resolver.timed(
-                bean != null ? beanInfoAdapter.convert(bean.getBeanClass())
-                        : beanInfoAdapter.convert(element.getDeclaringClass()),
-                memberInfoAdapter.convert(element));
-        String name = meterResolver.metricName();
-        Tag[] tags = meterResolver.tags();
-        MetricID metricID = new MetricID(name, tags);
-        Timer timer = (Timer) registry.getMetrics().get(metricID);
-        if (timer == null) {
-            throw new IllegalStateException("No timer with metricID [" + metricID + "] found in registry [" + registry + "]");
-        }
+    private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext invocationContext, E element)
+            throws Exception {
+        Set<MetricID> ids = ((MetricsRegistryImpl) registry).getMemberToMetricMappings()
+                .getTimers(new CDIMemberInfoAdapter<>().convert(element));
 
-        Timer.Context time = timer.time();
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalStateException("No metric mapped for " + element);
+        }
+        List<Timer.Context> contexts = ids.stream()
+                .map(metricID -> {
+                    Timer metric = registry.getTimers().get(metricID);
+                    if (metric == null) {
+                        throw new IllegalStateException(
+                                "No timer with metricID [" + metricID + "] found in registry [" + registry + "]");
+                    }
+                    return metric;
+                })
+                .map(Timer::time)
+                .collect(Collectors.toList());
         try {
-            return context.proceed();
+            return invocationContext.proceed();
         } finally {
-            time.stop();
+            for (Timer.Context timeContext : contexts) {
+                timeContext.stop();
+            }
         }
     }
 }
