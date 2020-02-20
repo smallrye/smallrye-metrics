@@ -19,6 +19,7 @@ package io.smallrye.metrics.elementdesc;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +33,8 @@ public class RawMemberInfo implements MemberInfo {
     private String declaringClassSimpleName;
 
     private String name;
+
+    private String[] parameterTypeNames;
 
     private List<AnnotationInfo> annotationInfos = new ArrayList<>();
 
@@ -48,6 +51,16 @@ public class RawMemberInfo implements MemberInfo {
         this.annotationInfos.addAll(annotationInfos);
     }
 
+    public RawMemberInfo(MemberType memberType, String declaringClassName, String declaringClassSimpleName, String name,
+            Collection<AnnotationInfo> annotationInfos, String[] parameterTypes) {
+        this.memberType = memberType;
+        this.declaringClassName = declaringClassName;
+        this.declaringClassSimpleName = declaringClassSimpleName;
+        this.name = name;
+        this.annotationInfos.addAll(annotationInfos);
+        this.parameterTypeNames = parameterTypes;
+    }
+
     public void setMemberType(MemberType memberType) {
         this.memberType = memberType;
     }
@@ -62,6 +75,10 @@ public class RawMemberInfo implements MemberInfo {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setParameterTypeNames(String[] parameterTypeNames) {
+        this.parameterTypeNames = parameterTypeNames;
     }
 
     public void setAnnotationInfos(List<AnnotationInfo> annotationInfos) {
@@ -99,6 +116,11 @@ public class RawMemberInfo implements MemberInfo {
     }
 
     @Override
+    public String[] getParameterTypeNames() {
+        return parameterTypeNames;
+    }
+
+    @Override
     public <T extends Annotation> boolean isAnnotationPresent(Class<T> metricClass) {
         return annotationInfos.stream().anyMatch(annotation -> annotation.annotationName().equals(metricClass.getName()));
     }
@@ -110,11 +132,22 @@ public class RawMemberInfo implements MemberInfo {
         }
         MemberInfo other = (MemberInfo) obj;
         return other.getDeclaringClassName().equals(this.getDeclaringClassName()) &&
-                other.getName().equals(this.getName());
+                other.getName().equals(this.getName()) &&
+                Arrays.equals(other.getParameterTypeNames(), this.parameterTypeNames);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.declaringClassName, this.name);
+        return Objects.hash(this.declaringClassName, this.name, Arrays.hashCode(this.parameterTypeNames));
+    }
+
+    @Override
+    public String toString() {
+        return "RawMemberInfo{" +
+                "memberType=" + memberType +
+                ", declaringClassName='" + declaringClassName + '\'' +
+                ", name='" + name + '\'' +
+                ", parameterTypeNames=" + Arrays.toString(parameterTypeNames) +
+                '}';
     }
 }

@@ -74,12 +74,17 @@ public class MetricsRegistryImpl implements MetricRegistry {
 
     private Type registryType;
 
+    private MemberToMetricMappings memberToMetricMappings;
+
     public MetricsRegistryImpl() {
-        this.registryType = null;
+        this(null);
     }
 
     public MetricsRegistryImpl(Type registryType) {
         this.registryType = registryType;
+        if (registryType == Type.APPLICATION) {
+            memberToMetricMappings = new MemberToMetricMappings();
+        }
     }
 
     @Override
@@ -669,5 +674,9 @@ public class MetricsRegistryImpl implements MetricRegistry {
     @Override
     public Type getType() {
         return registryType;
+    }
+
+    public MemberToMetricMappings getMemberToMetricMappings() {
+        return memberToMetricMappings;
     }
 }

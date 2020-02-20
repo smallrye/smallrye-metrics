@@ -33,4 +33,6 @@ public interface MemberInfo {
 
     <T extends Annotation> AnnotationInfo getAnnotation(Class<T> metric);
 
+    String[] getParameterTypeNames();
+
 }
