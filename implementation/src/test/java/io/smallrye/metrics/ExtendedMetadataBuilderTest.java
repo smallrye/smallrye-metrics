@@ -18,17 +18,17 @@ public class ExtendedMetadataBuilderTest {
 
         //when
         ExtendedMetadata extendedMetadata = ExtendedMetadata.builder()
-            .withType(MetricType.CONCURRENT_GAUGE)
-            .withDisplayName(displayName)
-            .withName(name)
-            .withDescription(description)
-            .withMbean(mbean)
-            .withOpenMetricsKeyOverride(openMetricsKeyOverride)
-            .withUnit(unit)
-            .skipsScopeInOpenMetricsExportCompletely(false)
-            .prependsScopeToOpenMetricsName(false)
-            .multi(false)
-            .build();
+                .withType(MetricType.CONCURRENT_GAUGE)
+                .withDisplayName(displayName)
+                .withName(name)
+                .withDescription(description)
+                .withMbean(mbean)
+                .withOpenMetricsKeyOverride(openMetricsKeyOverride)
+                .withUnit(unit)
+                .skipsScopeInOpenMetricsExportCompletely(false)
+                .prependsScopeToOpenMetricsName(false)
+                .multi(false)
+                .build();
 
         //then
         Assert.assertEquals(displayName, extendedMetadata.getDisplayName());
