@@ -18,6 +18,9 @@
 package io.smallrye.metrics.elementdesc.adapter.cdi;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+
+import javax.enterprise.inject.Stereotype;
 
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
@@ -46,13 +49,31 @@ public class CDIBeanInfo implements BeanInfo {
         if (annotation != null) {
             return new CDIAnnotationInfoAdapter().convert(annotation);
         } else {
+            // the metric annotation can also be applied via a stereotype, so look for stereotype annotations
+            for (Annotation stereotypeCandidate : ((AnnotatedElement) input).getAnnotations()) {
+                if (stereotypeCandidate.annotationType().isAnnotationPresent(Stereotype.class) &&
+                        stereotypeCandidate.annotationType().isAnnotationPresent(metric)) {
+                    return new CDIAnnotationInfoAdapter().convert(stereotypeCandidate.annotationType().getAnnotation(metric));
+                }
+            }
             return null;
         }
     }
 
     @Override
     public <T extends Annotation> boolean isAnnotationPresent(Class<T> metric) {
-        return input.isAnnotationPresent(metric);
+        if (input.isAnnotationPresent(metric)) {
+            return true;
+        } else {
+            // the metric annotation can also be applied via a stereotype, so look for stereotype annotations
+            for (Annotation stereotypeCandidate : ((AnnotatedElement) input).getAnnotations()) {
+                if (stereotypeCandidate.annotationType().isAnnotationPresent(Stereotype.class) &&
+                        stereotypeCandidate.annotationType().isAnnotationPresent(metric)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     @Override
