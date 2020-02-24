@@ -73,6 +73,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
      */
     private Map<MetricID, Object> originMap = new HashMap<>();
 
+    private Type registryType;
+
+    public MetricsRegistryImpl() {
+        this.registryType = null;
+    }
+
+    public MetricsRegistryImpl(Type registryType) {
+        this.registryType = registryType;
+    }
+
     @Override
     public synchronized <T extends Metric> T register(String name, T metric) {
 
@@ -597,5 +607,10 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public synchronized Map<String, Metadata> getMetadata() {
         return new HashMap<>(metadataMap);
+    }
+
+    @Override
+    public Type getType() {
+        return registryType;
     }
 }
