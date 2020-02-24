@@ -56,7 +56,7 @@ public class MetricRegistries {
     }
 
     public static MetricRegistry get(MetricRegistry.Type type) {
-        return registries.computeIfAbsent(type, t -> new MetricsRegistryImpl());
+        return registries.computeIfAbsent(type, t -> new MetricsRegistryImpl(type));
     }
 
     @PreDestroy
