@@ -40,7 +40,7 @@
 
     <version.jakarta.servlet>4.0.3</version.jakarta.servlet>
 
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <licenses>
@@ -124,6 +124,15 @@
         <module>release</module>
       </modules>
     </profile>
+    <profile>
+      <id>coverage</id>
+      <properties>
+        <argLine>@{jacocoArgLine}</argLine>
+      </properties>
+      <modules>
+        <module>coverage</module>
+      </modules>
+</profile>
   </profiles>
 
 </project>
