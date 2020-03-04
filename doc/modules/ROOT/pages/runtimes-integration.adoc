@@ -1,0 +1,54 @@
+[[runtimes-integration]]
+= Integrating into runtimes
+
+[[cdi-extension]]
+== CDI Extension for eager registration of annotated application metrics
+SmallRye Metrics provides a CDI extension which takes care of the annotation scanning and then registering
+all detected metrics at deployment time. If your runtime supports CDI extensions, just make sure that
+the `io.smallrye.metrics.setup.MetricCdiInjectionExtension` extension is active. It is mandatory
+to register metrics beforehand, because the metric interceptors expect metrics to already exist when
+the interceptor is invoked (with the exception of Gauges, where registration is performed in a
+`@PostConstruct` method of the interceptor, that means when the owning bean is being instantiated).
+
+If the target runtime does not support CDI extensions, a different strategy must be devised
+for scanning the deployment and registering annotated metrics.
+
+[[base-vendor-metrics]]
+== Activating base and vendor metrics
+Base and vendor metrics are registered at deployment time by the `io.smallrye.metrics.setup.JmxRegistrar`
+class. It is necessary to instantiate it and invoke `jmxRegistrar.init()`. The definitions of base and vendor
+metrics are read from the file `base-metrics.properties` and `vendor-metrics.properties`, which should be available
+as a resource under the path `/io/smallrye/metrics/*-metrics.properties` for either the classloader that
+loaded the `JmxRegistrar` class (higher precedence) or the thread context class loader (lower precedence).
+
+These files reference management MBeans as the sources of metric values, so they can only be used for metrics
+that are obtained from MBeans, and only in cases when JMX is available at runtime. Furthermore, only
+Counters and Gauges are currently supported through this file. In other cases, a different
+approach must be devised to register base and vendor metrics.
+
+=== base-metrics.properties and vendor-metrics.properties file schema
+These files list all base and vendor metrics through usage of a regular Java properties file.
+The schema is as following:
+
+For simple metrics (where one MBean property corresponds to one metric), you will need these properties:
+|===
+| Property key | Property meaning
+| METRIC_NAME.displayName
+| The display name of the metric
+
+| METRIC_NAME.type
+| The type of the metric (can be `counter` or `gauge`)
+
+| METRIC_NAME.unit
+| The unit of the metric as a string (you can use `none`)
+
+| METRIC_NAME.description
+| The description of the metric
+
+| METRIC_NAME.mbean
+| Reference to a JMX property including the `ObjectName` of the owning MBean.
+For example, `java.lang:type=ClassLoading/TotalLoadedClassCount`
+to obtain the total of all loaded classes in the JVM.
+
+|===
+
