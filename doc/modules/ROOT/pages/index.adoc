@@ -1,0 +1,13 @@
+[[index]]
+= SmallRye Metrics Documentation
+
+SmallRye Metrics is an implementation of the MicroProfile Metrics specification.
+
+TODO: come up with something suitable for the index page. A quickstart, a short code example?
+
+[[more-resources]]
+== More Resources
+
+* https://github.com/smallrye/smallrye-metrics/[GitHub project repository]
+* https://github.com/eclipse/microprofile-metrics/[Eclipse MicroProfile Metrics]
+

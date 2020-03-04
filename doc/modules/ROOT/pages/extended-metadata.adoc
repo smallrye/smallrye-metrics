@@ -1,0 +1,41 @@
+[[extended-metadata]]
+= Extended metadata
+
+SmallRye Metrics provides its own class for metadata, `io.smallrye.metrics.ExtendedMetadata`,
+which contains a few additional fields. Usage of this is not mandatory, unless you need to make
+use of these extra fields.
+
+The extra fields are:
+|===
+| Field | Meaning
+| mbean
+| The expression designating the JMX MBean property from which the value of this metric will be retrieved.
+This is meant to be used only for base and vendor metrics, see
+xref:runtimes-integration.adoc#base-vendor-metrics[Base and vendor metrics] for more information
+
+| multi
+| Is set to `true` if `mbean` expression contains placeholders and therefore multiple metrics can potentially
+be created out of this definition.
+
+| prependsScopeToOpenMetricsName
+| Optional configuration to prepend the microprofile scope to the metric name when it is exported
+to the OpenMetrics format. By default, the option is empty() and will not be taken into account.
+If true, the scope is prepended to the metric name when the OpenMetrics
+name is generated (e.g. `vendor_foo`}.
+If false, the scope is added to the metric tags instead (e.g. `foo{microprofile_scope="vendor"`}.
+This option has precedence over the global configuration (config property `smallrye.metrics.usePrefixForScope`)
+
+| skipsScopeInOpenMetricsExportCompletely
+| If `true`, then the metrics scope will be omitted completely when exporting the metric. For example, instead of
+`application_metric1`, the OpenMetrics key will be just `metric1`. This can be useful
+for various special compatibility use cases. However, dropping the scope means that if there are metrics with
+the same name under multiple scopes, they might not be distinguishable in the OpenMetrics output.
+This is currently not handled in any way in SmallRye, so the user should make sure this will not happen.
+
+| openMetricsKeyOverride
+| If set, this property overrides the OpenMetrics key under which the metric will be presented in an OpenMetrics export.
+Normal export rules defined by the MicroProfile Metrics specification are therefore ignored. Only applies to non-compound
+metrics, that is counters and gauges.
+|===
+
+The `ExtendedMetadata` class also comes with a fluent builder - `io.smallrye.metrics.ExtendedMetadataBuilder`.
