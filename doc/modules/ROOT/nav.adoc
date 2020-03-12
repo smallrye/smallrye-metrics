@@ -1,6 +1,8 @@
 * xref:index.adoc[Index]
 * Features on top of the specification
 ** xref:extended-metadata.adoc[Extended metadata]
-* xref:runtimes-integration.adoc[Integrating SmallRye Metrics into runtimes]
-** xref:runtimes-integration.adoc#cdi-extension[CDI Extension]
-** xref:runtimes-integration.adoc#base-vendor-metrics[Base and vendor metrics]
+* Integrating SmallRye Metrics into runtimes
+** xref:cdi-extension.adoc[CDI Extension]
+** xref:base-and-vendor-metrics.adoc[Base and vendor metrics]
+** xref:metric-registry-lifecycle.adoc[Metric registry lifecycle]
+** xref:jaxrs-metrics.adoc[JAX-RS metrics]
