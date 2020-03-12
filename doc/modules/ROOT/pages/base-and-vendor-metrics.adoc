@@ -1,20 +1,6 @@
-[[runtimes-integration]]
-= Integrating into runtimes
-
-[[cdi-extension]]
-== CDI Extension for eager registration of annotated application metrics
-SmallRye Metrics provides a CDI extension which takes care of the annotation scanning and then registering
-all detected metrics at deployment time. If your runtime supports CDI extensions, just make sure that
-the `io.smallrye.metrics.setup.MetricCdiInjectionExtension` extension is active. It is mandatory
-to register metrics beforehand, because the metric interceptors expect metrics to already exist when
-the interceptor is invoked (with the exception of Gauges, where registration is performed in a
-`@PostConstruct` method of the interceptor, that means when the owning bean is being instantiated).
-
-If the target runtime does not support CDI extensions, a different strategy must be devised
-for scanning the deployment and registering annotated metrics.
-
 [[base-vendor-metrics]]
-== Activating base and vendor metrics
+= Activating base and vendor metrics
+
 Base and vendor metrics are registered at deployment time by the `io.smallrye.metrics.setup.JmxRegistrar`
 class. It is necessary to instantiate it and invoke `jmxRegistrar.init()`. The definitions of base and vendor
 metrics are read from the file `base-metrics.properties` and `vendor-metrics.properties`, which should be available
@@ -24,9 +10,14 @@ loaded the `JmxRegistrar` class (higher precedence) or the thread context class 
 These files reference management MBeans as the sources of metric values, so they can only be used for metrics
 that are obtained from MBeans, and only in cases when JMX is available at runtime. Furthermore, only
 Counters and Gauges are currently supported through this file. In other cases, a different
-approach must be devised to register base and vendor metrics.
+approach must be devised to register base and vendor metrics (but the specification does not require
+any base metrics of different types).
 
-=== base-metrics.properties and vendor-metrics.properties file schema
+Note that JAX-RS metrics are a bit special and use a different mechanism. For info, see
+xref:jaxrs-metrics.adoc[JAX-RS Metrics].
+
+
+== base-metrics.properties and vendor-metrics.properties file schema
 These files list all base and vendor metrics through usage of a regular Java properties file.
 The schema is as following:
 
@@ -51,4 +42,3 @@ For example, `java.lang:type=ClassLoading/TotalLoadedClassCount`
 to obtain the total of all loaded classes in the JVM.
 
 |===
-
