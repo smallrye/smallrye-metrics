@@ -11,7 +11,7 @@ The extra fields are:
 | mbean
 | The expression designating the JMX MBean property from which the value of this metric will be retrieved.
 This is meant to be used only for base and vendor metrics, see
-xref:runtimes-integration.adoc#base-vendor-metrics[Base and vendor metrics] for more information
+xref:base-and-vendor-metrics.adoc[Base and vendor metrics] for more information
 
 | multi
 | Is set to `true` if `mbean` expression contains placeholders and therefore multiple metrics can potentially
