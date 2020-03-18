@@ -24,7 +24,6 @@ import java.io.StringReader;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -353,9 +352,9 @@ public class JsonExporterTest {
         Timer timerRed = registry.timer(metadata, new Tag("color", "red"));
         Timer timerBlue = registry.timer(metadata, new Tag("color", "blue"), new Tag("foo", "bar"));
 
-        timerWithoutTags.update(1, TimeUnit.SECONDS);
-        timerRed.update(2, TimeUnit.SECONDS);
-        timerBlue.update(3, TimeUnit.SECONDS);
+        timerWithoutTags.update(Duration.ofSeconds(1));
+        timerRed.update(Duration.ofSeconds(2));
+        timerBlue.update(Duration.ofSeconds(3));
 
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mytimer").toString();
         JsonObject json = Json.createReader(new StringReader(result)).read().asJsonObject();
@@ -365,6 +364,10 @@ public class JsonExporterTest {
         assertEquals(1.0, mytimerObject.getJsonNumber("count").doubleValue(), 1e-10);
         assertEquals(1.0, mytimerObject.getJsonNumber("count;color=red").doubleValue(), 1e-10);
         assertEquals(1.0, mytimerObject.getJsonNumber("count;color=blue;foo=bar").doubleValue(), 1e-10);
+
+        assertEquals(1.0, mytimerObject.getJsonNumber("elapsedTime").doubleValue(), 1e-10);
+        assertEquals(2.0, mytimerObject.getJsonNumber("elapsedTime;color=red").doubleValue(), 1e-10);
+        assertEquals(3.0, mytimerObject.getJsonNumber("elapsedTime;color=blue;foo=bar").doubleValue(), 1e-10);
 
         assertEquals(1.0, mytimerObject.getJsonNumber("p50").doubleValue(), 1e-10);
         assertEquals(2.0, mytimerObject.getJsonNumber("p50;color=red").doubleValue(), 1e-10);
