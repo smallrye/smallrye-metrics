@@ -736,6 +736,18 @@ public class OpenMetricsExporterTest {
         assertHasValueLineExactlyOnce(result, "foo_total_volts", "0.0", tag);
     }
 
+    @Test
+    public void testNewlineCharacterEscaping() {
+        OpenMetricsExporter exporter = new OpenMetricsExporter();
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+
+        Tag tag = new Tag("a", "b\nc");
+        registry.counter("mycounter", tag);
+
+        String result = exporter.exportOneScope(MetricRegistry.Type.APPLICATION).toString();
+        assertTrue(result.contains("application_mycounter_total{a=\"b\\nc\"} 0.0"));
+    }
+
     private void assertHasValueLineExactlyOnce(String output, String key, String value, Tag... tags) {
         List<String> foundLines = getLines(output, key, value, tags);
         if (foundLines.isEmpty())
