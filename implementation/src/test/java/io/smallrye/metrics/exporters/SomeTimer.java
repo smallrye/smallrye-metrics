@@ -17,8 +17,8 @@
 
 package io.smallrye.metrics.exporters;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
@@ -28,7 +28,7 @@ public class SomeTimer implements Timer {
     private Snapshot snapshot = new SomeSnapshot();
 
     @Override
-    public void update(long duration, TimeUnit unit) {
+    public void update(Duration duration) {
     }
 
     @Override
@@ -43,6 +43,11 @@ public class SomeTimer implements Timer {
     @Override
     public Context time() {
         return null;
+    }
+
+    @Override
+    public Duration getElapsedTime() {
+        return Duration.ZERO;
     }
 
     @Override

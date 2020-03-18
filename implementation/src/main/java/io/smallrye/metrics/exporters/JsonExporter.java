@@ -265,6 +265,7 @@ public class JsonExporter implements Exporter {
                 .forEach(builder::add);
         meterValues(timer, tags)
                 .forEach(builder::add);
+        builder.add("elapsedTime" + tags, toBase(timer.getElapsedTime().toNanos(), unit));
         return builder.build();
     }
 

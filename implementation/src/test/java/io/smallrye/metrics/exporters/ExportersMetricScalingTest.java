@@ -21,6 +21,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 
 import java.io.StringReader;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -64,9 +65,9 @@ public class ExportersMetricScalingTest {
                 .withUnit(MetricUnits.MINUTES)
                 .build();
         Timer metric = registry.timer(metadata);
-        metric.update(1, TimeUnit.HOURS);
-        metric.update(2, TimeUnit.HOURS);
-        metric.update(3, TimeUnit.HOURS);
+        metric.update(Duration.ofHours(1));
+        metric.update(Duration.ofHours(2));
+        metric.update(Duration.ofHours(3));
 
         OpenMetricsExporter exporter = new OpenMetricsExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
@@ -90,9 +91,9 @@ public class ExportersMetricScalingTest {
                 .withUnit(MetricUnits.MINUTES)
                 .build();
         Timer metric = registry.timer(metadata);
-        metric.update(1, TimeUnit.HOURS);
-        metric.update(2, TimeUnit.HOURS);
-        metric.update(3, TimeUnit.HOURS);
+        metric.update(Duration.ofHours(1));
+        metric.update(Duration.ofHours(2));
+        metric.update(Duration.ofHours(3));
 
         JsonExporter exporter = new JsonExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();
@@ -102,6 +103,7 @@ public class ExportersMetricScalingTest {
         assertEquals(120.0, json.getJsonNumber("mean").doubleValue(), 0.001);
         assertEquals(60.0, json.getJsonNumber("min").doubleValue(), 0.001);
         assertEquals(180.0, json.getJsonNumber("max").doubleValue(), 0.001);
+        assertEquals(360.0, json.getJsonNumber("elapsedTime").doubleValue(), 0.001);
     }
 
     /**
@@ -169,9 +171,9 @@ public class ExportersMetricScalingTest {
                 .withUnit(MetricUnits.MINUTES)
                 .build();
         Timer metric = registry.timer(metadata);
-        metric.update(1, TimeUnit.HOURS);
-        metric.update(2, TimeUnit.HOURS);
-        metric.update(3, TimeUnit.HOURS);
+        metric.update(Duration.ofHours(1));
+        metric.update(Duration.ofHours(2));
+        metric.update(Duration.ofHours(3));
 
         JsonExporter exporter = new JsonExporter();
         String exported = exporter.exportOneMetric(MetricRegistry.Type.APPLICATION, new MetricID("timer1")).toString();

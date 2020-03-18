@@ -33,7 +33,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -475,16 +474,19 @@ public class OpenMetricsExporterTest {
         Tag greenTag = new Tag("color", "green");
         Timer greenTimer = registry.timer(metadata, greenTag);
 
-        blueTimer.update(3, TimeUnit.SECONDS);
-        blueTimer.update(4, TimeUnit.SECONDS);
-        greenTimer.update(5, TimeUnit.SECONDS);
-        greenTimer.update(6, TimeUnit.SECONDS);
+        blueTimer.update(Duration.ofSeconds(3));
+        blueTimer.update(Duration.ofSeconds(4));
+        greenTimer.update(Duration.ofSeconds(5));
+        greenTimer.update(Duration.ofSeconds(6));
 
         String result = exporter.exportMetricsByName(MetricRegistry.Type.APPLICATION, "mytimer").toString();
         System.out.println(result);
 
         assertHasTypeLineExactlyOnce(result, "application_mytimer_seconds", "summary");
         assertHasHelpLineExactlyOnce(result, "application_mytimer_seconds", "awesome");
+
+        assertHasValueLineExactlyOnce(result, "application_mytimer_elapsedTime_seconds", "7.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_elapsedTime_seconds", "11.0", greenTag);
 
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_count", "2.0", blueTag);
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_count", "2.0", greenTag);

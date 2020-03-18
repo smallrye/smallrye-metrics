@@ -31,8 +31,9 @@
  */
 package io.smallrye.metrics.app;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
@@ -45,6 +46,7 @@ public class TimerImpl implements Timer {
 
     private final MeterImpl meter;
     private final HistogramImpl histogram;
+    private final LongAdder elapsedTime;
     private final Clock clock;
 
     /**
@@ -74,16 +76,17 @@ public class TimerImpl implements Timer {
         this.meter = new MeterImpl(clock);
         this.clock = clock;
         this.histogram = new HistogramImpl(reservoir);
+        this.elapsedTime = new LongAdder();
     }
 
     /**
      * Adds a recorded duration.
      *
      * @param duration the length of the duration
-     * @param unit the scale unit of {@code duration}
      */
-    public void update(long duration, TimeUnit unit) {
-        update(unit.toNanos(duration));
+    @Override
+    public void update(Duration duration) {
+        update(duration.toNanos());
     }
 
     /**
@@ -130,6 +133,11 @@ public class TimerImpl implements Timer {
     }
 
     @Override
+    public Duration getElapsedTime() {
+        return Duration.ofNanos(elapsedTime.longValue());
+    }
+
+    @Override
     public long getCount() {
         return histogram.getCount();
     }
@@ -163,6 +171,7 @@ public class TimerImpl implements Timer {
         if (duration >= 0) {
             histogram.update(duration);
             meter.mark();
+            elapsedTime.add(duration);
         }
     }
 
@@ -194,7 +203,7 @@ public class TimerImpl implements Timer {
          */
         public long stop() {
             final long elapsed = clock.getTick() - startTime;
-            timer.update(elapsed, TimeUnit.NANOSECONDS);
+            timer.update(Duration.ofNanos(elapsed));
             return elapsed;
         }
 
