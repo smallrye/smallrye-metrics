@@ -18,6 +18,7 @@
 package io.smallrye.metrics.exporters;
 
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.app.SimpleTimerImpl;
 
 /**
  * @author hrupp
@@ -243,6 +245,18 @@ public class JsonExporter implements Exporter {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("count" + tags, timer.getCount());
         builder.add("elapsedTime" + tags, toBase(timer.getElapsedTime().toNanos(), unit));
+        Duration minTimeDuration = timer.getMinTimeDuration();
+        if (minTimeDuration != SimpleTimerImpl.NO_DATA_AVAILABLE) {
+            builder.add("minTimeDuration" + tags, toBase(minTimeDuration.toNanos(), unit));
+        } else {
+            builder.add("minTimeDuration" + tags, JsonValue.NULL);
+        }
+        Duration maxTimeDuration = timer.getMaxTimeDuration();
+        if (maxTimeDuration != SimpleTimerImpl.NO_DATA_AVAILABLE) {
+            builder.add("maxTimeDuration" + tags, toBase(maxTimeDuration.toNanos(), unit));
+        } else {
+            builder.add("maxTimeDuration" + tags, JsonValue.NULL);
+        }
         return builder.build();
     }
 

@@ -33,6 +33,8 @@ package io.smallrye.metrics.app;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.eclipse.microprofile.metrics.SimpleTimer;
@@ -46,6 +48,24 @@ public class SimpleTimerImpl implements SimpleTimer {
 
     // total elapsed time across all measurements
     private final LongAdder elapsedTime;
+
+    // maximum duration achieved in previous minute
+    private final AtomicReference<Duration> max_previousMinute;
+    // minimum duration achieved in previous minute
+    private final AtomicReference<Duration> min_previousMinute;
+
+    // maximum duration achieved in this minute
+    private final AtomicReference<Duration> max_thisMinute;
+    // minimum duration achieved in this minute
+    private final AtomicReference<Duration> min_thisMinute;
+
+    // current timestamp rounded down to the last whole minute
+    private final AtomicLong thisMinute;
+
+    // what getMaxTimeDuration and getMinTimeDuration methods will return if
+    // we have no measurements available. However, for internally representing "no data"
+    // within this class, we use a null Duration.
+    public static final Duration NO_DATA_AVAILABLE = Duration.ofNanos(-1);
 
     /**
      * Creates a new {@link SimpleTimerImpl} using the default {@link Clock}.
@@ -63,6 +83,11 @@ public class SimpleTimerImpl implements SimpleTimer {
         this.clock = clock;
         this.count = new LongAdder();
         this.elapsedTime = new LongAdder();
+        this.thisMinute = new AtomicLong(getCurrentMinuteFromSystem());
+        this.max_previousMinute = new AtomicReference<>(null);
+        this.min_previousMinute = new AtomicReference<>(null);
+        this.max_thisMinute = new AtomicReference<>(null);
+        this.min_thisMinute = new AtomicReference<>(null);
     }
 
     /**
@@ -71,7 +96,21 @@ public class SimpleTimerImpl implements SimpleTimer {
      * @param duration the length of the duration
      */
     public void update(Duration duration) {
-        update(duration.toNanos());
+        if (duration.compareTo(Duration.ZERO) > 0) {
+            maybeStartNewMinute();
+            synchronized (this) {
+                count.increment();
+                elapsedTime.add(duration.toNanos());
+                Duration currentMax = max_thisMinute.get();
+                if (currentMax == null || (duration.compareTo(currentMax) > 0)) {
+                    max_thisMinute.set(duration);
+                }
+                Duration currentMin = min_thisMinute.get();
+                if (currentMin == null || (duration.compareTo(currentMin) < 0)) {
+                    min_thisMinute.set(duration);
+                }
+            }
+        }
     }
 
     /**
@@ -88,7 +127,7 @@ public class SimpleTimerImpl implements SimpleTimer {
         try {
             return event.call();
         } finally {
-            update(clock.getTick() - startTime);
+            update(Duration.ofNanos(clock.getTick() - startTime));
         }
     }
 
@@ -103,7 +142,7 @@ public class SimpleTimerImpl implements SimpleTimer {
         try {
             event.run();
         } finally {
-            update(clock.getTick() - startTime);
+            update(Duration.ofNanos(clock.getTick() - startTime));
         }
     }
 
@@ -127,11 +166,38 @@ public class SimpleTimerImpl implements SimpleTimer {
         return count.sum();
     }
 
-    private void update(long duration) {
-        if (duration >= 0) {
-            count.increment();
-            elapsedTime.add(duration);
+    @Override
+    public Duration getMaxTimeDuration() {
+        maybeStartNewMinute();
+        Duration max = max_previousMinute.get();
+        return max != null ? max : NO_DATA_AVAILABLE;
+    }
+
+    @Override
+    public Duration getMinTimeDuration() {
+        maybeStartNewMinute();
+        Duration min = min_previousMinute.get();
+        return min != null ? min : NO_DATA_AVAILABLE;
+    }
+
+    private void maybeStartNewMinute() {
+        long newMinute = getCurrentMinuteFromSystem();
+        if (newMinute > thisMinute.get()) {
+            synchronized (this) {
+                if (newMinute > thisMinute.get()) {
+                    thisMinute.set(newMinute);
+                    max_previousMinute.set(max_thisMinute.get());
+                    min_previousMinute.set(min_thisMinute.get());
+                    max_thisMinute.set(null);
+                    min_thisMinute.set(null);
+                }
+            }
         }
+    }
+
+    // Get the current system time in minutes, truncating. This number will increase by 1 every complete minute.
+    private long getCurrentMinuteFromSystem() {
+        return System.currentTimeMillis() / 60000;
     }
 
     /**
