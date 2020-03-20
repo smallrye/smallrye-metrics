@@ -269,9 +269,11 @@ public class OpenMetricsExporter implements Exporter {
         // 'total' value plus the help line
         writeHelpLine(sb, scope, md.getName(), md, "_total");
         writeTypeAndValue(sb, scope, "_total", simpleTimer.getCount(), COUNTER, md, false, tags);
-
-        // 'elapsed time' value
         writeTypeAndValue(sb, scope, "_elapsedTime" + theUnit, simpleTimer.getElapsedTime().toNanos(), GAUGE, md, true, tags);
+        writeTypeAndValue(sb, scope, "_minTimeDuration" + theUnit, simpleTimer.getMinTimeDuration().toNanos(), GAUGE, md, true,
+                tags);
+        writeTypeAndValue(sb, scope, "_maxTimeDuration" + theUnit, simpleTimer.getMaxTimeDuration().toNanos(), GAUGE, md, true,
+                tags);
     }
 
     private void writeConcurrentGaugeValues(StringBuilder sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge,
@@ -545,7 +547,7 @@ public class OpenMetricsExporter implements Exporter {
     public static String quoteValue(String value) {
         return value
                 // replace newline characters with a literal \n
-                 .replaceAll("\\n", "\\\\n")
+                .replaceAll("\\n", "\\\\n")
                 // replace \ with \\, unless it is followed by n (which means it is an already escaped newline character from the previous step)
                 .replaceAll("\\\\([^n])", "\\\\\\\\$1")
                 // replace " with \"
