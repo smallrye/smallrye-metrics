@@ -79,9 +79,4 @@ public class OriginAndMetadata implements Metadata {
 
     }
 
-    @Override
-    public boolean isReusable() {
-        return metadata.isReusable();
-
-    }
 }

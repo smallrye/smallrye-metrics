@@ -217,8 +217,7 @@ public class MetricCdiInjectionExtension implements Extension {
                         metricAnnotation.unit(),
                         metricAnnotation.description(),
                         metricAnnotation.displayName(),
-                        type,
-                        false);
+                        type);
                 Tag[] tags = TagsUtils.parseTagsAsArray(metricAnnotation.tags());
                 registry.register(metadata, getReference(manager, bean.getValue().getBaseType(), bean.getKey()), tags);
             } else {

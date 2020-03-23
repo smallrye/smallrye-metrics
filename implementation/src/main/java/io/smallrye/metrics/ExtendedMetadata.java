@@ -87,7 +87,7 @@ public class ExtendedMetadata extends DefaultMetadata {
     public ExtendedMetadata(String name, String displayName, String description, MetricType typeRaw, String unit, String mbean,
             boolean multi, Optional<Boolean> prependsScopeToOpenMetricsName, boolean skipsScopeInOpenMetricsExportCompletely,
             String openMetricsKeyOverride) {
-        super(name, displayName, description, typeRaw, unit, true);
+        super(name, displayName, description, typeRaw, unit);
         this.mbean = mbean;
         this.multi = multi;
         this.prependsScopeToOpenMetricsName = prependsScopeToOpenMetricsName;

@@ -35,29 +35,31 @@ import org.junit.runner.RunWith;
  * Test that two metrics of the same name and differing tags can be created by annotations.
  */
 @RunWith(Arquillian.class)
-public class NonReusableMetricWithDifferingTagsTest {
+public class ReuseMetricWithDifferingTagsTest {
 
     @Inject
-    private MetricRegistry metricRegistry;
+    MetricRegistry metricRegistry;
 
     @Inject
-    private NonReusableMetricWithDifferingTagsBean bean;
+    private ReuseMetricWithDifferingTagsBean bean;
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClass(NonReusableMetricWithDifferingTagsBean.class);
+                .addClass(ReuseMetricWithDifferingTagsBean.class);
     }
 
     @Test
     public void test() {
-        bean.colorBlue();
-        bean.colorBlue();
-        bean.colorRed();
-        Assert.assertEquals(2,
+        bean.colorBlue1();
+        bean.colorBlue1();
+        bean.colorBlue2();
+        bean.colorRed1();
+        bean.colorRed2();
+        Assert.assertEquals(3,
                 metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "blue"))).getCount());
-        Assert.assertEquals(1,
+        Assert.assertEquals(2,
                 metricRegistry.getCounters().get(new MetricID("colorCounter", new Tag("color", "red"))).getCount());
     }
 

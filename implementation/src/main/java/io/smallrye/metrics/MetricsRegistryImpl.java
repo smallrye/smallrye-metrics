@@ -129,15 +129,8 @@ public class MetricsRegistryImpl implements MetricRegistry {
         MetricID metricID = new MetricID(name, tags);
         Metadata existingMetadata = metadataMap.get(name);
 
-        boolean reusableFlag = (existingMetadata == null || existingMetadata.isReusable());
-
-        //Gauges are not reusable
-        if (metadata.getTypeRaw().equals(MetricType.GAUGE)) {
-            reusableFlag = false;
-        }
-
-        if (metricMap.keySet().contains(metricID) && !reusableFlag) {
-            throw new IllegalArgumentException("A metric with metricID " + metricID + " already exists");
+        if (metricMap.containsKey(metricID) && metadata.getTypeRaw().equals(MetricType.GAUGE)) {
+            throw new IllegalArgumentException("A gauge with metricID " + metricID + " already exists");
         }
 
         /*
@@ -192,9 +185,6 @@ public class MetricsRegistryImpl implements MetricRegistry {
 
         // unspecified means that someone is programmatically obtaining a metric instance without specifying the metadata, so we check only the name and type
         if (!(newMetadata instanceof UnspecifiedMetadata)) {
-            if (existingMetadata.isReusable() != newMetadata.isReusable()) {
-                throw new IllegalStateException("Reusable flag differs from previous usage");
-            }
 
             String existingUnit = existingMetadata.getUnit().orElse("none");
             String newUnit = newMetadata.getUnit().orElse("none");
@@ -452,11 +442,6 @@ public class MetricsRegistryImpl implements MetricRegistry {
                 originMap.get(metricID) != null &&
                 areCompatibleOrigins(originMap.get(metricID), ((OriginAndMetadata) metadata).getOrigin())) {
             // stop caring, same thing.
-        } else if (previousMetadata.isReusable() && (!(metadata instanceof UnspecifiedMetadata) && !metadata.isReusable())) {
-            throw new IllegalArgumentException(
-                    "Previously registered metric " + name + " was flagged as reusable, while current request is not.");
-        } else if (!previousMetadata.isReusable()) {
-            throw new IllegalArgumentException("Previously registered metric " + name + " was not flagged as reusable");
         } else {
             verifyMetadataEquality(metadata, previousMetadata);
         }

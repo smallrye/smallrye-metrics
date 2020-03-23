@@ -31,8 +31,6 @@ public class RawAnnotationInfo implements AnnotationInfo {
 
     private String displayName;
 
-    private boolean reusable;
-
     private String annotationName;
 
     public RawAnnotationInfo() {
@@ -40,14 +38,13 @@ public class RawAnnotationInfo implements AnnotationInfo {
     }
 
     public RawAnnotationInfo(String name, boolean absolute, String[] tags, String unit,
-            String description, String displayName, boolean reusable, String annotationName) {
+            String description, String displayName, String annotationName) {
         this.name = name;
         this.absolute = absolute;
         this.tags = tags;
         this.unit = unit;
         this.description = description;
         this.displayName = displayName;
-        this.reusable = reusable;
         this.annotationName = annotationName;
     }
 
@@ -99,14 +96,6 @@ public class RawAnnotationInfo implements AnnotationInfo {
         this.displayName = displayName;
     }
 
-    public boolean isReusable() {
-        return reusable;
-    }
-
-    public void setReusable(boolean reusable) {
-        this.reusable = reusable;
-    }
-
     public String getAnnotationName() {
         return annotationName;
     }
@@ -143,11 +132,6 @@ public class RawAnnotationInfo implements AnnotationInfo {
     @Override
     public String displayName() {
         return displayName;
-    }
-
-    @Override
-    public boolean reusable() {
-        return reusable;
     }
 
     @Override

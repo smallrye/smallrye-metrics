@@ -118,7 +118,6 @@ public class MetricProducer {
                     .withUnit(metric.unit())
                     .withDescription(metric.description())
                     .withDisplayName(metric.displayName())
-                    .notReusable()
                     .build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         } else {
@@ -127,7 +126,6 @@ public class MetricProducer {
                     .withUnit(MetricUnits.NONE)
                     .withDescription("")
                     .withDisplayName("")
-                    .notReusable()
                     .build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         }

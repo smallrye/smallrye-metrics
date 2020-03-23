@@ -69,11 +69,6 @@ public class UnspecifiedMetadata implements Metadata {
         throw new IllegalStateException("Unspecified metadata only contains name and type.");
     }
 
-    @Override
-    public boolean isReusable() {
-        throw new IllegalStateException("Unspecified metadata only contains name and type.");
-    }
-
     public Metadata convertToRealMetadata() {
         return Metadata.builder()
                 .withName(name)

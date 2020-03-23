@@ -91,24 +91,6 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
         return this;
     }
 
-    @Override
-    public ExtendedMetadataBuilder reusable() {
-        super.reusable();
-        return this;
-    }
-
-    @Override
-    public ExtendedMetadataBuilder reusable(boolean value) {
-        super.reusable(value);
-        return this;
-    }
-
-    @Override
-    public ExtendedMetadataBuilder notReusable() {
-        super.notReusable();
-        return this;
-    }
-
     public ExtendedMetadataBuilder multi(final boolean multi) {
         this.multi = multi;
         return this;

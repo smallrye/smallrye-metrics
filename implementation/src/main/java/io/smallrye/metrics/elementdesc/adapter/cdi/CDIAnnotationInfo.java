@@ -151,25 +151,6 @@ public class CDIAnnotationInfo implements AnnotationInfo {
     }
 
     @Override
-    public boolean reusable() {
-        if (annotation instanceof Counted) {
-            return ((Counted) annotation).reusable();
-        } else if (annotation instanceof ConcurrentGauge) {
-            return ((ConcurrentGauge) annotation).reusable();
-        } else if (annotation instanceof Gauge) {
-            return false;
-        } else if (annotation instanceof Metered) {
-            return ((Metered) annotation).reusable();
-        } else if (annotation instanceof Timed) {
-            return ((Timed) annotation).reusable();
-        } else if (annotation instanceof SimplyTimed) {
-            return ((SimplyTimed) annotation).reusable();
-        } else {
-            throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
-        }
-    }
-
-    @Override
     public String annotationName() {
         return annotation.annotationType().getName();
     }

@@ -44,47 +44,46 @@ public class MetricsMetadata {
         if (counted.isPresent()) {
             AnnotationInfo t = counted.metricAnnotation();
             Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(), t.displayName(),
-                    MetricType.COUNTER, t.reusable());
+                    MetricType.COUNTER);
             registry.counter(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<ConcurrentGauge> concurrentGauge = resolver.concurrentGauge(bean, element);
         if (concurrentGauge.isPresent()) {
             AnnotationInfo t = concurrentGauge.metricAnnotation();
             Metadata metadata = getMetadata(element, concurrentGauge.metricName(), t.unit(), t.description(), t.displayName(),
-                    MetricType.CONCURRENT_GAUGE, t.reusable());
+                    MetricType.CONCURRENT_GAUGE);
             registry.concurrentGauge(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<Metered> metered = resolver.metered(bean, element);
         if (metered.isPresent()) {
             AnnotationInfo t = metered.metricAnnotation();
             Metadata metadata = getMetadata(element, metered.metricName(), t.unit(), t.description(), t.displayName(),
-                    MetricType.METERED, t.reusable());
+                    MetricType.METERED);
             registry.meter(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<SimplyTimed> simplyTimed = resolver.simplyTimed(bean, element);
         if (simplyTimed.isPresent()) {
             AnnotationInfo t = simplyTimed.metricAnnotation();
             Metadata metadata = getMetadata(element, simplyTimed.metricName(), t.unit(), t.description(), t.displayName(),
-                    MetricType.SIMPLE_TIMER, t.reusable());
+                    MetricType.SIMPLE_TIMER);
             registry.simpleTimer(metadata, parseTagsAsArray(t.tags()));
         }
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
         if (timed.isPresent()) {
             AnnotationInfo t = timed.metricAnnotation();
             Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(), t.displayName(),
-                    MetricType.TIMER, t.reusable());
+                    MetricType.TIMER);
             registry.timer(metadata, parseTagsAsArray(t.tags()));
         }
     }
 
     public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName,
-            MetricType type, boolean reusable) {
+            MetricType type) {
         Metadata metadata = Metadata.builder().withName(name)
                 .withType(type)
                 .withUnit(unit)
                 .withDescription(description)
                 .withDisplayName(displayName)
-                .reusable(reusable)
                 .build();
         return new OriginAndMetadata(origin, metadata);
     }
