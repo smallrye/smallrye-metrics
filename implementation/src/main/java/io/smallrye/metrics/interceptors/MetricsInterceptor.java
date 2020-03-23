@@ -76,7 +76,7 @@ public class MetricsInterceptor {
                 if (gauge.isPresent()) {
                     AnnotationInfo g = gauge.metricAnnotation();
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
-                            g.displayName(), MetricType.GAUGE, false);
+                            g.displayName(), MetricType.GAUGE);
                     registry.register(metadata, new ForwardingGauge(method, context.getTarget()),
                             TagsUtils.parseTagsAsArray(g.tags()));
                 }

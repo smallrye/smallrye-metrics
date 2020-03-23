@@ -40,7 +40,6 @@ public class ExtendedMetadataBuilderTest {
         Assert.assertFalse(extendedMetadata.isSkipsScopeInOpenMetricsExportCompletely());
         Assert.assertFalse(extendedMetadata.isMulti());
         Assert.assertFalse(extendedMetadata.prependsScopeToOpenMetricsName().get());
-        Assert.assertTrue(extendedMetadata.isReusable());
         Assert.assertEquals(MetricType.CONCURRENT_GAUGE, extendedMetadata.getTypeRaw());
     }
 }

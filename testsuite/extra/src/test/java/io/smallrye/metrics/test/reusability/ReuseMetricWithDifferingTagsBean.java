@@ -19,14 +19,22 @@ package io.smallrye.metrics.test.reusability;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
-public class NonReusableMetricWithDifferingTagsBean {
+public class ReuseMetricWithDifferingTagsBean {
 
     @Counted(name = "colorCounter", absolute = true, tags = { "color=blue" })
-    public void colorBlue() {
+    public void colorBlue1() {
     }
 
     @Counted(name = "colorCounter", absolute = true, tags = { "color=red" })
-    public void colorRed() {
+    public void colorRed1() {
+    }
+
+    @Counted(name = "colorCounter", absolute = true, tags = { "color=blue" })
+    public void colorBlue2() {
+    }
+
+    @Counted(name = "colorCounter", absolute = true, tags = { "color=red" })
+    public void colorRed2() {
     }
 
 }

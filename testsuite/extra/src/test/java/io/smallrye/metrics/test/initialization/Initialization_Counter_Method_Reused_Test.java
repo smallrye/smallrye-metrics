@@ -18,20 +18,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
-public class Initialization_Counter_Method_Reusable_Test {
+public class Initialization_Counter_Method_Reused_Test {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addClasses(BeanWithCounter_Method_Reusable.class);
+                .addClasses(BeanWithCounter_Method_Reused.class);
     }
 
     @Inject
     private MetricRegistry registry;
 
     @Inject
-    private BeanWithCounter_Method_Reusable bean;
+    private BeanWithCounter_Method_Reused bean;
 
     @Test
     public void test() {
@@ -44,14 +44,14 @@ public class Initialization_Counter_Method_Reusable_Test {
         assertEquals(1, registry.getCounters().size());
     }
 
-    public static class BeanWithCounter_Method_Reusable {
+    public static class BeanWithCounter_Method_Reused {
 
-        @Counted(name = "counter_method", absolute = true, reusable = true)
+        @Counted(name = "counter_method", absolute = true)
         public void counterMethod() {
 
         }
 
-        @Counted(name = "counter_method", absolute = true, reusable = true)
+        @Counted(name = "counter_method", absolute = true)
         public void counterMethod2() {
 
         }
