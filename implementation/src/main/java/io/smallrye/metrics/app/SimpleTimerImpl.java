@@ -62,11 +62,6 @@ public class SimpleTimerImpl implements SimpleTimer {
     // current timestamp rounded down to the last whole minute
     private final AtomicLong thisMinute;
 
-    // what getMaxTimeDuration and getMinTimeDuration methods will return if
-    // we have no measurements available. However, for internally representing "no data"
-    // within this class, we use a null Duration.
-    public static final Duration NO_DATA_AVAILABLE = Duration.ofNanos(-1);
-
     /**
      * Creates a new {@link SimpleTimerImpl} using the default {@link Clock}.
      */
@@ -169,15 +164,13 @@ public class SimpleTimerImpl implements SimpleTimer {
     @Override
     public Duration getMaxTimeDuration() {
         maybeStartNewMinute();
-        Duration max = max_previousMinute.get();
-        return max != null ? max : NO_DATA_AVAILABLE;
+        return max_previousMinute.get();
     }
 
     @Override
     public Duration getMinTimeDuration() {
         maybeStartNewMinute();
-        Duration min = min_previousMinute.get();
-        return min != null ? min : NO_DATA_AVAILABLE;
+        return min_previousMinute.get();
     }
 
     private void maybeStartNewMinute() {
