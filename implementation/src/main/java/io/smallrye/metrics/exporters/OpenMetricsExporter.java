@@ -17,6 +17,7 @@
 
 package io.smallrye.metrics.exporters;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -270,10 +271,19 @@ public class OpenMetricsExporter implements Exporter {
         writeHelpLine(sb, scope, md.getName(), md, "_total");
         writeTypeAndValue(sb, scope, "_total", simpleTimer.getCount(), COUNTER, md, false, tags);
         writeTypeAndValue(sb, scope, "_elapsedTime" + theUnit, simpleTimer.getElapsedTime().toNanos(), GAUGE, md, true, tags);
-        writeTypeAndValue(sb, scope, "_minTimeDuration" + theUnit, simpleTimer.getMinTimeDuration().toNanos(), GAUGE, md, true,
-                tags);
-        writeTypeAndValue(sb, scope, "_maxTimeDuration" + theUnit, simpleTimer.getMaxTimeDuration().toNanos(), GAUGE, md, true,
-                tags);
+        Duration min = simpleTimer.getMinTimeDuration();
+        Duration max = simpleTimer.getMaxTimeDuration();
+        if (min != null) {
+            writeTypeAndValue(sb, scope, "_minTimeDuration" + theUnit, min.toNanos(), GAUGE, md, true, tags);
+        } else {
+            writeTypeAndValue(sb, scope, "_minTimeDuration" + theUnit, Double.NaN, GAUGE, md, true, tags);
+        }
+        if (max != null) {
+            writeTypeAndValue(sb, scope, "_maxTimeDuration" + theUnit, max.toNanos(), GAUGE, md, true, tags);
+        } else {
+            writeTypeAndValue(sb, scope, "_maxTimeDuration" + theUnit, Double.NaN, GAUGE, md, true, tags);
+        }
+
     }
 
     private void writeConcurrentGaugeValues(StringBuilder sb, MetricRegistry.Type scope, ConcurrentGauge concurrentGauge,
