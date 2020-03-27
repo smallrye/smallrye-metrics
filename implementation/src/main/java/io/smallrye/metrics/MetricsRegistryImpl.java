@@ -19,6 +19,7 @@ package io.smallrye.metrics;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -56,14 +57,12 @@ import io.smallrye.metrics.app.TimerImpl;
  * @author hrupp
  */
 @Vetoed
-public class MetricsRegistryImpl extends MetricRegistry {
+public class MetricsRegistryImpl implements MetricRegistry {
 
     private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
 
-    private Map<String, Metadata> metadataMap = new HashMap<>();
+    private Map<String, Metadata> metadataMap = new ConcurrentHashMap<>();
 
-    // Only this map needs to be concurrent because it is being iterated in getMetrics which is not synchronized.
-    // Other maps are accessed only in synchronized methods.
     private Map<MetricID, Metric> metricMap = new ConcurrentHashMap<>();
 
     /*
@@ -238,6 +237,29 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public Counter counter(MetricID metricID) {
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.COUNTER));
+    }
+
+    @Override
+    public Gauge<?> gauge(String name, Gauge<?> gauge) {
+        Objects.requireNonNull(gauge);
+        return get(new MetricID(name), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public Gauge<?> gauge(String name, Gauge<?> gauge, Tag... tags) {
+        Objects.requireNonNull(gauge);
+        return get(new MetricID(name, tags), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public Gauge<?> gauge(MetricID metricID, Gauge<?> gauge) {
+        Objects.requireNonNull(gauge);
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.GAUGE), gauge);
+    }
+
+    @Override
     public ConcurrentGauge concurrentGauge(String name) {
         return get(new MetricID(name),
                 new UnspecifiedMetadata(name, MetricType.CONCURRENT_GAUGE));
@@ -246,6 +268,11 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
         return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.CONCURRENT_GAUGE));
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(MetricID metricID) {
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
@@ -271,6 +298,11 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public Histogram histogram(MetricID metricID) {
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.HISTOGRAM));
+    }
+
+    @Override
     public Histogram histogram(String name, Tag... tags) {
         return get(new MetricID(name, tags),
                 new UnspecifiedMetadata(name, MetricType.HISTOGRAM));
@@ -293,6 +325,11 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     @Override
+    public Meter meter(MetricID metricID) {
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.METERED));
+    }
+
+    @Override
     public Meter meter(String name, Tag... tags) {
         return get(new MetricID(name, tags),
                 new UnspecifiedMetadata(name, MetricType.METERED));
@@ -312,6 +349,11 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public Timer timer(Metadata metadata) {
         return get(new MetricID(metadata.getName()), sanitizeMetadata(metadata, MetricType.TIMER));
+    }
+
+    @Override
+    public Timer timer(MetricID metricID) {
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.TIMER));
     }
 
     @Override
@@ -347,7 +389,16 @@ public class MetricsRegistryImpl extends MetricRegistry {
         return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.SIMPLE_TIMER));
     }
 
-    private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata) {
+    @Override
+    public SimpleTimer simpleTimer(MetricID metricID) {
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.SIMPLE_TIMER));
+    }
+
+    private <T extends Metric> T get(MetricID metricID, Metadata metadata) {
+        return get(metricID, metadata, null);
+    }
+
+    private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata, T implementor) {
         String name = metadata.getName();
         MetricType type = metadata.getTypeRaw();
         if (name == null || name.isEmpty()) {
@@ -365,7 +416,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     m = new CounterImpl();
                     break;
                 case GAUGE:
-                    throw new IllegalArgumentException("Gauge " + name + " was not registered, this should not happen");
+                    m = implementor;
+                    break;
                 case METERED:
                     m = new MeterImpl();
                     break;
@@ -550,8 +602,23 @@ public class MetricsRegistryImpl extends MetricRegistry {
 
     @Override
     public Map<MetricID, Metric> getMetrics() {
-
         return new HashMap<>(metricMap);
+    }
+
+    @Override
+    public Metric getMetric(MetricID metricID) {
+        return metricMap.get(metricID);
+    }
+
+    @Override
+    public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
+        SortedMap<MetricID, Metric> out = new TreeMap<>();
+        for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
+            if (filter.matches(entry.getKey(), entry.getValue())) {
+                out.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return out;
     }
 
     private Metadata sanitizeMetadata(Metadata metadata, MetricType metricType) {
@@ -607,6 +674,11 @@ public class MetricsRegistryImpl extends MetricRegistry {
     @Override
     public synchronized Map<String, Metadata> getMetadata() {
         return new HashMap<>(metadataMap);
+    }
+
+    @Override
+    public Metadata getMetadata(String name) {
+        return metadataMap.get(name);
     }
 
     @Override
