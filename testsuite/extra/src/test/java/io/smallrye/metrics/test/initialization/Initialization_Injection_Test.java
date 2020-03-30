@@ -53,7 +53,7 @@ public class Initialization_Injection_Test {
     @Test
     public void test() {
         MetricID metricID = new MetricID(
-                "io.smallrye.metrics.test.initialization.Initialization_Injection_Test$BeanWithMetricInjection.histogram");
+                "io.smallrye.metrics.test.initialization.Initialization_Injection_Test.BeanWithMetricInjection.histogram");
         // check that the injected histogram is registered eagerly
         assertTrue(registry.getHistograms().containsKey(metricID));
         bean.addDataToHistogram();
