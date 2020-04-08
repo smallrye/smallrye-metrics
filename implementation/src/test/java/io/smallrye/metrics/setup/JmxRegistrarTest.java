@@ -17,7 +17,6 @@
 package io.smallrye.metrics.setup;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,8 +97,6 @@ public class JmxRegistrarTest {
         final List<ExtendedMetadataAndTags> metadataList = Lists.list(extendedMetadata);
 
         JmxWorker.instance().expandMultiValueEntries(metadataList);
-
-        assertEquals(2, metadataList.size());
 
         final ExtendedMetadataAndTags extendedMetadata1 = metadataList.get(0);
         assertThat(extendedMetadata1.getMetadata().getDescription().get()).isEqualTo("Description BufferPool-mapped");
