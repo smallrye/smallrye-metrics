@@ -34,7 +34,7 @@
 
   <properties>
     <version.microprofile-config>1.4</version.microprofile-config>
-    <version.microprofile-metrics>3.0-M2</version.microprofile-metrics>
+    <version.microprofile-metrics>3.0-M3</version.microprofile-metrics>
 
     <version.smallrye.config>1.7.0</version.smallrye.config>
 
