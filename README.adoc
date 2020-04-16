@@ -1,6 +1,5 @@
 :microprofile-metrics: https://github.com/eclipse/microprofile-metrics/
 
-image:https://semaphoreci.com/api/v1/smallrye/smallrye-metrics/branches/master/badge.svg["Semaphore CI", link="https://semaphoreci.com/smallrye/smallrye-metrics"]
 image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-metrics&metric=alert_status["Quality Gate Status", link="https://sonarcloud.io/dashboard?id=smallrye_smallrye-metrics"]
 image:https://img.shields.io/github/license/thorntail/thorntail.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
 
