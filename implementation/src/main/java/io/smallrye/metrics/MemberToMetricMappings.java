@@ -86,7 +86,7 @@ public class MemberToMetricMappings {
             default:
                 throw new IllegalArgumentException();
         }
-        if(log.isTraceEnabled()) {
+        if (log.isTraceEnabled()) {
             log.trace("Matching member " + member + " to metric type=" + metricType + " and ID " + metricID);
         }
     }
