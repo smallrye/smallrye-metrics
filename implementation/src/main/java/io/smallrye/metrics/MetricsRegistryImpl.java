@@ -95,23 +95,9 @@ public class MetricsRegistryImpl implements MetricRegistry {
             throw new IllegalArgumentException("A metric with name " + name + " already exists");
         }
 
-        MetricType type;
-        Class<?> metricCls = metric.getClass();
-        if (metricCls.getName().contains("Lambda")) {
-            String tname = metricCls.getGenericInterfaces()[0].getTypeName(); // TODO [0] is brittle
-            tname = tname.substring(tname.lastIndexOf('.') + 1);
-            tname = tname.toLowerCase();
-            type = MetricType.from(tname);
-        } else if (metricCls.isAnonymousClass()) {
-            type = MetricType.from(metricCls.getInterfaces().length == 0 ? metricCls.getSuperclass().getInterfaces()[0]
-                    : metricCls.getInterfaces()[0]);
-        } else {
-            if (!metricCls.isInterface()) {
-                // [0] is ok, as all our Impl classes implement exactly the one matching interface
-                type = MetricType.from(metricCls.getInterfaces()[0]);
-            } else {
-                type = MetricType.from(metricCls);
-            }
+        MetricType type = inferMetricType(metric.getClass());
+        if (type == null || type.equals(MetricType.INVALID)) {
+            throw new IllegalStateException("Unable to infer metric type of " + metric);
         }
 
         Metadata m = Metadata.builder().withName(name).withType(type).build();
@@ -678,5 +664,56 @@ public class MetricsRegistryImpl implements MetricRegistry {
 
     public MemberToMetricMappings getMemberToMetricMappings() {
         return memberToMetricMappings;
+    }
+
+    /**
+     * Guess the metric type from a class object. Recursively scans its
+     * superclasses and implemented interfaces.
+     * If no metric type can be inferred, returns null.
+     * If multiple metric types are inferred, throws an IllegalArgumentException.
+     */
+    private MetricType inferMetricType(Class<?> clazz) {
+        MetricType direct = metricTypeFromClass(clazz);
+        if (direct != null) {
+            return direct;
+        } else {
+            MetricType candidateType = null;
+            // recursively scan the superclass first, then implemented interfaces
+            Class<?> superClass = clazz.getSuperclass();
+            if (superClass != null && !superClass.equals(Object.class)) {
+                candidateType = inferMetricType(superClass);
+            }
+            for (Class<?> implementedInterface : clazz.getInterfaces()) {
+                MetricType newCandidateType = inferMetricType(implementedInterface);
+                if (candidateType == null) {
+                    candidateType = newCandidateType;
+                } else {
+                    if (newCandidateType != null && !candidateType.equals(newCandidateType)) {
+                        throw new IllegalArgumentException("Ambiguous metric type, " +
+                                newCandidateType + " and " + candidateType + " are possible");
+                    }
+                }
+            }
+            return candidateType;
+        }
+    }
+
+    private MetricType metricTypeFromClass(Class<?> in) {
+        if (in.equals(Counter.class)) {
+            return MetricType.COUNTER;
+        } else if (in.equals(Gauge.class)) {
+            return MetricType.GAUGE;
+        } else if (in.equals(ConcurrentGauge.class)) {
+            return MetricType.CONCURRENT_GAUGE;
+        } else if (in.equals(Meter.class)) {
+            return MetricType.METERED;
+        } else if (in.equals(Timer.class)) {
+            return MetricType.TIMER;
+        } else if (in.equals(SimpleTimer.class)) {
+            return MetricType.SIMPLE_TIMER;
+        } else if (in.equals(Histogram.class)) {
+            return MetricType.HISTOGRAM;
+        }
+        return null;
     }
 }
