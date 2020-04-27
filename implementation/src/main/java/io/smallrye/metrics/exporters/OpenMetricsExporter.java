@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.Config;
@@ -156,7 +157,7 @@ public class OpenMetricsExporter implements Exporter {
         MetricRegistry registry = MetricRegistries.get(scope);
         Map<MetricID, Metric> metricMap = registry.getMetrics();
 
-        exposeEntries(scope, sb, registry, metricMap);
+        exposeEntries(scope, sb, registry, new TreeMap<>(metricMap));
     }
 
     private void exposeEntries(MetricRegistry.Type scope, StringBuilder sb, MetricRegistry registry,
