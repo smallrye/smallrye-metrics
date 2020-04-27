@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -120,6 +121,20 @@ public class RegistrationCornerCasesTest {
     }
 
     @Test
+    public void ambiguousClassButTypeIsProvidedDuringRegistrationWithTags() {
+        Metadata metadata = Metadata.builder()
+                .withType(MetricType.COUNTER)
+                .withName("test")
+                .build();
+        // the Ambiguous class can be a counter as well as gauge, but we specified the type in the metadata
+        // so it should be registered as a counter
+        registry.register(metadata, new Ambiguous(), new Tag("a", "b"));
+
+        Assert.assertEquals(MetricType.COUNTER, registry.getMetadata("test").getTypeRaw());
+        Assert.assertEquals(666L, registry.getCounter(new MetricID("test", new Tag("a", "b"))).getCount());
+    }
+
+    @Test
     public void anonymousClassThatImplementsMetricViaSuperClass() {
         registry.register("test", new Bax() {
             @Override
@@ -149,6 +164,18 @@ public class RegistrationCornerCasesTest {
             }
         });
         Assert.assertEquals(3L, registry.getCounter(new MetricID("test")).getCount());
+    }
+
+    @Test
+    public void lambdaGaugeInRegisterMethod() {
+        registry.register(Metadata.builder().withName("test").build(), (Gauge<Long>) () -> 1L);
+        Assert.assertEquals(MetricType.GAUGE, registry.getMetadata("test").getTypeRaw());
+    }
+
+    @Test
+    public void lambdaGaugeInRegisterMethodWithTags() {
+        registry.register(Metadata.builder().withName("test").build(), (Gauge<Long>) () -> 1L, new Tag("a", "b"));
+        Assert.assertEquals(MetricType.GAUGE, registry.getMetadata("test").getTypeRaw());
     }
 
     interface DummyInterface {

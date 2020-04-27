@@ -108,7 +108,7 @@ public class MetricsRegistryImpl implements MetricRegistry {
 
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric) {
-        return register(metadata, metric, (Tag[]) null);
+        return register(sanitizeMetadata(metadata, metric.getClass()), metric, (Tag[]) null);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class MetricsRegistryImpl implements MetricRegistry {
                     originMap.put(metricID, ((OriginAndMetadata) metadata).getOrigin());
                     metadataMap.put(name, ((OriginAndMetadata) metadata).getMetadata());
                 } else {
-                    metadataMap.put(name, metadata);
+                    metadataMap.put(name, sanitizeMetadata(metadata, metric.getClass()));
                 }
                 metricMap.put(metricID, metric);
             }
@@ -595,6 +595,15 @@ public class MetricsRegistryImpl implements MetricRegistry {
             }
         }
         return out;
+    }
+
+    private Metadata sanitizeMetadata(Metadata metadata, Class<?> metricClass) {
+        if (metadata.getTypeRaw() == null || metadata.getTypeRaw() == MetricType.INVALID) {
+            MetricType inferredMetricType = inferMetricType(metricClass);
+            return Metadata.builder(metadata).withType(inferredMetricType).build();
+        } else {
+            return metadata;
+        }
     }
 
     private Metadata sanitizeMetadata(Metadata metadata, MetricType metricType) {
