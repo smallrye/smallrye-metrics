@@ -161,9 +161,10 @@ public class OpenMetricsExporter implements Exporter {
 
     private void exposeEntries(MetricRegistry.Type scope, StringBuilder sb, MetricRegistry registry,
             Map<MetricID, Metric> metricMap) {
+        Map<String, Metadata> metadataMap = registry.getMetadata();
         for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
             String key = entry.getKey().getName();
-            Metadata md = registry.getMetadata().get(key);
+            Metadata md = metadataMap.get(key);
 
             if (md == null) {
                 throw new IllegalStateException("No entry for " + key + " found");
