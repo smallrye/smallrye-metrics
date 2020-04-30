@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -83,7 +82,7 @@ public class JsonMetadataExporter implements Exporter {
             return null;
         }
 
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JsonProviderHolder.get().createObjectBuilder();
         metricJSON(builder, name, metadata, getKnownTagsByMetricName(registry, name));
         return stringify(builder.build());
 
@@ -93,14 +92,14 @@ public class JsonMetadataExporter implements Exporter {
 
     StringBuilder stringify(JsonObject obj) {
         StringWriter out = new StringWriter();
-        try (JsonWriter writer = Json.createWriterFactory(JSON_CONFIG).createWriter(out)) {
+        try (JsonWriter writer = JsonProviderHolder.get().createWriterFactory(JSON_CONFIG).createWriter(out)) {
             writer.writeObject(obj);
         }
         return new StringBuilder(out.toString());
     }
 
     private JsonObject rootJSON() {
-        JsonObjectBuilder root = Json.createObjectBuilder();
+        JsonObjectBuilder root = JsonProviderHolder.get().createObjectBuilder();
 
         root.add("base", registryJSON(MetricRegistries.get(MetricRegistry.Type.BASE)));
         root.add("vendor", registryJSON(MetricRegistries.get(MetricRegistry.Type.VENDOR)));
@@ -110,7 +109,7 @@ public class JsonMetadataExporter implements Exporter {
     }
 
     private JsonObject registryJSON(MetricRegistry registry) {
-        JsonObjectBuilder registryJSON = Json.createObjectBuilder();
+        JsonObjectBuilder registryJSON = JsonProviderHolder.get().createObjectBuilder();
         Map<String, Metadata> metrics = registry.getMetadata();
 
         metrics.entrySet().stream()
@@ -125,7 +124,7 @@ public class JsonMetadataExporter implements Exporter {
     }
 
     private JsonObject metricJSON(Metadata metadata, List<List<String>> tagSets) {
-        JsonObjectBuilder obj = Json.createObjectBuilder();
+        JsonObjectBuilder obj = JsonProviderHolder.get().createObjectBuilder();
 
         metadata.getUnit().ifPresent(s -> obj.add("unit", s));
 
@@ -140,9 +139,9 @@ public class JsonMetadataExporter implements Exporter {
         }
 
         // append known sets of tags
-        JsonArrayBuilder tagsArray = Json.createArrayBuilder();
+        JsonArrayBuilder tagsArray = JsonProviderHolder.get().createArrayBuilder();
         tagSets.forEach(tagSet -> {
-            JsonArrayBuilder innerArrayBuilder = Json.createArrayBuilder();
+            JsonArrayBuilder innerArrayBuilder = JsonProviderHolder.get().createArrayBuilder();
             tagSet.forEach(innerArrayBuilder::add);
             tagsArray.add(innerArrayBuilder);
         });
