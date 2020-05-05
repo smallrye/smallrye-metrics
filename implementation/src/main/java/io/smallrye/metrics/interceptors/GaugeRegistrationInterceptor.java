@@ -30,7 +30,6 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.TagsUtils;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
@@ -45,8 +44,6 @@ import io.smallrye.metrics.setup.MetricsMetadata;
 @MetricsBinding
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
 public class GaugeRegistrationInterceptor {
-
-    private static final Logger log = Logger.getLogger(GaugeRegistrationInterceptor.class);
 
     private final MetricRegistry registry;
 

@@ -44,7 +44,6 @@ import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.MetricRegistries;
 
@@ -52,8 +51,6 @@ import io.smallrye.metrics.MetricRegistries;
  * @author hrupp
  */
 public class JsonExporter implements Exporter {
-
-    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     @Override
     public StringBuilder exportOneScope(MetricRegistry.Type scope) {
@@ -316,14 +313,12 @@ public class JsonExporter implements Exporter {
             if (value != null) {
                 return value;
             } else {
-                log.warn("Value is null for " + name);
-                return -142.142; // TODO
+                return 0;
             }
         } else if (theMetric instanceof Counter) {
             return ((Counter) theMetric).getCount();
         } else {
-            log.error("Not yet supported metric: " + theMetric.getClass().getName());
-            return -42.42;
+            return null;
         }
     }
 

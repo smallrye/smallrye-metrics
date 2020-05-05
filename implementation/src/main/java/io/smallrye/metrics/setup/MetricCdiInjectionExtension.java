@@ -60,11 +60,11 @@ import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRequestHandler;
+import io.smallrye.metrics.SmallRyeMetricsLogging;
 import io.smallrye.metrics.TagsUtils;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
@@ -85,8 +85,6 @@ import io.smallrye.metrics.interceptors.TimedInterceptor;
  */
 public class MetricCdiInjectionExtension implements Extension {
 
-    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
-
     private static final AnnotationLiteral<MetricsBinding> METRICS_BINDING = new AnnotationLiteral<MetricsBinding>() {
     };
 
@@ -104,8 +102,7 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private void addInterceptorBindings(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
-        log.info("MicroProfile: Metrics activated (SmallRye Metrics version: "
-                + getImplementationVersion().orElse("unknown") + ")");
+        SmallRyeMetricsLogging.log.logSmallRyeMetricsVersion(getImplementationVersion().orElse("unknown"));
 
         String extensionName = MetricCdiInjectionExtension.class.getName();
 
@@ -173,13 +170,13 @@ public class MetricCdiInjectionExtension implements Extension {
     }
 
     private void findMetricProducerFields(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
-        log.debugf("Metrics producer field discovered: %s", ppf.getAnnotatedProducerField());
+        SmallRyeMetricsLogging.log.producerFieldDiscovered(ppf.getAnnotatedProducerField());
         metricsFromProducers.put(ppf.getBean(), ppf.getAnnotatedProducerField());
     }
 
     private void findMetricProducerMethods(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
         if (!ppm.getBean().getBeanClass().equals(MetricProducer.class)) {
-            log.debugf("Metrics producer method discovered: %s", ppm.getAnnotatedProducerMethod());
+            SmallRyeMetricsLogging.log.producerMethodDiscovered(ppm.getAnnotatedProducerMethod());
             metricsFromProducers.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
         }
     }
@@ -289,7 +286,7 @@ public class MetricCdiInjectionExtension implements Extension {
                         return Optional.ofNullable(properties.getProperty("smallrye.metrics.version"));
                     }
                 } catch (IOException e) {
-                    log.warn("Couldn't determine version of SmallRye Metrics", e);
+                    SmallRyeMetricsLogging.log.unableToDetectVersion();
                 }
                 return Optional.empty();
             }

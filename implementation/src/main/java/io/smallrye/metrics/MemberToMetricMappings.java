@@ -24,13 +24,10 @@ import java.util.Set;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.elementdesc.MemberInfo;
 
 public class MemberToMetricMappings {
-
-    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     MemberToMetricMappings() {
         counters = new HashMap<>();
@@ -86,9 +83,7 @@ public class MemberToMetricMappings {
             default:
                 throw new IllegalArgumentException();
         }
-        if (log.isTraceEnabled()) {
-            log.trace("Matching member " + member + " to metric type=" + metricType + " and ID " + metricID);
-        }
+        SmallRyeMetricsLogging.log.matchingMemberToMetric(member, metricID, metricType);
     }
 
 }
