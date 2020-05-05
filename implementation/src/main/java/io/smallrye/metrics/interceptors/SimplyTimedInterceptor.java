@@ -33,11 +33,13 @@ import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRegistryImpl;
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
@@ -73,14 +75,13 @@ public class SimplyTimedInterceptor {
         Set<MetricID> ids = ((MetricsRegistryImpl) registry).getMemberToMetricMappings()
                 .getSimpleTimers(new CDIMemberInfoAdapter<>().convert(element));
         if (ids == null || ids.isEmpty()) {
-            throw new IllegalStateException("No metric mapped for " + element);
+            throw SmallRyeMetricsMessages.msg.noMetricMappedForMember(element);
         }
         List<SimpleTimer.Context> contexts = ids.stream()
                 .map(metricID -> {
                     SimpleTimer metric = registry.getSimpleTimers().get(metricID);
                     if (metric == null) {
-                        throw new IllegalStateException(
-                                "No simple timer with metricID [" + metricID + "] found in registry [" + registry + "]");
+                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.SIMPLE_TIMER, metricID);
                     }
                     return metric;
                 })

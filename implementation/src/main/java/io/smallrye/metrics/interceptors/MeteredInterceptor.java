@@ -32,10 +32,12 @@ import javax.interceptor.InvocationContext;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRegistryImpl;
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
@@ -71,14 +73,13 @@ public class MeteredInterceptor {
         Set<MetricID> ids = ((MetricsRegistryImpl) registry).getMemberToMetricMappings()
                 .getMeters(new CDIMemberInfoAdapter<>().convert(element));
         if (ids == null || ids.isEmpty()) {
-            throw new IllegalStateException("No metric mapped for " + element);
+            throw SmallRyeMetricsMessages.msg.noMetricMappedForMember(element);
         }
         ids.stream()
                 .map(metricID -> {
                     Meter metric = registry.getMeters().get(metricID);
                     if (metric == null) {
-                        throw new IllegalStateException(
-                                "No meter with metricID [" + metricID + "] found in registry [" + registry + "]");
+                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.METERED, metricID);
                     }
                     return metric;
                 })

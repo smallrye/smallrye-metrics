@@ -30,6 +30,7 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.TagsUtils;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
@@ -184,17 +185,17 @@ public class MetricResolver {
 
         @Override
         public String metricName() {
-            throw new UnsupportedOperationException();
+            throw SmallRyeMetricsMessages.msg.noMetricPresent();
         }
 
         @Override
         public Tag[] tags() {
-            throw new UnsupportedOperationException();
+            throw SmallRyeMetricsMessages.msg.noMetricPresent();
         }
 
         @Override
         public AnnotationInfo metricAnnotation() {
-            throw new UnsupportedOperationException();
+            throw SmallRyeMetricsMessages.msg.noMetricPresent();
         }
     }
 }

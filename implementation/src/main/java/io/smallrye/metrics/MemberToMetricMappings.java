@@ -81,7 +81,7 @@ public class MemberToMetricMappings {
                 simpleTimers.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
                 break;
             default:
-                throw new IllegalArgumentException();
+                throw SmallRyeMetricsMessages.msg.unknownMetricType();
         }
         SmallRyeMetricsLogging.log.matchingMemberToMetric(member, metricID, metricType);
     }

@@ -20,12 +20,12 @@ package io.smallrye.metrics.mbean;
 import org.eclipse.microprofile.metrics.Counter;
 
 import io.smallrye.metrics.JmxWorker;
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 
 /**
  * @author hrupp
  */
 public class MCounterImpl implements Counter {
-    private static final String MUST_NOT_BE_CALLED = "Must not be called";
     private final String mbeanExpression;
     private final JmxWorker worker;
 
@@ -36,12 +36,12 @@ public class MCounterImpl implements Counter {
 
     @Override
     public void inc() {
-        throw new IllegalStateException(MUST_NOT_BE_CALLED);
+        throw SmallRyeMetricsMessages.msg.mustNotBeCalled();
     }
 
     @Override
     public void inc(long n) {
-        throw new IllegalStateException(MUST_NOT_BE_CALLED);
+        throw SmallRyeMetricsMessages.msg.mustNotBeCalled();
     }
 
     @Override

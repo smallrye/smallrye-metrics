@@ -29,6 +29,8 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
+import io.smallrye.metrics.SmallRyeMetricsMessages;
+
 @Vetoed
 /* package-private */ class SeMetricName implements MetricName {
 
@@ -46,8 +48,7 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
         } else if (annotated instanceof AnnotatedParameter) {
             return of((AnnotatedParameter<?>) annotated);
         } else {
-            throw new IllegalArgumentException("Unable to retrieve metric name for injection point [" + ip
-                    + "], only members and parameters are supported");
+            throw SmallRyeMetricsMessages.msg.unableToRetrieveMetricNameForInjectionPoint(ip);
         }
     }
 
@@ -96,12 +97,10 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
             if ((Boolean) Parameter.getMethod("isNamePresent").invoke(param)) {
                 return (String) Parameter.getMethod("getName").invoke(param);
             } else {
-                throw new UnsupportedOperationException("Unable to retrieve name for parameter [" + parameter
-                        + "], activate the -parameters compiler argument or annotate the injected parameter with the @Metric annotation");
+                throw SmallRyeMetricsMessages.msg.unableToRetrieveParameterName(parameter);
             }
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException cause) {
-            throw new UnsupportedOperationException("Unable to retrieve name for parameter [" + parameter
-                    + "], @Metric annotation on injected parameter is required before Java 8");
+            throw SmallRyeMetricsMessages.msg.unableToRetrieveParameterName(parameter);
         }
     }
 }

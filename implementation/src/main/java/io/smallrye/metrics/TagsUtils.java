@@ -22,16 +22,16 @@ import org.eclipse.microprofile.metrics.Tag;
 public class TagsUtils {
 
     private TagsUtils() {
-        throw new UnsupportedOperationException("Don't construct me");
+        // not to be constructed
     }
 
     public static Tag parseTag(String kvString) {
         if (kvString == null || kvString.isEmpty() || !kvString.contains("=")) {
-            throw new IllegalArgumentException("Not a k=v pair: " + kvString);
+            throw SmallRyeMetricsMessages.msg.notAKeyValuePair(kvString);
         }
         String[] kv = kvString.split("=");
         if (kv.length != 2) {
-            throw new IllegalArgumentException("Not a k=v pair: " + kvString);
+            throw SmallRyeMetricsMessages.msg.notAKeyValuePair(kvString);
         }
         String key = kv[0].trim();
         String value = kv[1].trim();

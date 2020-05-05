@@ -82,7 +82,7 @@ public class MetricRegistryThreadSafetyTest {
                         }
                     }).count());
 
-            assertEquals("99 attempts should fail with IllegalArgumentException",
+            assertEquals("99 attempts should fail with IllegalStateException",
                     99, Arrays.stream(futures).filter(f -> {
                         try {
                             f.get();
@@ -91,7 +91,7 @@ public class MetricRegistryThreadSafetyTest {
                             e.printStackTrace();
                             return false;
                         } catch (ExecutionException e) {
-                            return e.getCause() instanceof IllegalArgumentException;
+                            return e.getCause() instanceof IllegalStateException;
                         }
                     }).count());
 
