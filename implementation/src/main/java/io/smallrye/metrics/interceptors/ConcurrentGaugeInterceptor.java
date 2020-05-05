@@ -32,7 +32,6 @@ import javax.interceptor.InvocationContext;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRegistryImpl;
@@ -43,8 +42,6 @@ import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 @Interceptor
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 public class ConcurrentGaugeInterceptor {
-
-    private static final Logger log = Logger.getLogger(ConcurrentGaugeInterceptor.class);
 
     private final MetricRegistry registry;
 

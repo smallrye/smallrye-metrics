@@ -42,10 +42,10 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.ExtendedMetadata;
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SmallRyeMetricsLogging;
 
 /**
  * Export data in OpenMetrics text format
@@ -53,8 +53,6 @@ import io.smallrye.metrics.MetricRegistries;
  * @author Heiko W. Rupp
  */
 public class OpenMetricsExporter implements Exporter {
-
-    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     // This allows to suppress the (noisy) # HELP line
     private static final String MICROPROFILE_METRICS_OMIT_HELP_LINE = "microprofile.metrics.omitHelpLine";
@@ -236,7 +234,7 @@ public class OpenMetricsExporter implements Exporter {
                 sb.append(metricBuf);
                 alreadyExportedNames.get().add(md.getName());
             } catch (Exception e) {
-                log.warn("Unable to export metric " + key, e);
+                SmallRyeMetricsLogging.log.unableToExport(key, e);
             }
         }
     }
@@ -508,8 +506,7 @@ public class OpenMetricsExporter implements Exporter {
             if (value1 != null) {
                 valIn = value1.doubleValue();
             } else {
-                log.warn("Value is null for " + key);
-                throw new IllegalStateException("Value must not be null for " + key);
+                valIn = Double.NaN;
             }
         } else {
             valIn = (double) ((Counter) metric).getCount();

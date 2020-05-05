@@ -31,7 +31,6 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRegistryImpl;
@@ -42,8 +41,6 @@ import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 @Interceptor
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 public class CountedInterceptor {
-
-    private static final Logger log = Logger.getLogger(CountedInterceptor.class);
 
     private final MetricRegistry registry;
 

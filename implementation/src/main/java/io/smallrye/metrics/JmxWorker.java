@@ -31,14 +31,11 @@ import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 
 import org.eclipse.microprofile.metrics.Tag;
-import org.jboss.logging.Logger;
 
 /**
  * @author hrupp
  */
 public class JmxWorker {
-
-    private static final Logger log = Logger.getLogger("io.smallrye.metrics");
 
     private static final String PLACEHOLDER = "%s";
     private static MBeanServer mbs;
@@ -133,9 +130,7 @@ public class JmxWorker {
                     for (ObjectName oName : objNames) {
                         String newName = entry.getMetadata().getName();
                         if (!newName.contains(PLACEHOLDER) && entry.getTags().isEmpty()) {
-                            log.warn("Name [" + newName
-                                    + "] did not contain a %s or any tags, no replacement will be done, check" +
-                                    " the configuration");
+                            SmallRyeMetricsLogging.log.nameDoesNotContainPlaceHoldersOrTags(newName);
                         }
                         String newDisplayName = entry.getMetadata().getDisplayName();
                         String newDescription = entry.getMetadata().getDescription();
@@ -167,7 +162,6 @@ public class JmxWorker {
         }
         entries.removeAll(toBeRemoved);
         entries.addAll(result);
-        log.debug("Converted [" + toBeRemoved.size() + "] config entries and added [" + result.size() + "] replacements");
     }
 
     /**

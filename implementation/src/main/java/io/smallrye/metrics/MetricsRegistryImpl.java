@@ -43,7 +43,6 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
-import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.app.ConcurrentGaugeImpl;
 import io.smallrye.metrics.app.CounterImpl;
@@ -58,8 +57,6 @@ import io.smallrye.metrics.app.TimerImpl;
  */
 @Vetoed
 public class MetricsRegistryImpl implements MetricRegistry {
-
-    private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
 
     private Map<String, Metadata> metadataMap = new ConcurrentHashMap<>();
 
@@ -419,10 +416,10 @@ public class MetricsRegistryImpl implements MetricRegistry {
                     throw new IllegalStateException("Must not happen");
             }
             if (metadata instanceof OriginAndMetadata) {
-                log.debugf("Register metric [metricId: %s, type: %s, origin: %s]", metricID, type,
+                SmallRyeMetricsLogging.log.registerMetric(metricID, type,
                         ((OriginAndMetadata) metadata).getOrigin());
             } else {
-                log.debugf("Register metric [metricId: %s, type: %s]", metricID, type);
+                SmallRyeMetricsLogging.log.registerMetric(metricID, type);
             }
 
             register(metadata, m, metricID.getTagsAsList().toArray(new Tag[] {}));
@@ -454,7 +451,7 @@ public class MetricsRegistryImpl implements MetricRegistry {
 
     @Override
     public boolean remove(String metricName) {
-        log.debugf("Removing metrics with [name: %s]", metricName);
+        SmallRyeMetricsLogging.log.removeMetricsByName(metricName);
         // iterate over all metricID's in the map and remove the ones with this name
         for (MetricID metricID : metricMap.keySet()) {
             if (metricID.getName().equals(metricName)) {
@@ -468,12 +465,13 @@ public class MetricsRegistryImpl implements MetricRegistry {
     @Override
     public synchronized boolean remove(MetricID metricID) {
         if (metricMap.containsKey(metricID)) {
-            log.debugf("Remove metric with [id: %s]", metricID);
+            SmallRyeMetricsLogging.log.removeMetricsById(metricID);
             metricMap.remove(metricID);
             // remove the metadata as well if this is the last metric of this name to be removed
-            if (metricMap.keySet().stream().noneMatch(id -> id.getName().equals(metricID.getName()))) {
-                log.debugf("Remove metadata for [name: %s]", metricID.getName());
-                metadataMap.remove(metricID.getName());
+            String name = metricID.getName();
+            if (metricMap.keySet().stream().noneMatch(id -> id.getName().equals(name))) {
+                SmallRyeMetricsLogging.log.removeMetadata(name);
+                metadataMap.remove(name);
             }
             return true;
         }
