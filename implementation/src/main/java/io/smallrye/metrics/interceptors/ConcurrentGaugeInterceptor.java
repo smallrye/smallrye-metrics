@@ -31,10 +31,12 @@ import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRegistryImpl;
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 
 @SuppressWarnings("unused")
@@ -70,15 +72,14 @@ public class ConcurrentGaugeInterceptor {
         Set<MetricID> ids = ((MetricsRegistryImpl) registry).getMemberToMetricMappings()
                 .getConcurrentGauges(new CDIMemberInfoAdapter<>().convert(element));
         if (ids == null || ids.isEmpty()) {
-            throw new IllegalStateException("No metric mapped for " + element);
+            throw SmallRyeMetricsMessages.msg.noMetricMappedForMember(element);
         }
         List<org.eclipse.microprofile.metrics.ConcurrentGauge> metrics = ids
                 .stream()
                 .map(metricID -> {
                     org.eclipse.microprofile.metrics.ConcurrentGauge metric = registry.getConcurrentGauges().get(metricID);
                     if (metric == null) {
-                        throw new IllegalStateException(
-                                "No concurrent gauge with metricID [" + metricID + "] found in registry [" + registry + "]");
+                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.CONCURRENT_GAUGE, metricID);
                     }
                     return metric;
                 })

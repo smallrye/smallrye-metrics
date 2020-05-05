@@ -156,7 +156,7 @@ public class JmxWorker {
                     }
                     toBeRemoved.add(entry);
                 } catch (MalformedObjectNameException e) {
-                    throw new IllegalStateException(e);
+                    throw SmallRyeMetricsMessages.msg.malformedObjectName(e);
                 }
             }
         }

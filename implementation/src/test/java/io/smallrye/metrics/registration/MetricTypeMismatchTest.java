@@ -16,7 +16,7 @@
  */
 package io.smallrye.metrics.registration;
 
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -52,7 +52,7 @@ public class MetricTypeMismatchTest {
             registry.meter(metadata2);
             fail("Must not be able to register if a metric with different type is registered under the same name");
         } catch (Exception e) {
-            assertThat(e, instanceOf(IllegalArgumentException.class));
+            assertThat(e, instanceOf(IllegalStateException.class));
             assertEquals(1, registry.getMetrics().size());
         }
     }
@@ -69,7 +69,7 @@ public class MetricTypeMismatchTest {
         } catch (Exception e) {
             assertThat(e, instanceOf(IllegalArgumentException.class));
             assertThat(e.getMessage(),
-                    equalTo("Attempting to register a meter, but the passed metadata contains type=counter"));
+                    containsString("Attempting to register a meter, but the passed metadata contains type=counter"));
             assertEquals(0, registry.getMetrics().size());
         }
     }
