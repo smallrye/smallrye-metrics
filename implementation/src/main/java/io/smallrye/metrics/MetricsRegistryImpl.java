@@ -177,14 +177,14 @@ public class MetricsRegistryImpl implements MetricRegistry {
         // unspecified means that someone is programmatically obtaining a metric instance without specifying the metadata, so we check only the name and type
         if (!(newMetadata instanceof UnspecifiedMetadata)) {
 
-            String existingUnit = existingMetadata.getUnit().orElse("none");
-            String newUnit = newMetadata.getUnit().orElse("none");
+            String existingUnit = existingMetadata.getUnit();
+            String newUnit = newMetadata.getUnit();
             if (!existingUnit.equals(newUnit)) {
                 throw new IllegalStateException("Unit is different from the unit in previous usage (" + existingUnit + ")");
             }
 
-            String existingDescription = existingMetadata.getDescription().orElse("none");
-            String newDescription = newMetadata.getDescription().orElse("none");
+            String existingDescription = existingMetadata.getDescription();
+            String newDescription = newMetadata.getDescription();
             if (!existingDescription.equals(newDescription)) {
                 throw new IllegalStateException("Description differs from previous usage");
             }
@@ -587,6 +587,50 @@ public class MetricsRegistryImpl implements MetricRegistry {
     }
 
     @Override
+    public <T extends Metric> T getMetric(MetricID metricID, Class<T> asType) {
+        try {
+            return asType.cast(getMetric(metricID));
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException(metricID + " was not of expected type " + asType, e);
+        }
+    }
+
+    @Override
+    public Counter getCounter(MetricID metricID) {
+        return getMetric(metricID, Counter.class);
+    }
+
+    @Override
+    public ConcurrentGauge getConcurrentGauge(MetricID metricID) {
+        return getMetric(metricID, ConcurrentGauge.class);
+    }
+
+    @Override
+    public Gauge<?> getGauge(MetricID metricID) {
+        return getMetric(metricID, Gauge.class);
+    }
+
+    @Override
+    public Histogram getHistogram(MetricID metricID) {
+        return getMetric(metricID, Histogram.class);
+    }
+
+    @Override
+    public Meter getMeter(MetricID metricID) {
+        return getMetric(metricID, Meter.class);
+    }
+
+    @Override
+    public Timer getTimer(MetricID metricID) {
+        return getMetric(metricID, Timer.class);
+    }
+
+    @Override
+    public SimpleTimer getSimpleTimer(MetricID metricID) {
+        return getMetric(metricID, SimpleTimer.class);
+    }
+
+    @Override
     public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
         SortedMap<MetricID, Metric> out = new TreeMap<>();
         for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
@@ -595,6 +639,13 @@ public class MetricsRegistryImpl implements MetricRegistry {
             }
         }
         return out;
+    }
+
+    @Override
+    public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
+        return (SortedMap<MetricID, T>) getMetrics(
+                (metricID, metric) -> filter.matches(metricID, metric)
+                        && ofType.isAssignableFrom(metric.getClass()));
     }
 
     private Metadata sanitizeMetadata(Metadata metadata, Class<?> metricClass) {

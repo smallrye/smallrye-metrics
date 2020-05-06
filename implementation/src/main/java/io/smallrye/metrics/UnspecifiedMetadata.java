@@ -49,14 +49,23 @@ public class UnspecifiedMetadata implements Metadata {
     }
 
     @Override
-    public Optional<String> getDescription() {
+    public Optional<String> displayName() {
+        throw new IllegalStateException("Unspecified metadata only contains name and type.");
+    }
+
+    @Override
+    public String getDescription() {
+        throw new IllegalStateException("Unspecified metadata only contains name and type.");
+    }
+
+    @Override
+    public Optional<String> description() {
         throw new IllegalStateException("Unspecified metadata only contains name and type.");
     }
 
     @Override
     public String getType() {
         return type.toString();
-
     }
 
     @Override
@@ -65,7 +74,12 @@ public class UnspecifiedMetadata implements Metadata {
     }
 
     @Override
-    public Optional<String> getUnit() {
+    public String getUnit() {
+        throw new IllegalStateException("Unspecified metadata only contains name and type.");
+    }
+
+    @Override
+    public Optional<String> unit() {
         throw new IllegalStateException("Unspecified metadata only contains name and type.");
     }
 

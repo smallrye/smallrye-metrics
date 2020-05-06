@@ -46,37 +46,46 @@ public class OriginAndMetadata implements Metadata {
     @Override
     public String getName() {
         return metadata.getName();
-
     }
 
     @Override
     public String getDisplayName() {
         return metadata.getDisplayName();
-
     }
 
     @Override
-    public Optional<String> getDescription() {
-        return metadata.getDescription();
+    public Optional<String> displayName() {
+        return metadata.displayName();
+    }
 
+    @Override
+    public String getDescription() {
+        return metadata.getDescription();
+    }
+
+    @Override
+    public Optional<String> description() {
+        return metadata.description();
     }
 
     @Override
     public String getType() {
         return metadata.getType();
-
     }
 
     @Override
     public MetricType getTypeRaw() {
         return metadata.getTypeRaw();
-
     }
 
     @Override
-    public Optional<String> getUnit() {
+    public String getUnit() {
         return metadata.getUnit();
+    }
 
+    @Override
+    public Optional<String> unit() {
+        return metadata.unit();
     }
 
 }

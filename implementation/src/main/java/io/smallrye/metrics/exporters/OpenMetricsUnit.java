@@ -46,7 +46,7 @@ public class OpenMetricsUnit {
     public static String getBaseUnitAsOpenMetricsString(Optional<String> optUnit) {
 
         if (!optUnit.isPresent()) {
-            return "NONE";
+            return MetricUnits.NONE;
         }
 
         String unit = optUnit.get();

@@ -50,20 +50,8 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
     }
 
     @Override
-    public ExtendedMetadataBuilder withOptionalDisplayName(String displayName) {
-        super.withOptionalDisplayName(displayName);
-        return this;
-    }
-
-    @Override
     public ExtendedMetadataBuilder withDescription(String description) {
         super.withDescription(description);
-        return this;
-    }
-
-    @Override
-    public ExtendedMetadataBuilder withOptionalDescription(String description) {
-        super.withOptionalDescription(description);
         return this;
     }
 
@@ -74,20 +62,8 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
     }
 
     @Override
-    public ExtendedMetadataBuilder withOptionalType(MetricType type) {
-        super.withOptionalType(type);
-        return this;
-    }
-
-    @Override
     public ExtendedMetadataBuilder withUnit(String unit) {
         super.withUnit(unit);
-        return this;
-    }
-
-    @Override
-    public ExtendedMetadataBuilder withOptionalUnit(String unit) {
-        super.withOptionalUnit(unit);
         return this;
     }
 
@@ -122,9 +98,9 @@ public class ExtendedMetadataBuilder extends MetadataBuilder {
         DefaultMetadata metadata = (DefaultMetadata) super.build();
         return new ExtendedMetadata(metadata.getName(),
                 metadata.getDisplayName(),
-                metadata.getDescription().orElse(null),
+                metadata.getDescription(),
                 metadata.getTypeRaw(),
-                metadata.getUnit().orElse(null),
+                metadata.getUnit(),
                 this.mbean,
                 this.multi,
                 Optional.ofNullable(this.prependsScopeToOpenMetricsName),
