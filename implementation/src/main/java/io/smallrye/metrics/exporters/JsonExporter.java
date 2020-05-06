@@ -152,7 +152,7 @@ public class JsonExporter implements Exporter {
             case SIMPLE_TIMER:
                 metricMap.forEach((metricID, value) -> {
                     SimpleTimer metric = (SimpleTimer) value;
-                    exportSimpleTimer(metric, metadata.getUnit().orElse(null), createTagsString(metricID.getTagsAsList()))
+                    exportSimpleTimer(metric, metadata.getUnit(), createTagsString(metricID.getTagsAsList()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());
@@ -160,7 +160,7 @@ public class JsonExporter implements Exporter {
             case TIMER:
                 metricMap.forEach((metricID, value) -> {
                     Timer metric = (Timer) value;
-                    exportTimer(metric, metadata.getUnit().orElse(null), createTagsString(metricID.getTagsAsList()))
+                    exportTimer(metric, metadata.getUnit(), createTagsString(metricID.getTagsAsList()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());

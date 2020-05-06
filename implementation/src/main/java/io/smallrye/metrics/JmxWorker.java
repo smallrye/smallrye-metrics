@@ -138,7 +138,7 @@ public class JmxWorker {
                                     " the configuration");
                         }
                         String newDisplayName = entry.getMetadata().getDisplayName();
-                        String newDescription = entry.getMetadata().getDescription().orElse("");
+                        String newDescription = entry.getMetadata().getDescription();
                         List<Tag> newTags = new ArrayList<>(entry.getTags());
                         for (final Entry<String, String> keyHolder : keyHolders.entrySet()) {
                             String keyValue = oName.getKeyPropertyList().get(keyHolder.getValue());
@@ -154,7 +154,7 @@ public class JmxWorker {
                         String newObjectName = oName.getCanonicalName() + "/" + attName;
 
                         ExtendedMetadata newEntryMetadata = new ExtendedMetadata(newName, newDisplayName, newDescription,
-                                entry.getMetadata().getTypeRaw(), entry.getMetadata().getUnit().orElse(null), newObjectName,
+                                entry.getMetadata().getTypeRaw(), entry.getMetadata().getUnit(), newObjectName,
                                 true);
                         ExtendedMetadataAndTags newEntry = new ExtendedMetadataAndTags(newEntryMetadata, newTags);
                         result.add(newEntry);

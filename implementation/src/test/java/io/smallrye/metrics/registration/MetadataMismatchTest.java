@@ -66,7 +66,7 @@ public class MetadataMismatchTest {
 
         assertNotEquals(histogram1, histogram2);
         assertEquals(2, registry.getMetrics().size());
-        assertThat(registry.getMetadata().get("myhistogram").getDescription().get(), equalTo("description1"));
+        assertThat(registry.getMetadata().get("myhistogram").description().get(), equalTo("description1"));
     }
 
     @Test

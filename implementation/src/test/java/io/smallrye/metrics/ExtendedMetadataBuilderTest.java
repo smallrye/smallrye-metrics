@@ -35,8 +35,8 @@ public class ExtendedMetadataBuilderTest {
         Assert.assertEquals(name, extendedMetadata.getName());
         Assert.assertEquals(mbean, extendedMetadata.getMbean());
         Assert.assertEquals(openMetricsKeyOverride, extendedMetadata.getOpenMetricsKeyOverride().get());
-        Assert.assertEquals(unit, extendedMetadata.getUnit().get());
-        Assert.assertEquals(description, extendedMetadata.getDescription().get());
+        Assert.assertEquals(unit, extendedMetadata.unit().get());
+        Assert.assertEquals(description, extendedMetadata.description().get());
         Assert.assertFalse(extendedMetadata.isSkipsScopeInOpenMetricsExportCompletely());
         Assert.assertFalse(extendedMetadata.isMulti());
         Assert.assertFalse(extendedMetadata.prependsScopeToOpenMetricsName().get());

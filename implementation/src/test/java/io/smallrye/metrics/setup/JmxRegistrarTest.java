@@ -54,13 +54,13 @@ public class JmxRegistrarTest {
         ExtendedMetadataAndTags loadedClasses = getSingleMatch("classloader\\.currentLoadedClass\\.count");
 
         assertThat(loadedClasses.getMetadata().getName()).isEqualTo("classloader.currentLoadedClass.count");
-        assertThat(loadedClasses.getMetadata().getDescription().get())
+        assertThat(loadedClasses.getMetadata().getDescription())
                 .isEqualTo("Displays the number of classes that are currently " +
                         "loaded in the Java virtual machine.");
         assertThat(loadedClasses.getMetadata().getDisplayName()).isEqualTo("Current Loaded Class Count");
         assertThat(loadedClasses.getMetadata().getMbean()).isEqualTo("java.lang:type=ClassLoading/LoadedClassCount");
         assertThat(loadedClasses.getMetadata().getType()).isEqualTo("counter");
-        assertThat(loadedClasses.getMetadata().getUnit().get()).isEqualTo("none");
+        assertThat(loadedClasses.getMetadata().getUnit()).isEqualTo("none");
     }
 
     @Test
@@ -85,21 +85,21 @@ public class JmxRegistrarTest {
 
         final ExtendedMetadataAndTags extendedMetadata = getSingleMatch("test_key");
         assertThat(extendedMetadata.getMetadata().getName()).isEqualTo("test_key");
-        assertThat(extendedMetadata.getMetadata().getDescription().orElse(null)).isEqualTo("Description %s1-%s2");
+        assertThat(extendedMetadata.getMetadata().getDescription()).isEqualTo("Description %s1-%s2");
         assertThat(extendedMetadata.getMetadata().getDisplayName()).isEqualTo("Display Name %s1-%s2");
         assertThat(extendedMetadata.getMetadata().getMbean()).isEqualTo("java.nio:name=%s2,type=%s1/ObjectName");
         assertThat(extendedMetadata.getTags()).contains(
                 new Tag("type", "%s1"),
                 new Tag("name", "%s2"));
         assertThat(extendedMetadata.getMetadata().getType()).isEqualTo("counter");
-        assertThat(extendedMetadata.getMetadata().getUnit().orElse("none")).isEqualTo("none");
+        assertThat(extendedMetadata.getMetadata().getUnit()).isEqualTo("none");
 
         final List<ExtendedMetadataAndTags> metadataList = Lists.list(extendedMetadata);
 
         JmxWorker.instance().expandMultiValueEntries(metadataList);
 
         final ExtendedMetadataAndTags extendedMetadata1 = metadataList.get(0);
-        assertThat(extendedMetadata1.getMetadata().getDescription().get()).isEqualTo("Description BufferPool-mapped");
+        assertThat(extendedMetadata1.getMetadata().getDescription()).isEqualTo("Description BufferPool-mapped");
         assertThat(extendedMetadata1.getMetadata().getDisplayName()).isEqualTo("Display Name BufferPool-mapped");
         assertThat(extendedMetadata1.getMetadata().getMbean()).isEqualTo("java.nio:name=mapped,type=BufferPool/ObjectName");
         assertThat(extendedMetadata1.getTags()).contains(
@@ -107,7 +107,7 @@ public class JmxRegistrarTest {
                 new Tag("name", "mapped"));
 
         final ExtendedMetadataAndTags extendedMetadata2 = metadataList.get(1);
-        assertThat(extendedMetadata2.getMetadata().getDescription().get()).isEqualTo("Description BufferPool-direct");
+        assertThat(extendedMetadata2.getMetadata().getDescription()).isEqualTo("Description BufferPool-direct");
         assertThat(extendedMetadata2.getMetadata().getDisplayName()).isEqualTo("Display Name BufferPool-direct");
         assertThat(extendedMetadata2.getMetadata().getMbean()).isEqualTo("java.nio:name=direct,type=BufferPool/ObjectName");
         assertThat(extendedMetadata2.getTags()).contains(
