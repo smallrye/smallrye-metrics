@@ -1,7 +1,11 @@
 :microprofile-metrics: https://github.com/eclipse/microprofile-metrics/
+:ci: https://github.com/smallrye/smallrye-config/actions?query=workflow%3A%22SmallRye+Build%22
+:sonar: https://sonarcloud.io/dashboard?id=smallrye_smallrye-config
 
-image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-metrics&metric=alert_status["Quality Gate Status", link="https://sonarcloud.io/dashboard?id=smallrye_smallrye-metrics"]
-image:https://img.shields.io/github/license/thorntail/thorntail.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
+image:https://github.com/smallrye/smallrye-metrics/workflows/SmallRye%20Build/badge.svg?branch=master[link={ci}]
+image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-metrics&metric=alert_status["Quality Gate Status", link={sonar}]
+image:https://img.shields.io/github/license/smallrye/smallrye-metrics.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
+image:https://img.shields.io/maven-central/v/io.smallrye/smallrye-metrics?color=green[]
 
 = SmallRye Metrics
 
@@ -20,6 +24,10 @@ mvn clean install
 
 * link:implementation[] - Implementation of the Eclipse MicroProfile Metrics API.
 * link:tck[] - Test suite to run the implementation against the Eclipse MicroProfile Metrics TCK.
+
+=== Contributing
+
+Please refer to our Wiki for the https://github.com/smallrye/smallrye-parent/wiki[Contribution Guidelines].
 
 === Links
 
