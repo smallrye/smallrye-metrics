@@ -17,12 +17,15 @@
 
 package io.smallrye.metrics.jaxrs;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 
@@ -43,7 +46,7 @@ import org.eclipse.microprofile.metrics.Tag;
  * {@link JaxRsMetricsServletFilter} and {@link JaxRsMetricsFilter} to handle incoming requests.
  * {@link JaxRsMetricsServletFilter} must run first, but this will probably be the case always.
  */
-public class JaxRsMetricsFilter implements ContainerRequestFilter {
+public class JaxRsMetricsFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     @Context
     ResourceInfo resourceInfo;
@@ -73,4 +76,11 @@ public class JaxRsMetricsFilter implements ContainerRequestFilter {
         return new MetricID("REST.request", classTag, methodTag);
     }
 
+    @Override
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+        // If the response filter is called, it means the processing did NOT end with
+        // an unmapped exception. Store this information for the servlet filter so
+        // that it knows which metric to update.
+        requestContext.setProperty("smallrye.metrics.jaxrs.successful", true);
+    }
 }
