@@ -49,6 +49,7 @@ public class RawMemberInfo implements MemberInfo {
         this.declaringClassSimpleName = declaringClassSimpleName;
         this.name = name;
         this.annotationInfos.addAll(annotationInfos);
+        this.parameterTypeNames = new String[0];
     }
 
     public RawMemberInfo(MemberType memberType, String declaringClassName, String declaringClassSimpleName, String name,
@@ -58,7 +59,11 @@ public class RawMemberInfo implements MemberInfo {
         this.declaringClassSimpleName = declaringClassSimpleName;
         this.name = name;
         this.annotationInfos.addAll(annotationInfos);
-        this.parameterTypeNames = parameterTypes;
+        if (parameterTypes != null) {
+            this.parameterTypeNames = parameterTypes;
+        } else {
+            this.parameterTypeNames = new String[0];
+        }
     }
 
     public void setMemberType(MemberType memberType) {
