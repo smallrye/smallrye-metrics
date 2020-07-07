@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -32,28 +31,19 @@ import java.util.Optional;
 import java.util.Properties;
 
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedParameter;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.ProcessProducerField;
-import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
@@ -65,7 +55,6 @@ import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.MetricsRequestHandler;
 import io.smallrye.metrics.SmallRyeMetricsLogging;
-import io.smallrye.metrics.TagsUtils;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
@@ -73,7 +62,6 @@ import io.smallrye.metrics.interceptors.ConcurrentGaugeInterceptor;
 import io.smallrye.metrics.interceptors.CountedInterceptor;
 import io.smallrye.metrics.interceptors.GaugeRegistrationInterceptor;
 import io.smallrye.metrics.interceptors.MeteredInterceptor;
-import io.smallrye.metrics.interceptors.MetricName;
 import io.smallrye.metrics.interceptors.MetricNameFactory;
 import io.smallrye.metrics.interceptors.MetricResolver;
 import io.smallrye.metrics.interceptors.MetricsBinding;
@@ -87,11 +75,6 @@ public class MetricCdiInjectionExtension implements Extension {
 
     private static final AnnotationLiteral<MetricsBinding> METRICS_BINDING = new AnnotationLiteral<MetricsBinding>() {
     };
-
-    private static final AnnotationLiteral<Default> DEFAULT = new AnnotationLiteral<Default>() {
-    };
-
-    private final Map<Bean<?>, AnnotatedMember<?>> metricsFromProducers = new HashMap<>();
 
     private final Map<Bean<?>, List<AnnotatedMember<?>>> metricsFromAnnotatedMethods = new HashMap<>();
 
@@ -169,58 +152,12 @@ public class MetricCdiInjectionExtension implements Extension {
         }
     }
 
-    private void findMetricProducerFields(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
-        SmallRyeMetricsLogging.log.producerFieldDiscovered(ppf.getAnnotatedProducerField());
-        metricsFromProducers.put(ppf.getBean(), ppf.getAnnotatedProducerField());
-    }
-
-    private void findMetricProducerMethods(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
-        if (!ppm.getBean().getBeanClass().equals(MetricProducer.class)) {
-            SmallRyeMetricsLogging.log.producerMethodDiscovered(ppm.getAnnotatedProducerMethod());
-            metricsFromProducers.put(ppm.getBean(), ppm.getAnnotatedProducerMethod());
-        }
-    }
-
     void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
 
         // Produce and register custom metrics
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        MetricName name = getReference(manager, MetricName.class);
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
-
-        for (Map.Entry<Bean<?>, AnnotatedMember<?>> bean : metricsFromProducers.entrySet()) {
-            if (// skip non @Default beans
-            !bean.getKey().getQualifiers().contains(DEFAULT)
-                    // skip producer methods with injection point metadata
-                    || hasInjectionPointMetadata(bean.getValue())) {
-                continue;
-            }
-
-            String metricName = name.of(bean.getValue());
-            org.eclipse.microprofile.metrics.annotation.Metric metricAnnotation = bean.getValue()
-                    .getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class);
-            if (metricAnnotation != null) {
-                Object reference = getReference(manager, bean.getValue().getBaseType(), bean.getKey());
-                if (reference == null) {
-                    adv.addDeploymentProblem(new IllegalStateException("null was returned from " + bean.getValue()));
-                    return;
-                }
-                Class<?> clazz = reference.getClass();
-                MetricType type = MetricType.from(clazz.getInterfaces().length == 0 ? clazz.getSuperclass().getInterfaces()[0]
-                        : clazz.getInterfaces()[0]);
-                Metadata metadata = MetricsMetadata.getMetadata(metricAnnotation,
-                        metricName,
-                        metricAnnotation.unit(),
-                        metricAnnotation.description(),
-                        metricAnnotation.displayName(),
-                        type);
-                Tag[] tags = TagsUtils.parseTagsAsArray(metricAnnotation.tags());
-                registry.register(metadata, getReference(manager, bean.getValue().getBaseType(), bean.getKey()), tags);
-            } else {
-                registry.register(metricName, getReference(manager, bean.getValue().getBaseType(), bean.getKey()));
-            }
-        }
 
         for (Map.Entry<Bean<?>, List<AnnotatedMember<?>>> entry : metricsFromAnnotatedMethods.entrySet()) {
             Bean<?> bean = entry.getKey();
@@ -248,30 +185,7 @@ public class MetricCdiInjectionExtension implements Extension {
         metricsInterfaces.clear();
 
         // Let's clear the collected metrics
-        metricsFromProducers.clear();
         metricsFromAnnotatedMethods.clear();
-    }
-
-    private static boolean hasInjectionPointMetadata(AnnotatedMember<?> member) {
-        if (!(member instanceof AnnotatedMethod)) {
-            return false;
-        }
-        AnnotatedMethod<?> method = (AnnotatedMethod<?>) member;
-        for (AnnotatedParameter<?> parameter : method.getParameters()) {
-            if (parameter.getBaseType().equals(InjectionPoint.class)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static <T> T getReference(BeanManager manager, Class<T> type) {
-        return getReference(manager, type, manager.resolve(manager.getBeans(type)));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T getReference(BeanManager manager, Type type, Bean<?> bean) {
-        return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }
 
     private Optional<String> getImplementationVersion() {
