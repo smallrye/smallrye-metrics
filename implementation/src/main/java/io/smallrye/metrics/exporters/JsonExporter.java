@@ -21,8 +21,8 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.json.JsonObject;
@@ -31,6 +31,8 @@ import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -42,15 +44,27 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.TagsUtils;
 
 /**
  * @author hrupp
  */
 public class JsonExporter implements Exporter {
+
+    private Map<String, String> globalTags;
+
+    public JsonExporter() {
+        try {
+            Config config = ConfigProvider.getConfig();
+            globalTags = TagsUtils
+                    .parseGlobalTags(config.getOptionalValue("mp.metrics.tags", String.class).orElse(""));
+        } catch (IllegalStateException | ExceptionInInitializerError | NoClassDefFoundError t) {
+            // MP Config implementation is probably not available
+        }
+    }
 
     @Override
     public StringBuilder exportOneScope(MetricRegistry.Type scope) {
@@ -122,18 +136,19 @@ public class JsonExporter implements Exporter {
     private Map<String, JsonValue> exportMetricsByName(Map<MetricID, Metric> metricMap, Metadata metadata) {
         Map<String, JsonValue> result = new HashMap<>();
         JsonObjectBuilder builder = JsonProviderHolder.get().createObjectBuilder();
+
         switch (metadata.getTypeRaw()) {
             case GAUGE:
             case COUNTER:
                 metricMap.forEach((metricID, metric) -> {
-                    result.put(metricID.getName() + createTagsString(metricID.getTagsAsList()),
+                    result.put(metricID.getName() + createTagsString(metricID.getTags()),
                             exportSimpleMetric(metricID, metric));
                 });
                 break;
             case METERED:
                 metricMap.forEach((metricID, value) -> {
                     Metered metric = (Metered) value;
-                    meterValues(metric, createTagsString(metricID.getTagsAsList()))
+                    meterValues(metric, createTagsString(metricID.getTags()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());
@@ -141,7 +156,7 @@ public class JsonExporter implements Exporter {
             case CONCURRENT_GAUGE:
                 metricMap.forEach((metricID, value) -> {
                     ConcurrentGauge metric = (ConcurrentGauge) value;
-                    exportConcurrentGauge(metric, createTagsString(metricID.getTagsAsList()))
+                    exportConcurrentGauge(metric, createTagsString(metricID.getTags()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());
@@ -149,7 +164,7 @@ public class JsonExporter implements Exporter {
             case SIMPLE_TIMER:
                 metricMap.forEach((metricID, value) -> {
                     SimpleTimer metric = (SimpleTimer) value;
-                    exportSimpleTimer(metric, metadata.getUnit(), createTagsString(metricID.getTagsAsList()))
+                    exportSimpleTimer(metric, metadata.getUnit(), createTagsString(metricID.getTags()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());
@@ -157,7 +172,7 @@ public class JsonExporter implements Exporter {
             case TIMER:
                 metricMap.forEach((metricID, value) -> {
                     Timer metric = (Timer) value;
-                    exportTimer(metric, metadata.getUnit(), createTagsString(metricID.getTagsAsList()))
+                    exportTimer(metric, metadata.getUnit(), createTagsString(metricID.getTags()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());
@@ -165,7 +180,7 @@ public class JsonExporter implements Exporter {
             case HISTOGRAM:
                 metricMap.forEach((metricID, value) -> {
                     Histogram metric = (Histogram) value;
-                    exportHistogram(metric, createTagsString(metricID.getTagsAsList()))
+                    exportHistogram(metric, createTagsString(metricID.getTags()))
                             .forEach(builder::add);
                 });
                 result.put(metadata.getName(), builder.build());
@@ -326,12 +341,17 @@ public class JsonExporter implements Exporter {
      * Converts a list of tags to the string that will be appended to the metric name in JSON output.
      * If there are no tags, this returns an empty string.
      */
-    private String createTagsString(List<Tag> tagsAsList) {
-        if (tagsAsList == null || tagsAsList.isEmpty()) {
+    private String createTagsString(Map<String, String> tags) {
+        if (tags == null) {
             return "";
         } else {
-            return ";" + tagsAsList.stream()
-                    .map(tag -> tag.getTagName() + "=" + tag.getTagValue()
+            Map<String, String> withGlobalTags = new TreeMap<>(tags);
+            withGlobalTags.putAll(globalTags);
+            if (withGlobalTags.isEmpty()) {
+                return "";
+            }
+            return ";" + withGlobalTags.entrySet().stream()
+                    .map(tag -> tag.getKey() + "=" + tag.getValue()
                             .replaceAll(";", "_"))
                     //                            .replaceAll("\"", "\\\\\""))  // this is done by JSON-P automatically
                     //                            .replaceAll("\n", "\\\\n"))  // this is done by JSON-P automatically

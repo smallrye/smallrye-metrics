@@ -18,6 +18,7 @@
 package io.smallrye.metrics.exporters;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -30,16 +31,34 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.TagsUtils;
 
 /**
  * Created by bob on 1/22/18.
  */
 public class JsonMetadataExporter implements Exporter {
+
+    private List<String> globalTags;
+
+    public JsonMetadataExporter() {
+        try {
+            Config config = ConfigProvider.getConfig();
+            Map<String, String> globalTagsMap = TagsUtils
+                    .parseGlobalTags(config.getOptionalValue("mp.metrics.tags", String.class).orElse(""));
+            globalTags = globalTagsMap.entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(Collectors.toList());
+        } catch (IllegalStateException | ExceptionInInitializerError | NoClassDefFoundError t) {
+            // MP Config implementation is probably not available
+        }
+    }
 
     @Override
     public String getContentType() {
@@ -160,10 +179,15 @@ public class JsonMetadataExporter implements Exporter {
         return registry.getMetricIDs()
                 .stream()
                 .filter(id -> id.getName().equals(name))
-                .map(id -> id.getTagsAsList()
-                        .stream()
-                        .map(tag -> tag.getTagName() + "=" + tag.getTagValue())
-                        .collect(Collectors.toList()))
+                .map(id -> {
+                    List<String> tags = id.getTagsAsList()
+                            .stream()
+                            .map(tag -> tag.getTagName() + "=" + tag.getTagValue())
+                            .collect(Collectors.toList());
+                    List<String> withGlobalTags = new ArrayList<>(tags);
+                    withGlobalTags.addAll(globalTags);
+                    return withGlobalTags;
+                })
                 .collect(Collectors.toList());
     }
 }
