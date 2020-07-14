@@ -17,6 +17,10 @@
 
 package io.smallrye.metrics;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.eclipse.microprofile.metrics.Tag;
 
 public class TagsUtils {
@@ -46,6 +50,51 @@ public class TagsUtils {
             i++;
         }
         return result;
+    }
+
+    private static final String GLOBAL_TAG_MALFORMED_EXCEPTION = "Malformed list of Global Tags. Tag names "
+            + "must match the following regex [a-zA-Z_][a-zA-Z0-9_]*."
+            + " Global Tag values must not be empty."
+            + " Global Tag values MUST escape equal signs `=` and commas `,`"
+            + " with a backslash `\\` ";
+
+    /**
+     * Parses the global tags retrieved from environment variable {@code MP_METRICS_TAGS}.
+     *
+     * @param globalTags the string of global tags retrieved from MP_METRICS_TAGS
+     * @throws IllegalArgumentException if the global tags list does not adhere to
+     *         the appropriate format.
+     */
+    public static Map<String, String> parseGlobalTags(String globalTags) throws IllegalArgumentException {
+        if (globalTags == null || globalTags.length() == 0) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> tags = new TreeMap<String, String>();
+        String[] kvPairs = globalTags.split("(?<!\\\\),");
+        for (String kvString : kvPairs) {
+
+            if (kvString.length() == 0) {
+                throw new IllegalArgumentException(GLOBAL_TAG_MALFORMED_EXCEPTION);
+            }
+
+            String[] keyValueSplit = kvString.split("(?<!\\\\)=");
+
+            if (keyValueSplit.length != 2 || keyValueSplit[0].length() == 0 || keyValueSplit[1].length() == 0) {
+                throw new IllegalArgumentException(GLOBAL_TAG_MALFORMED_EXCEPTION);
+            }
+
+            String key = keyValueSplit[0];
+            String value = keyValueSplit[1];
+
+            if (!key.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+                throw new IllegalArgumentException("Invalid Tag name. Tag names must match the following regex "
+                        + "[a-zA-Z_][a-zA-Z0-9_]*");
+            }
+            value = value.replace("\\,", ",");
+            value = value.replace("\\=", "=");
+            tags.put(key, value);
+        }
+        return tags;
     }
 
 }

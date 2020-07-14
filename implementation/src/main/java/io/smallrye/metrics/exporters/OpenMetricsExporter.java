@@ -46,6 +46,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import io.smallrye.metrics.ExtendedMetadata;
 import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.SmallRyeMetricsLogging;
+import io.smallrye.metrics.TagsUtils;
 
 /**
  * Export data in OpenMetrics text format
@@ -77,12 +78,15 @@ public class OpenMetricsExporter implements Exporter {
     // this should be initialized to an empty map during start of an export and cleared after the export is finished
     private ThreadLocal<Set<String>> alreadyExportedNames = new ThreadLocal<>();
 
+    private Map<String, String> globalTags;
+
     public OpenMetricsExporter() {
         try {
             Config config = ConfigProvider.getConfig();
             Optional<Boolean> tmp = config.getOptionalValue(MICROPROFILE_METRICS_OMIT_HELP_LINE, Boolean.class);
             usePrefixForScope = config.getOptionalValue(SMALLRYE_METRICS_USE_PREFIX_FOR_SCOPE, Boolean.class).orElse(true);
             writeHelpLine = !tmp.isPresent() || !tmp.get();
+            globalTags = TagsUtils.parseGlobalTags(config.getOptionalValue("mp.metrics.tags", String.class).orElse(""));
         } catch (IllegalStateException | ExceptionInInitializerError | NoClassDefFoundError t) {
             // MP Config implementation is probably not available. Resort to default configuration.
             usePrefixForScope = true;
@@ -170,7 +174,10 @@ public class OpenMetricsExporter implements Exporter {
             }
 
             Metric metric = entry.getValue();
-            final Map<String, String> tagsMap = entry.getKey().getTags();
+            final Map<String, String> tagsMapOriginal = entry.getKey().getTags();
+            // the original map with tags is immutable, so create a copy where we append the global tags
+            Map<String, String> tagsMap = new TreeMap<>(tagsMapOriginal);
+            tagsMap.putAll(globalTags);
             StringBuilder metricBuf = new StringBuilder();
 
             try {
