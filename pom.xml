@@ -36,7 +36,7 @@
     <version.microprofile-config>1.4</version.microprofile-config>
     <version.microprofile-metrics>3.0-M5</version.microprofile-metrics>
 
-    <version.smallrye.config>1.8.3</version.smallrye.config>
+    <version.smallrye.config>1.8.4</version.smallrye.config>
 
     <version.jakarta.servlet>4.0.4</version.jakarta.servlet>
 
