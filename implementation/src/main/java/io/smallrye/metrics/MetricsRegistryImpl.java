@@ -25,6 +25,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -219,24 +221,6 @@ public class MetricsRegistryImpl implements MetricRegistry {
     }
 
     @Override
-    public Gauge<?> gauge(String name, Gauge<?> gauge) {
-        Objects.requireNonNull(gauge);
-        return get(new MetricID(name), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
-    }
-
-    @Override
-    public Gauge<?> gauge(String name, Gauge<?> gauge, Tag... tags) {
-        Objects.requireNonNull(gauge);
-        return get(new MetricID(name, tags), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
-    }
-
-    @Override
-    public Gauge<?> gauge(MetricID metricID, Gauge<?> gauge) {
-        Objects.requireNonNull(gauge);
-        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.GAUGE), gauge);
-    }
-
-    @Override
     public ConcurrentGauge concurrentGauge(String name) {
         return get(new MetricID(name),
                 new UnspecifiedMetadata(name, MetricType.CONCURRENT_GAUGE));
@@ -261,6 +245,48 @@ public class MetricsRegistryImpl implements MetricRegistry {
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
         return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.CONCURRENT_GAUGE));
+    }
+
+    @Override
+    public <T> Gauge<Double> gauge(String name, T stateObject, ToDoubleFunction<T> toDoubleFunction, Tag... tags) {
+        Objects.requireNonNull(stateObject);
+        Gauge<Double> gauge = () -> toDoubleFunction.applyAsDouble(stateObject);
+        return get(new MetricID(name, tags), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public <T> Gauge<Double> gauge(MetricID metricID, T stateObject, ToDoubleFunction<T> toDoubleFunction) {
+        Objects.requireNonNull(stateObject);
+        Gauge<Double> gauge = () -> toDoubleFunction.applyAsDouble(stateObject);
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public <T> Gauge<Double> gauge(Metadata metadata, T stateObject, ToDoubleFunction<T> toDoubleFunction, Tag... tags) {
+        Objects.requireNonNull(stateObject);
+        Gauge<Double> gauge = () -> toDoubleFunction.applyAsDouble(stateObject);
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
+        Objects.requireNonNull(supplier);
+        Gauge<T> gauge = supplier::get;
+        return get(new MetricID(name, tags), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
+        Objects.requireNonNull(supplier);
+        Gauge<T> gauge = supplier::get;
+        return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.GAUGE), gauge);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
+        Objects.requireNonNull(supplier);
+        Gauge<T> gauge = supplier::get;
+        return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.GAUGE), gauge);
     }
 
     @Override
