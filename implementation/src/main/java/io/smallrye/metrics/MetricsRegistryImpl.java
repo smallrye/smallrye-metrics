@@ -25,8 +25,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -248,23 +248,23 @@ public class MetricsRegistryImpl implements MetricRegistry {
     }
 
     @Override
-    public <T> Gauge<Double> gauge(String name, T stateObject, ToDoubleFunction<T> toDoubleFunction, Tag... tags) {
+    public <T, R extends Number> Gauge<R> gauge(String name, T stateObject, Function<T, R> function, Tag... tags) {
         Objects.requireNonNull(stateObject);
-        Gauge<Double> gauge = () -> toDoubleFunction.applyAsDouble(stateObject);
+        Gauge<R> gauge = () -> function.apply(stateObject);
         return get(new MetricID(name, tags), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
     }
 
     @Override
-    public <T> Gauge<Double> gauge(MetricID metricID, T stateObject, ToDoubleFunction<T> toDoubleFunction) {
+    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T stateObject, Function<T, R> function) {
         Objects.requireNonNull(stateObject);
-        Gauge<Double> gauge = () -> toDoubleFunction.applyAsDouble(stateObject);
+        Gauge<R> gauge = () -> function.apply(stateObject);
         return get(metricID, new UnspecifiedMetadata(metricID.getName(), MetricType.GAUGE), gauge);
     }
 
     @Override
-    public <T> Gauge<Double> gauge(Metadata metadata, T stateObject, ToDoubleFunction<T> toDoubleFunction, Tag... tags) {
+    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T stateObject, Function<T, R> function, Tag... tags) {
         Objects.requireNonNull(stateObject);
-        Gauge<Double> gauge = () -> toDoubleFunction.applyAsDouble(stateObject);
+        Gauge<R> gauge = () -> function.apply(stateObject);
         return get(new MetricID(metadata.getName(), tags), sanitizeMetadata(metadata, MetricType.GAUGE), gauge);
     }
 
