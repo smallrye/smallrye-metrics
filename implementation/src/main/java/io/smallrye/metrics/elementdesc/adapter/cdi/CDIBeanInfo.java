@@ -28,9 +28,11 @@ import io.smallrye.metrics.elementdesc.BeanInfo;
 public class CDIBeanInfo implements BeanInfo {
 
     private final Class<?> input;
+    private final Package pkg;
 
     CDIBeanInfo(Class<?> input) {
         this.input = input;
+        this.pkg = input.getPackage();
     }
 
     @Override
@@ -40,7 +42,7 @@ public class CDIBeanInfo implements BeanInfo {
 
     @Override
     public String getPackageName() {
-        return input.getPackage().getName();
+        return pkg == null ? null : pkg.getName();
     }
 
     @Override
