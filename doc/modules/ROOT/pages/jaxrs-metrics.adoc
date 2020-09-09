@@ -1,0 +1,18 @@
+[[jaxrs-metrics]]
+= JAX-RS metrics
+
+SmallRye Metrics 3.0 supports the optional JAX-RS metrics as defined in the specification. To enable collection of
+JAX-RS metrics for an application, it is necessary to apply two filters:
+
+- `io.smallrye.metrics.jaxrs.JaxRsMetricsFilter` - a JAX-RS `ContainerRequestFilter`
+- `io.smallrye.metrics.jaxrs.JaxRsMetricsServletFilter` - a servlet filter
+
+The reason for using two filters is that unfortunately, JAX-RS specification does not require `ContainerResponseFilter`-s
+to be invoked when request handling ended in an unmapped exception. That's why we need to use a servlet filter instead
+to be able to hook into the responses even in these cases.
+
+If the target runtime does not support servlets, a different mechanism needs to be used that will be able to hook into
+JAX-RS responses and will mimic the functionality of `JaxRsMetricsServletFilter`.
+
+At the moment, there is no general mechanism to register JAX-RS metrics eagerly at deployment time - metric for each JAX-RS method
+is registered as soon as that method is invoked.
