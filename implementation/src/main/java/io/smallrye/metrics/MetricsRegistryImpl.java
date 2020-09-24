@@ -19,11 +19,13 @@ package io.smallrye.metrics;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -44,6 +46,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.jboss.logging.Logger;
 
+import io.smallrye.metrics.api.FunctionGaugeSupport;
 import io.smallrye.metrics.app.ConcurrentGaugeImpl;
 import io.smallrye.metrics.app.CounterImpl;
 import io.smallrye.metrics.app.ExponentiallyDecayingReservoir;
@@ -56,7 +59,7 @@ import io.smallrye.metrics.app.TimerImpl;
  * @author hrupp
  */
 @Vetoed
-public class MetricsRegistryImpl extends MetricRegistry {
+public class MetricsRegistryImpl extends MetricRegistry implements FunctionGaugeSupport {
 
     private static Logger log = Logger.getLogger(MetricsRegistryImpl.class);
 
@@ -324,6 +327,10 @@ public class MetricsRegistryImpl extends MetricRegistry {
     }
 
     private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata) {
+        return get(metricID, metadata, null);
+    }
+
+    private synchronized <T extends Metric> T get(MetricID metricID, Metadata metadata, T implementor) {
         String name = metadata.getName();
         MetricType type = metadata.getTypeRaw();
         if (name == null || name.isEmpty()) {
@@ -341,7 +348,8 @@ public class MetricsRegistryImpl extends MetricRegistry {
                     m = new CounterImpl();
                     break;
                 case GAUGE:
-                    throw new IllegalArgumentException("Gauge " + name + " was not registered, this should not happen");
+                    m = implementor;
+                    break;
                 case METERED:
                     m = new MeterImpl();
                     break;
@@ -528,6 +536,13 @@ public class MetricsRegistryImpl extends MetricRegistry {
     public Map<MetricID, Metric> getMetrics() {
 
         return new HashMap<>(metricMap);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
+        Objects.requireNonNull(supplier);
+        Gauge<T> gauge = supplier::get;
+        return get(new MetricID(name, tags), new UnspecifiedMetadata(name, MetricType.GAUGE), gauge);
     }
 
     private Metadata sanitizeMetadata(Metadata metadata, MetricType metricType) {

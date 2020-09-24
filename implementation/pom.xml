@@ -102,6 +102,11 @@
       <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>io.smallrye</groupId>
+      <artifactId>smallrye-metrics-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
   </dependencies>
 
