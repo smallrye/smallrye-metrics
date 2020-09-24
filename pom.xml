@@ -37,6 +37,7 @@
     <version.microprofile-metrics>3.0-RC2</version.microprofile-metrics>
 
     <version.smallrye.config>1.9.1</version.smallrye.config>
+    <version.smallrye.common>1.4.0</version.smallrye.common>
 
     <version.jakarta.servlet>4.0.4</version.jakarta.servlet>
 
@@ -65,6 +66,7 @@
   <modules>
     <module>implementation</module>
     <module>testsuite</module>
+    <module>api</module>
   </modules>
 
   <dependencyManagement>
@@ -106,6 +108,12 @@
         <artifactId>weld-servlet-core</artifactId>
         <version>${version.weld.core}</version>
         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>io.smallrye.common</groupId>
+        <artifactId>smallrye-common-annotation</artifactId>
+        <version>${version.smallrye.common}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
