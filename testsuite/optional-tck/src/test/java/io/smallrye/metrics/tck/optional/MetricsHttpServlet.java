@@ -26,8 +26,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import io.smallrye.metrics.MetricsRequestHandler;
-
 @WebServlet(name = "metrics-servlet", urlPatterns = "/metrics/*")
 public class MetricsHttpServlet extends HttpServlet {
 

@@ -27,6 +27,9 @@ import javax.enterprise.inject.Produces;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
+import io.micrometer.core.instrument.Metrics;
+import io.smallrye.metrics.mpmetrics.MpMetricRegistryAdapter;
+
 /**
  * @author hrupp
  */
@@ -56,7 +59,7 @@ public class MetricRegistries {
     }
 
     public static MetricRegistry get(MetricRegistry.Type type) {
-        return registries.computeIfAbsent(type, t -> new MetricsRegistryImpl(type));
+        return registries.computeIfAbsent(type, t -> new MpMetricRegistryAdapter(type, Metrics.globalRegistry));
     }
 
     @PreDestroy

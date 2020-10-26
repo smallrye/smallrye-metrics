@@ -21,8 +21,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 
-import io.smallrye.metrics.setup.JmxRegistrar;
-
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
  *         <br>
@@ -31,7 +29,5 @@ import io.smallrye.metrics.setup.JmxRegistrar;
 @ApplicationScoped
 public class MetricsInitializer {
     void init(@Observes @Initialized(ApplicationScoped.class) Object ignored) throws IOException {
-        JmxRegistrar registrar = new JmxRegistrar();
-        registrar.init();
     }
 }

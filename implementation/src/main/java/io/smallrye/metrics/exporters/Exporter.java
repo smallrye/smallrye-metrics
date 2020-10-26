@@ -20,24 +20,22 @@ package io.smallrye.metrics.exporters;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-/**
- * @author hrupp
- */
+// TODO: create Json exporter
 public interface Exporter {
 
-    StringBuilder exportOneScope(MetricRegistry.Type scope);
+    String exportOneScope(MetricRegistry.Type scope);
 
-    StringBuilder exportAllScopes();
+    String exportAllScopes();
 
     String getContentType();
 
     /**
      * Exports just one metric obtained from a scope using its MetricID.
      */
-    StringBuilder exportOneMetric(MetricRegistry.Type scope, MetricID metricID);
+    String exportOneMetric(MetricRegistry.Type scope, MetricID metricID);
 
     /**
      * Exports all metrics with the given name inside the given scope.
      */
-    StringBuilder exportMetricsByName(MetricRegistry.Type scope, String name);
+    String exportMetricsByName(MetricRegistry.Type scope, String name);
 }

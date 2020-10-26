@@ -32,15 +32,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import io.smallrye.metrics.exporters.Exporter;
-import io.smallrye.metrics.exporters.JsonExporter;
-import io.smallrye.metrics.exporters.JsonMetadataExporter;
 import io.smallrye.metrics.exporters.OpenMetricsExporter;
 
-/**
- * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
- *         <br>
- *         Date: 6/25/18
- */
 @ApplicationScoped
 public class MetricsRequestHandler {
 
@@ -110,10 +103,10 @@ public class MetricsRequestHandler {
             scopePath = scopePath.substring(0, scopePath.length() - 1);
         }
 
-        StringBuilder sb;
+        String output;
         if (scopePath.isEmpty()) {
             // All metrics
-            sb = exporter.exportAllScopes();
+            output = exporter.exportAllScopes();
 
         } else if (scopePath.contains("/")) {
             // One metric name in a scope
@@ -130,7 +123,7 @@ public class MetricsRequestHandler {
             Map<MetricID, Metric> metricValuesMap = registry.getMetrics();
 
             if (metricValuesMap.keySet().stream().anyMatch(id -> id.getName().equals(metricName))) {
-                sb = exporter.exportMetricsByName(scope, metricName);
+                output = exporter.exportMetricsByName(scope, metricName);
             } else {
                 responder.respondWith(404, "Metric " + scopePath + " not found", Collections.emptyMap());
                 return;
@@ -150,7 +143,7 @@ public class MetricsRequestHandler {
                 return;
             }
 
-            sb = exporter.exportOneScope(scope);
+            output = exporter.exportOneScope(scope);
         }
 
         Map<String, String> headers = new HashMap<>();
@@ -158,8 +151,7 @@ public class MetricsRequestHandler {
         headers.put("Access-Control-Max-Age", "1209600");
         headers.putAll(corsHeaders);
 
-        responder.respondWith(200, sb.toString(), headers);
-
+        responder.respondWith(200, output, headers);
     }
 
     private MetricRegistry.Type getScopeFromPath(String scopePath) throws IOException {
@@ -202,11 +194,12 @@ public class MetricsRequestHandler {
 
                 if (mediaType.startsWith(APPLICATION_JSON)) {
 
-                    if (method.equals("GET")) {
-                        return new JsonExporter();
-                    } else {
-                        return new JsonMetadataExporter();
-                    }
+                    throw new UnsupportedOperationException("JSON export not implemented yet");
+                    //                    if (method.equals("GET")) {
+                    //                        return new JsonExporter();
+                    //                    } else {
+                    //                        return new JsonMetadataExporter();
+                    //                    }
                 } else {
                     // This is the fallback, but only for GET, as OpenMetrics does not support OPTIONS
                     if (method.equals("GET")) {

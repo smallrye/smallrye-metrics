@@ -1,5 +1,5 @@
 name: smallrye-metrics
 title: SmallRye Metrics
-version: 3.0.0
+version: 4.0.0
 nav:
 - modules/ROOT/nav.adoc

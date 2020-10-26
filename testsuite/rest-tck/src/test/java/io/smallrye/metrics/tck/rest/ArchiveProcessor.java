@@ -29,7 +29,6 @@ import org.jboss.weld.environment.deployment.discovery.BeanArchiveHandler;
 
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import io.smallrye.config.inject.ConfigExtension;
-import io.smallrye.metrics.testsuite.MetricsInitializer;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com

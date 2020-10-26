@@ -18,7 +18,6 @@ package io.smallrye.metrics.testsuite;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.container.ResourceContainer;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
@@ -29,12 +28,6 @@ public class ArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> applicationArchive, TestClass testClass) {
-        if (applicationArchive instanceof ResourceContainer) {
-            ResourceContainer archive = (ResourceContainer) applicationArchive;
-            archive.addAsResource("io/smallrye/metrics/base-metrics.properties",
-                    "/io/smallrye/metrics/base-metrics.properties");
-        } else {
-            throw new IllegalStateException(this.getClass().getCanonicalName() + " works only with ResourceContainers");
-        }
+
     }
 }

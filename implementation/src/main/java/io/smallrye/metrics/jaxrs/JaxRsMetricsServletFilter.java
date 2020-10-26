@@ -39,6 +39,7 @@ import io.smallrye.metrics.MetricRegistries;
 /**
  * For explanation, see javadoc of {@link JaxRsMetricsFilter}
  */
+// FIXME: make this use the Micrometer API directly instead of going through the compatibility layer
 public class JaxRsMetricsServletFilter implements Filter {
 
     @Override

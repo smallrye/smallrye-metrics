@@ -1,14 +1,9 @@
 [[index]]
 = SmallRye Metrics Documentation
 
-SmallRye Metrics 3.0 is an implementation of the MicroProfile Metrics 3.0 specification.
+SmallRye Metrics 4.0 docs
 
-Runtimes that currently use it as their metrics implementation include:
-
-* https://quarkus.io/[Quarkus]
-* https://wildfly.org/[WildFly]
-* https://thorntail.io/[Thorntail]
-
+TODO
 
 [[more-resources]]
 == More Resources

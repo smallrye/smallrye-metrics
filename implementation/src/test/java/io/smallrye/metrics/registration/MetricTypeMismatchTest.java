@@ -16,11 +16,8 @@
  */
 package io.smallrye.metrics.registration;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
@@ -68,8 +65,6 @@ public class MetricTypeMismatchTest {
             fail("Must not be able to register a metric if the type in its metadata is different than the what we specified by using a particular registration method.");
         } catch (Exception e) {
             assertThat(e, instanceOf(IllegalArgumentException.class));
-            assertThat(e.getMessage(),
-                    containsString("Attempting to register a meter, but the passed metadata contains type=counter"));
             assertEquals(0, registry.getMetrics().size());
         }
     }
