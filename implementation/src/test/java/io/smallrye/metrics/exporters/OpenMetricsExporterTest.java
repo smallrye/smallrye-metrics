@@ -485,8 +485,8 @@ public class OpenMetricsExporterTest {
         assertHasTypeLineExactlyOnce(result, "application_mytimer_seconds", "summary");
         assertHasHelpLineExactlyOnce(result, "application_mytimer_seconds", "awesome");
 
-        assertHasValueLineExactlyOnce(result, "application_mytimer_elapsedTime_seconds", "7.0", blueTag);
-        assertHasValueLineExactlyOnce(result, "application_mytimer_elapsedTime_seconds", "11.0", greenTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_sum", "7.0", blueTag);
+        assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_sum", "11.0", greenTag);
 
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_count", "2.0", blueTag);
         assertHasValueLineExactlyOnce(result, "application_mytimer_seconds_count", "2.0", greenTag);

@@ -283,6 +283,7 @@ public class JsonExporter implements Exporter {
     private Map<String, JsonValue> exportHistogram(Histogram histogram, String tags) {
         Map<String, JsonValue> map = new HashMap<>();
         map.put("count" + tags, JsonProviderHolder.get().createValue(histogram.getCount()));
+        map.put("sum" + tags, JsonProviderHolder.get().createValue(histogram.getSum()));
         snapshotValues(histogram.getSnapshot(), tags)
                 .forEach((map::put));
         return map;

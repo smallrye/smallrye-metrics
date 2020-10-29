@@ -46,7 +46,7 @@ public class SimpleTimerImpl implements SimpleTimer {
     // total number of captured measurements
     private final LongAdder count;
 
-    // total elapsed time across all measurements
+    // total elapsed time across all measurements. In nanoseconds
     private final LongAdder elapsedTime;
 
     // maximum duration achieved in previous minute
@@ -152,13 +152,13 @@ public class SimpleTimerImpl implements SimpleTimer {
     }
 
     @Override
-    public Duration getElapsedTime() {
-        return Duration.ofNanos(elapsedTime.sum());
+    public long getCount() {
+        return count.sum();
     }
 
     @Override
-    public long getCount() {
-        return count.sum();
+    public Duration getElapsedTime() {
+        return Duration.ofNanos(elapsedTime.sum());
     }
 
     @Override

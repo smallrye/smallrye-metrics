@@ -38,6 +38,11 @@ public class SomeHistogram implements Histogram {
     }
 
     @Override
+    public long getSum() {
+        return 0;
+    }
+
+    @Override
     public Snapshot getSnapshot() {
         return snapshot;
     }
