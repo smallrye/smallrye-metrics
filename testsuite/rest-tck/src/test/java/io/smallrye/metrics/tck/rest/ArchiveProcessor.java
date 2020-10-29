@@ -54,7 +54,6 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
 
         war.addClass(SmallRyeBeanArchiveHandler.class);
         war.addClass(MetricsHttpServlet.class);
-        war.addClass(MetricsInitializer.class);
         war.addAsResource("io/smallrye/metrics/base-metrics.properties", "/io/smallrye/metrics/base-metrics.properties");
         war.addAsServiceProvider(BeanArchiveHandler.class, SmallRyeBeanArchiveHandler.class);
         war.addAsServiceProvider(Extension.class, ConfigExtension.class);
