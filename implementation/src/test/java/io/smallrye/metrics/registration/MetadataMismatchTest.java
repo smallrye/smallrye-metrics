@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,7 +38,7 @@ public class MetadataMismatchTest {
 
     private MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
 
-    @Before
+    @After
     public void cleanupApplicationMetrics() {
         registry.removeMatching(MetricFilter.ALL);
     }
