@@ -45,6 +45,7 @@ import org.eclipse.microprofile.metrics.Snapshot;
 public class HistogramImpl implements Histogram {
     private final Reservoir reservoir;
     private final LongAdder count;
+    private final LongAdder sum;
 
     /**
      * Creates a new {@link HistogramImpl} with the given reservoir.
@@ -54,6 +55,7 @@ public class HistogramImpl implements Histogram {
     public HistogramImpl(Reservoir reservoir) {
         this.reservoir = reservoir;
         this.count = new LongAdder();
+        this.sum = new LongAdder();
     }
 
     /**
@@ -72,6 +74,7 @@ public class HistogramImpl implements Histogram {
      */
     public void update(long value) {
         count.increment();
+        sum.add(value);
         reservoir.update(value);
     }
 
@@ -83,6 +86,11 @@ public class HistogramImpl implements Histogram {
     @Override
     public long getCount() {
         return count.sum();
+    }
+
+    @Override
+    public long getSum() {
+        return sum.sum();
     }
 
     @Override

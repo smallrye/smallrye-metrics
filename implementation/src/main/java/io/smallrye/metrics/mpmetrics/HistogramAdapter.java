@@ -38,6 +38,11 @@ class HistogramAdapter implements Histogram, MeterHolder {
         return summary.count();
     }
 
+    @Override
+    public long getSum() {
+        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
+    }
+
     /** Not supported. */
     @Override
     public Snapshot getSnapshot() {
