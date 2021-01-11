@@ -19,6 +19,9 @@ package io.smallrye.metrics.setup;
 
 import static io.smallrye.metrics.TagsUtils.parseTagsAsArray;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -42,8 +45,10 @@ public class MetricsMetadata {
     private MetricsMetadata() {
     }
 
-    public static void registerMetrics(MetricRegistry registry, MetricResolver resolver, BeanInfo bean, MemberInfo element) {
+    public static List<MetricID> registerMetrics(MetricRegistry registry, MetricResolver resolver, BeanInfo bean,
+            MemberInfo element) {
         MetricResolver.Of<Counted> counted = resolver.counted(bean, element);
+        List<MetricID> metricIDs = new ArrayList<>();
         if (counted.isPresent()) {
             AnnotationInfo t = counted.metricAnnotation();
             Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(), t.displayName(),
@@ -51,9 +56,9 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
             if (registry instanceof MetricsRegistryImpl) {
-                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element,
-                        new MetricID(metadata.getName(), tags),
-                        MetricType.COUNTER);
+                MetricID metricID = new MetricID(metadata.getName(), tags);
+                metricIDs.add(metricID);
+                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element, metricID, MetricType.COUNTER);
             }
         }
         MetricResolver.Of<ConcurrentGauge> concurrentGauge = resolver.concurrentGauge(bean, element);
@@ -64,8 +69,9 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.concurrentGauge(metadata, tags);
             if (registry instanceof MetricsRegistryImpl) {
-                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element,
-                        new MetricID(metadata.getName(), tags),
+                MetricID metricID = new MetricID(metadata.getName(), tags);
+                metricIDs.add(metricID);
+                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element, metricID,
                         MetricType.CONCURRENT_GAUGE);
             }
         }
@@ -77,9 +83,9 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.meter(metadata, tags);
             if (registry instanceof MetricsRegistryImpl) {
-                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element,
-                        new MetricID(metadata.getName(), tags),
-                        MetricType.METERED);
+                MetricID metricID = new MetricID(metadata.getName(), tags);
+                metricIDs.add(metricID);
+                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element, metricID, MetricType.METERED);
             }
         }
         MetricResolver.Of<SimplyTimed> simplyTimed = resolver.simplyTimed(bean, element);
@@ -90,8 +96,9 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.simpleTimer(metadata, tags);
             if (registry instanceof MetricsRegistryImpl) {
-                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element,
-                        new MetricID(metadata.getName(), tags),
+                MetricID metricID = new MetricID(metadata.getName(), tags);
+                metricIDs.add(metricID);
+                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element, metricID,
                         MetricType.SIMPLE_TIMER);
             }
         }
@@ -103,11 +110,13 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
             if (registry instanceof MetricsRegistryImpl) {
-                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element,
-                        new MetricID(metadata.getName(), tags),
-                        MetricType.TIMER);
+                MetricID metricID = new MetricID(metadata.getName(), tags);
+                metricIDs.add(metricID);
+                ((MetricsRegistryImpl) registry).getMemberToMetricMappings().addMetric(element, metricID, MetricType.TIMER);
             }
         }
+
+        return metricIDs;
     }
 
     public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName,

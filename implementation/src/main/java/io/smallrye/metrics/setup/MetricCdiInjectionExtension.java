@@ -37,12 +37,14 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
 
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -79,6 +81,8 @@ public class MetricCdiInjectionExtension implements Extension {
     private final Map<Bean<?>, List<AnnotatedMember<?>>> metricsFromAnnotatedMethods = new HashMap<>();
 
     private final List<Class<?>> metricsInterfaces;
+
+    private final List<MetricID> metricIDs = new ArrayList<>();
 
     public MetricCdiInjectionExtension() {
         metricsInterfaces = new ArrayList<>();
@@ -158,25 +162,27 @@ public class MetricCdiInjectionExtension implements Extension {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
+        MetricResolver resolver = new MetricResolver();
 
         for (Map.Entry<Bean<?>, List<AnnotatedMember<?>>> entry : metricsFromAnnotatedMethods.entrySet()) {
             Bean<?> bean = entry.getKey();
             for (AnnotatedMember<?> method : entry.getValue()) {
-                MetricsMetadata.registerMetrics(registry,
-                        new MetricResolver(),
+                metricIDs.addAll(MetricsMetadata.registerMetrics(registry,
+                        resolver,
                         beanInfoAdapter.convert(bean.getBeanClass()),
-                        memberInfoAdapter.convert(method.getJavaMember()));
+                        memberInfoAdapter.convert(method.getJavaMember())));
             }
         }
 
         // THORN-2068: MicroProfile Rest Client basic support
         if (!metricsInterfaces.isEmpty()) {
-            MetricResolver resolver = new MetricResolver();
             for (Class<?> metricsInterface : metricsInterfaces) {
                 for (Method method : metricsInterface.getDeclaredMethods()) {
                     if (!method.isDefault() && !Modifier.isStatic(method.getModifiers())) {
-                        MetricsMetadata.registerMetrics(registry, resolver, beanInfoAdapter.convert(metricsInterface),
-                                memberInfoAdapter.convert(method));
+                        metricIDs.addAll(MetricsMetadata.registerMetrics(registry,
+                                resolver,
+                                beanInfoAdapter.convert(metricsInterface),
+                                memberInfoAdapter.convert(method)));
                     }
                 }
             }
@@ -186,6 +192,11 @@ public class MetricCdiInjectionExtension implements Extension {
 
         // Let's clear the collected metrics
         metricsFromAnnotatedMethods.clear();
+    }
+
+    void unregisterMetrics(@Observes BeforeShutdown shutdown) {
+        MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+        metricIDs.forEach(metricId -> registry.remove(metricId));
     }
 
     private Optional<String> getImplementationVersion() {
