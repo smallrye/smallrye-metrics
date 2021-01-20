@@ -16,8 +16,9 @@
  */
 package io.smallrye.metrics;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
@@ -504,13 +505,13 @@ public class MetricsRegistryImpl implements MetricRegistry {
 
     @Override
     public void removeMatching(MetricFilter metricFilter) {
-        Iterator<Map.Entry<MetricID, Metric>> iterator = metricMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<MetricID, Metric> entry = iterator.next();
+        List<MetricID> toRemove = new ArrayList<>();
+        for (Map.Entry<MetricID, Metric> entry : metricMap.entrySet()) {
             if (metricFilter.matches(entry.getKey(), entry.getValue())) {
-                remove(entry.getKey());
+                toRemove.add(entry.getKey());
             }
         }
+        toRemove.forEach(this::remove);
     }
 
     @Override
