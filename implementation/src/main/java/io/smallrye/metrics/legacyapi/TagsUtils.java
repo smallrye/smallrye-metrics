@@ -1,27 +1,11 @@
-/*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- */
+package io.smallrye.metrics.legacyapi;
 
-package io.smallrye.metrics;
+import io.smallrye.metrics.SmallRyeMetricsMessages;
+import org.eclipse.microprofile.metrics.Tag;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
-
-import org.eclipse.microprofile.metrics.Tag;
 
 public class TagsUtils {
 
@@ -63,7 +47,7 @@ public class TagsUtils {
      *
      * @param globalTags the string of global tags retrieved from MP_METRICS_TAGS
      * @throws IllegalArgumentException if the global tags list does not adhere to
-     *         the appropriate format.
+     *                                  the appropriate format.
      */
     public static Map<String, String> parseGlobalTags(String globalTags) throws IllegalArgumentException {
         if (globalTags == null || globalTags.length() == 0) {

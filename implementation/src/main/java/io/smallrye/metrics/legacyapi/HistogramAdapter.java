@@ -1,4 +1,4 @@
-package io.smallrye.metrics.mpmetrics;
+package io.smallrye.metrics.legacyapi;
 
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.MetricType;

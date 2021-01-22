@@ -1,4 +1,4 @@
-package io.smallrye.metrics.mpmetrics;
+package io.smallrye.metrics.legacyapi;
 
 import java.util.function.Function;
 import java.util.function.Supplier;

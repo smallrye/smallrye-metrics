@@ -1,4 +1,4 @@
-package io.smallrye.metrics.mpmetrics;
+package io.smallrye.metrics.legacyapi;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;

@@ -1,1 +1,2 @@
-io.smallrye.metrics.setup.MetricCdiInjectionExtension
+io.smallrye.metrics.setup.SmallRyeMetricsCdiExtension
+io.smallrye.metrics.legacyapi.LegacyMetricsExtension
