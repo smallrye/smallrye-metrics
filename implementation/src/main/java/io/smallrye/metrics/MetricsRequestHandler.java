@@ -48,6 +48,7 @@ public class MetricsRequestHandler {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String APPLICATION_JSON = "application/json";
     private static final String STAR_STAR = "*/*";
+    private boolean appendCorsHeaders = true;
 
     static {
         corsHeaders = new HashMap<>();
@@ -55,6 +56,11 @@ public class MetricsRequestHandler {
         corsHeaders.put("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
         corsHeaders.put("Access-Control-Allow-Credentials", "true");
         corsHeaders.put("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+        corsHeaders.put("Access-Control-Max-Age", "1209600");
+    }
+
+    public void appendCorsHeaders(boolean value) {
+        appendCorsHeaders = value;
     }
 
     /**
@@ -155,8 +161,9 @@ public class MetricsRequestHandler {
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", exporter.getContentType());
-        headers.put("Access-Control-Max-Age", "1209600");
-        headers.putAll(corsHeaders);
+        if (appendCorsHeaders) {
+            headers.putAll(corsHeaders);
+        }
 
         responder.respondWith(200, sb.toString(), headers);
 
