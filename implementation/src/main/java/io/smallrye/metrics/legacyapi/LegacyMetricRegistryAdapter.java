@@ -11,6 +11,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -39,12 +40,16 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     private MemberToMetricMappings memberToMetricMappings;
 
+    private final boolean appendScopeTags;
+
     public LegacyMetricRegistryAdapter(Type type, MeterRegistry registry) {
         this.type = type;
         this.registry = registry;
         if (type == Type.APPLICATION) {
             memberToMetricMappings = new MemberToMetricMappings();
         }
+        appendScopeTags = ConfigProvider.getConfig().getOptionalValue("smallrye.metrics.append-scope-tags",
+                Boolean.class).orElse(true);
     }
 
     @Override
@@ -667,7 +672,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public Tags withScopeTags(Tag... tags) {
-        Tags out = Tags.of("scope", this.type.getName());
+        Tags out = appendScopeTags ? Tags.of("scope", this.type.getName()) : Tags.empty();
         for (Tag t : tags) {
             out = out.and(t.getTagName(), t.getTagValue());
         }
@@ -675,9 +680,13 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public Tag[] scopeTagsLegacy() {
-        return new Tag[] {
-                new Tag("scope", this.type.getName())
-        };
+        if (appendScopeTags) {
+            return new Tag[] {
+                    new Tag("scope", this.type.getName())
+            };
+        } else {
+            return new Tag[0];
+        }
     }
 
     private MpMetadata internalGetMetadata(String name, MetricType type) {

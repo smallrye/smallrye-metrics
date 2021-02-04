@@ -10,11 +10,13 @@ import java.util.Map;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -25,8 +27,13 @@ import io.smallrye.metrics.MetricsRequestHandler;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
+import io.smallrye.metrics.legacyapi.interceptors.ConcurrentGaugeInterceptor;
+import io.smallrye.metrics.legacyapi.interceptors.CountedInterceptor;
+import io.smallrye.metrics.legacyapi.interceptors.MeteredInterceptor;
 import io.smallrye.metrics.legacyapi.interceptors.MetricNameFactory;
 import io.smallrye.metrics.legacyapi.interceptors.MetricResolver;
+import io.smallrye.metrics.legacyapi.interceptors.SimplyTimedInterceptor;
+import io.smallrye.metrics.legacyapi.interceptors.TimedInterceptor;
 import io.smallrye.metrics.setup.MetricsMetadata;
 import io.smallrye.metrics.setup.SmallRyeMetricsCdiExtension;
 
@@ -49,9 +56,34 @@ public class LegacyMetricsExtension implements Extension {
                 MetricProducer.class,
                 MetricNameFactory.class,
                 MetricRegistries.class,
+                MetricsRequestHandler.class,
+
+                MeteredInterceptor.class,
+                CountedInterceptor.class,
+                ConcurrentGaugeInterceptor.class,
+                TimedInterceptor.class,
+                SimplyTimedInterceptor.class,
                 MetricsRequestHandler.class
         }) {
             bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
+        }
+    }
+
+    private <X> void findAnnotatedMethods(@Observes ProcessManagedBean<X> bean) {
+        Package pack = bean.getBean().getBeanClass().getPackage();
+        if (pack != null && pack.equals(CountedInterceptor.class.getPackage())) {
+            return;
+        }
+        ArrayList<AnnotatedMember<?>> list = new ArrayList<>();
+        for (AnnotatedMethod<? super X> aMethod : bean.getAnnotatedBeanClass().getMethods()) {
+            Method method = aMethod.getJavaMember();
+            if (!method.isSynthetic() && !Modifier.isPrivate(method.getModifiers())) {
+                list.add(aMethod);
+            }
+        }
+        list.addAll(bean.getAnnotatedBeanClass().getConstructors());
+        if (!list.isEmpty()) {
+            metricsFromAnnotatedMethods.put(bean.getBean(), list);
         }
     }
 

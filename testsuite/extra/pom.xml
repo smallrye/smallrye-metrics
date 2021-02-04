@@ -86,16 +86,8 @@
             <!-- TODO: unexclude tests over time as we start passing them -->
             <exclude>**/GaugeInDependentScopedBeanTest.java</exclude>
             <exclude>**/MetricsInDependentScopedBeanTest.java</exclude>
-            <exclude>**/Initialization_ConcurrentGauge_Method_Test.java</exclude>
-            <exclude>**/Initialization_Counter_ClassLevel_Test.java</exclude>
-            <exclude>**/Initialization_Counter_Constructor_Test.java</exclude>
-            <exclude>**/Initialization_Counter_Method_Reused_Test.java</exclude>
-            <exclude>**/Initialization_Counter_Method_Test.java</exclude>
             <exclude>**/Initialization_Gauge_Method_Test.java</exclude>
             <exclude>**/Initialization_Injection_Test.java</exclude>
-            <exclude>**/Initialization_Meter_Method_Test.java</exclude>
-            <exclude>**/Initialization_SimpleTimer_Method_Test.java</exclude>
-            <exclude>**/Initialization_Timer_Method_Test.java</exclude>
             <exclude>**/NonReusableMetricInjectionTest.java</exclude>
             <exclude>**/AllMetricsOfGivenTypeTest.java</exclude>
             <exclude>**/MetricRegistryInjectionTest.java</exclude>

@@ -5,11 +5,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import io.smallrye.metrics.SmallRyeMetricsLogging;
-import io.smallrye.metrics.SmallRyeMetricsMessages;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 
+import io.smallrye.metrics.SmallRyeMetricsLogging;
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.MemberInfo;
 
 public class MemberToMetricMappings {

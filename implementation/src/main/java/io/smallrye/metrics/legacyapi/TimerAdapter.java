@@ -17,6 +17,10 @@ class TimerAdapter
     final MeterRegistry registry;
     Timer timer;
 
+    // which MP metric type this adapter represents - this is needed because the same class is used as an adapter for Timer and SimpleTimer
+    // if this is actually a SimpleTimer, this value will be changed to reflect that
+    MetricType metricType = MetricType.TIMER;
+
     TimerAdapter(MeterRegistry registry) {
         this.registry = registry;
     }
@@ -27,6 +31,9 @@ class TimerAdapter
                     .description(metadata.getDescription())
                     .tags(descriptor.tags())
                     .register(registry);
+        }
+        if (metadata.type == MetricType.SIMPLE_TIMER) {
+            metricType = MetricType.SIMPLE_TIMER;
         }
         return this;
     }
@@ -135,6 +142,6 @@ class TimerAdapter
 
     @Override
     public MetricType getType() {
-        return MetricType.TIMER;
+        return metricType;
     }
 }

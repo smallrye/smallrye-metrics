@@ -60,8 +60,6 @@ public class CountedInterceptor {
         }
         ids.stream()
                 .map(metricID -> {
-                    System.out.println("COUNTERS:::::");
-                    System.out.println(registry.getCounters().keySet());
                     Counter metric = registry.getCounters().get(metricID);
                     if (metric == null) {
                         throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.COUNTER, metricID);

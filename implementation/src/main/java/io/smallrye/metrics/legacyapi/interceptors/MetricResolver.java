@@ -15,11 +15,11 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.SmallRyeMetricsMessages;
-import io.smallrye.metrics.legacyapi.TagsUtils;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
 import io.smallrye.metrics.elementdesc.MemberInfo;
 import io.smallrye.metrics.elementdesc.MemberType;
+import io.smallrye.metrics.legacyapi.TagsUtils;
 
 @Vetoed
 public class MetricResolver {

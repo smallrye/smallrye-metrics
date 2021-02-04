@@ -1,11 +1,12 @@
 package io.smallrye.metrics.legacyapi;
 
-import io.smallrye.metrics.SmallRyeMetricsMessages;
-import org.eclipse.microprofile.metrics.Tag;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.eclipse.microprofile.metrics.Tag;
+
+import io.smallrye.metrics.SmallRyeMetricsMessages;
 
 public class TagsUtils {
 
@@ -47,7 +48,7 @@ public class TagsUtils {
      *
      * @param globalTags the string of global tags retrieved from MP_METRICS_TAGS
      * @throws IllegalArgumentException if the global tags list does not adhere to
-     *                                  the appropriate format.
+     *         the appropriate format.
      */
     public static Map<String, String> parseGlobalTags(String globalTags) throws IllegalArgumentException {
         if (globalTags == null || globalTags.length() == 0) {

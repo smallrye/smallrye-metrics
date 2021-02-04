@@ -29,17 +29,22 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.metrics.test.MeterRegistrySetup;
+
 @RunWith(Arquillian.class)
-public class Initialization_SimpleTimer_Method_Test {
+public class Initialization_SimpleTimer_Method_Test extends MeterRegistrySetup {
 
     @Deployment
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addAsWebResource(new StringAsset("smallrye.metrics.append-scope-tags=false"),
+                        "WEB-INF/classes/META-INF/microprofile-config.properties")
                 .addClasses(BeanWithSimpleTimer_Method.class);
     }
 
