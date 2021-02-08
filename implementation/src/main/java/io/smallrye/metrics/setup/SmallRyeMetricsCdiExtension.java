@@ -8,15 +8,23 @@ import java.util.Optional;
 import java.util.Properties;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 
 import io.smallrye.metrics.SmallRyeMetricsLogging;
+import io.smallrye.metrics.inject.GlobalRegistryProducer;
 
 public class SmallRyeMetricsCdiExtension implements Extension {
 
     void logVersion(@Observes BeforeBeanDiscovery bbd) {
         SmallRyeMetricsLogging.log.logSmallRyeMetricsVersion(getImplementationVersion().orElse("unknown"));
+    }
+
+    // allow to @Inject the global Micrometer registry
+    void injectionOfGlobalRegistry(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
+        bbd.addAnnotatedType(manager.createAnnotatedType(GlobalRegistryProducer.class),
+                "SmallRyeMetricsCdiExtension_GlobalRegistryProducer");
     }
 
     private Optional<String> getImplementationVersion() {

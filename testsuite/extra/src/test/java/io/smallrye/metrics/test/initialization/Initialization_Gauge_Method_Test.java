@@ -74,7 +74,8 @@ public class Initialization_Gauge_Method_Test extends MeterRegistrySetup {
 
         @Gauge(name = "gaugeApp", absolute = true, unit = MetricUnits.NONE)
         public Long gauge() {
-            return ++i;
+            i++;
+            return i;
         }
 
     }

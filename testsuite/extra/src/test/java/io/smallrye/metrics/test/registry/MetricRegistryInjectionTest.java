@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.smallrye.metrics.test.HelloService;
+import io.smallrye.metrics.test.MeterRegistrySetup;
 import io.smallrye.metrics.test.MetricsSummary;
 
 /**
@@ -40,7 +41,7 @@ import io.smallrye.metrics.test.MetricsSummary;
  * @author Martin Kouba
  */
 @RunWith(Arquillian.class)
-public class MetricRegistryInjectionTest {
+public class MetricRegistryInjectionTest extends MeterRegistrySetup {
 
     @Inject
     HelloService hello;

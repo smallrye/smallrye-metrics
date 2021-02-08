@@ -32,11 +32,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.metrics.test.MeterRegistrySetup;
+
 /**
  * Test that it is possible to inject a metric using an annotated method parameter.
  */
 @RunWith(Arquillian.class)
-public class NonReusableMetricInjectionTest {
+public class NonReusableMetricInjectionTest extends MeterRegistrySetup {
 
     @Inject
     private Instance<NonReusableMetricInjectionBean> bean;

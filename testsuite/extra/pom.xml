@@ -93,6 +93,7 @@
             <exclude>**/ReuseMetricWithDifferingTagsTest.java</exclude>
             <exclude>**/StereotypeCountedClassTest.java</exclude>
           </excludes>
+          <forkMode>always</forkMode>
         </configuration>
       </plugin>
     </plugins>

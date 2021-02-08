@@ -31,11 +31,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.metrics.test.MeterRegistrySetup;
+
 /**
  * Test that two metrics of the same name and differing tags can be created by annotations.
  */
 @RunWith(Arquillian.class)
-public class ReuseMetricWithDifferingTagsTest {
+public class ReuseMetricWithDifferingTagsTest extends MeterRegistrySetup {
 
     @Inject
     MetricRegistry metricRegistry;

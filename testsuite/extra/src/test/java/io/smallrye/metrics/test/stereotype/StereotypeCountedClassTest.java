@@ -32,10 +32,11 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.metrics.test.MeterRegistrySetup;
 import io.smallrye.metrics.test.stereotype.stereotypes.CountMe;
 
 @RunWith(Arquillian.class)
-public class StereotypeCountedClassTest {
+public class StereotypeCountedClassTest extends MeterRegistrySetup {
 
     @Deployment
     public static WebArchive createTestArchive() {
