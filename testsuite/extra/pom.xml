@@ -86,7 +86,6 @@
             <!-- TODO: unexclude tests over time as we start passing them -->
             <exclude>**/GaugeInDependentScopedBeanTest.java</exclude>
             <exclude>**/MetricsInDependentScopedBeanTest.java</exclude>
-            <exclude>**/Initialization_Gauge_Method_Test.java</exclude>
             <exclude>**/Initialization_Injection_Test.java</exclude>
             <exclude>**/NonReusableMetricInjectionTest.java</exclude>
             <exclude>**/AllMetricsOfGivenTypeTest.java</exclude>

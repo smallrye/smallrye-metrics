@@ -7,6 +7,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
+// TODO: This was taken from the Quarkus extension and maybe we could do without it?
 class MpMetadata implements Metadata {
 
     public static MpMetadata sanitize(Metadata metadata, MetricType type) {

@@ -63,8 +63,8 @@ public class Initialization_Gauge_Method_Test extends MeterRegistrySetup {
     public void testApplicationScoped() {
         applicationScopedBean.gauge(); // access the application-scoped bean so that an instance gets created
         assertTrue(registry.getGauges().containsKey(new MetricID("gaugeApp")));
-        Assert.assertEquals(2L, registry.getGauges().get(new MetricID("gaugeApp")).getValue());
-        Assert.assertEquals(3L, registry.getGauges().get(new MetricID("gaugeApp")).getValue());
+        Assert.assertEquals(2.0, (double) registry.getGauges().get(new MetricID("gaugeApp")).getValue(), 0.0000001);
+        Assert.assertEquals(3.0, (double) registry.getGauges().get(new MetricID("gaugeApp")).getValue(), 0.0000001);
     }
 
     @ApplicationScoped

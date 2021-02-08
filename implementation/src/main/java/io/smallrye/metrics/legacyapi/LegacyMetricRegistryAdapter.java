@@ -35,8 +35,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     private final Type type;
     private final MeterRegistry registry;
 
-    private Map<MetricDescriptor, MeterHolder> constructedMeters = new ConcurrentHashMap<>();
-    private Map<String, MpMetadata> metadataMap = new ConcurrentHashMap<>();
+    private final Map<MetricDescriptor, MeterHolder> constructedMeters = new ConcurrentHashMap<>();
+    private final Map<String, MpMetadata> metadataMap = new ConcurrentHashMap<>();
 
     private MemberToMetricMappings memberToMetricMappings;
 

@@ -1,4 +1,4 @@
-package io.smallrye.metrics.setup;
+package io.smallrye.metrics.legacyapi;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;

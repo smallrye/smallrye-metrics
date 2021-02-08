@@ -10,5 +10,6 @@ import javax.interceptor.InterceptorBinding;
 @InterceptorBinding
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
+// TODO: probably rename it to GaugeRegistrationBinding or something like that?!
 public @interface MetricsBinding {
 }
