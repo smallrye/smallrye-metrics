@@ -207,6 +207,9 @@ public class ExponentiallyDecayingReservoir implements Reservoir {
                         final WeightedSnapshot.WeightedSample sample = values.remove(key);
                         final WeightedSnapshot.WeightedSample newSample = new WeightedSnapshot.WeightedSample(sample.value,
                                 sample.weight * scalingFactor);
+                        if (Double.compare(newSample.weight, 0) == 0) {
+                            continue;
+                        }
                         values.put(key * scalingFactor, newSample);
                     }
                 }
