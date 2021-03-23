@@ -53,10 +53,13 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import io.smallrye.metrics.MemberToMetricMappings;
 import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.MetricsRegistryImpl;
 import io.smallrye.metrics.MetricsRequestHandler;
 import io.smallrye.metrics.SmallRyeMetricsLogging;
+import io.smallrye.metrics.elementdesc.MemberInfo;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
@@ -82,7 +85,7 @@ public class MetricCdiInjectionExtension implements Extension {
 
     private final List<Class<?>> metricsInterfaces;
 
-    private final List<MetricID> metricIDs = new ArrayList<>();
+    private final Map<MemberInfo, List<MetricID>> registeredMetrics = new HashMap<>();
 
     public MetricCdiInjectionExtension() {
         metricsInterfaces = new ArrayList<>();
@@ -167,10 +170,10 @@ public class MetricCdiInjectionExtension implements Extension {
         for (Map.Entry<Bean<?>, List<AnnotatedMember<?>>> entry : metricsFromAnnotatedMethods.entrySet()) {
             Bean<?> bean = entry.getKey();
             for (AnnotatedMember<?> method : entry.getValue()) {
-                metricIDs.addAll(MetricsMetadata.registerMetrics(registry,
-                        resolver,
-                        beanInfoAdapter.convert(bean.getBeanClass()),
-                        memberInfoAdapter.convert(method.getJavaMember())));
+                final MemberInfo info = memberInfoAdapter.convert(method.getJavaMember());
+                final List<MetricID> metricIDs = MetricsMetadata.registerMetrics(registry, resolver,
+                        beanInfoAdapter.convert(bean.getBeanClass()), info);
+                registeredMetrics.put(info, metricIDs);
             }
         }
 
@@ -179,10 +182,10 @@ public class MetricCdiInjectionExtension implements Extension {
             for (Class<?> metricsInterface : metricsInterfaces) {
                 for (Method method : metricsInterface.getDeclaredMethods()) {
                     if (!method.isDefault() && !Modifier.isStatic(method.getModifiers())) {
-                        metricIDs.addAll(MetricsMetadata.registerMetrics(registry,
-                                resolver,
-                                beanInfoAdapter.convert(metricsInterface),
-                                memberInfoAdapter.convert(method)));
+                        final MemberInfo info = memberInfoAdapter.convert(method);
+                        final List<MetricID> metricIDs = MetricsMetadata.registerMetrics(registry, resolver,
+                                beanInfoAdapter.convert(metricsInterface), info);
+                        registeredMetrics.put(info, metricIDs);
                     }
                 }
             }
@@ -196,7 +199,22 @@ public class MetricCdiInjectionExtension implements Extension {
 
     void unregisterMetrics(@Observes BeforeShutdown shutdown) {
         MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
-        metricIDs.forEach(metricId -> registry.remove(metricId));
+
+        final MemberToMetricMappings memberToMetricMappings;
+        if (registry instanceof MetricsRegistryImpl) {
+            memberToMetricMappings = ((MetricsRegistryImpl) registry).getMemberToMetricMappings();
+        } else {
+            memberToMetricMappings = null;
+        }
+
+        registeredMetrics.forEach(((memberInfo, metricIDs) -> {
+            metricIDs.forEach(metricID -> {
+                registry.remove(metricID);
+                if (memberToMetricMappings != null) {
+                    memberToMetricMappings.removeMappingsFor(memberInfo, metricID);
+                }
+            });
+        }));
     }
 
     private Optional<String> getImplementationVersion() {

@@ -86,4 +86,17 @@ public class MemberToMetricMappings {
         SmallRyeMetricsLogging.log.matchingMemberToMetric(member, metricID, metricType);
     }
 
+    public void removeMappingsFor(MemberInfo member, MetricID metricID) {
+        removeMapping(counters, member, metricID);
+        removeMapping(concurrentGauges, member, metricID);
+        removeMapping(meters, member, metricID);
+        removeMapping(timers, member, metricID);
+        removeMapping(simpleTimers, member, metricID);
+    }
+
+    private void removeMapping(Map<MemberInfo, Set<MetricID>> map, MemberInfo member, MetricID metricID) {
+        if (map.containsKey(member)) {
+            map.get(member).remove(metricID);
+        }
+    }
 }
