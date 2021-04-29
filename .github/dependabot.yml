@@ -1,0 +1,11 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: io.smallrye.config:smallrye-config
+    versions:
+    - 2.1.0
