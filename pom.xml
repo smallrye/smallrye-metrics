@@ -36,7 +36,7 @@
     <version.microprofile-config>2.0</version.microprofile-config>
     <version.microprofile-metrics>3.0</version.microprofile-metrics>
 
-    <version.micrometer>1.6.6</version.micrometer>
+    <version.micrometer>1.7.0</version.micrometer>
 
     <version.smallrye.config>2.2.0</version.smallrye.config>
     <version.smallrye.common>1.6.0</version.smallrye.common>
