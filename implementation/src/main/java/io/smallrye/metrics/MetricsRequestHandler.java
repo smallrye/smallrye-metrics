@@ -30,6 +30,7 @@ import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.jboss.logging.Logger;
 
 import io.smallrye.metrics.exporters.Exporter;
 import io.smallrye.metrics.exporters.JsonExporter;
@@ -49,6 +50,8 @@ public class MetricsRequestHandler {
     private static final String APPLICATION_JSON = "application/json";
     private static final String STAR_STAR = "*/*";
     private boolean appendCorsHeaders = true;
+
+    private static Logger log = Logger.getLogger(MetricsRequestHandler.class);
 
     static {
         corsHeaders = new HashMap<>();
@@ -102,9 +105,10 @@ public class MetricsRequestHandler {
         }
 
         if (!requestPath.startsWith(contextRoot)) {
-            responder.respondWith(500, "The expected context root of metrics is "
-                    + contextRoot + ", but a request with a different path was routed to MetricsRequestHandler",
-                    Collections.emptyMap());
+            String message = "The expected context root of metrics is \""
+                    + contextRoot + "\", but a request with a different path was routed to MetricsRequestHandler";
+            log.error(message);
+            responder.respondWith(500, message, Collections.emptyMap());
             return;
         }
 
