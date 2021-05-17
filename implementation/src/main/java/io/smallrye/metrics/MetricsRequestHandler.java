@@ -102,9 +102,10 @@ public class MetricsRequestHandler {
         }
 
         if (!requestPath.startsWith(contextRoot)) {
-            responder.respondWith(500, "The expected context root of metrics is "
-                    + contextRoot + ", but a request with a different path was routed to MetricsRequestHandler",
-                    Collections.emptyMap());
+            SmallRyeMetricsLogging.log.contextPathMismatch(contextRoot);
+            String message = "The expected context root of metrics is "
+                    + contextRoot + ", but a request with a different path was routed to MetricsRequestHandler";
+            responder.respondWith(500, message, Collections.emptyMap());
             return;
         }
 

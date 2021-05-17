@@ -76,4 +76,9 @@ public interface SmallRyeMetricsLogging {
     @Message(id = 1300, value = "Unable to export metric %s")
     void unableToExport(String name, @Cause Exception e);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 1301, value = "The expected context root of metrics is \"%s\", but a request with a different " +
+            "path was routed to MetricsRequestHandler")
+    void contextPathMismatch(String name);
+
 }
