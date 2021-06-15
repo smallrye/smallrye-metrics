@@ -63,6 +63,7 @@ public class JsonExporter implements Exporter {
                     .parseGlobalTags(config.getOptionalValue("mp.metrics.tags", String.class).orElse(""));
         } catch (IllegalStateException | ExceptionInInitializerError | NoClassDefFoundError t) {
             // MP Config implementation is probably not available
+            globalTags = Collections.emptyMap();
         }
     }
 
