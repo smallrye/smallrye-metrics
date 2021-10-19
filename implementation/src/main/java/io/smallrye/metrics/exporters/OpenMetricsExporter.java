@@ -262,7 +262,7 @@ public class OpenMetricsExporter implements Exporter {
         writeHelpLine(sb, scope, md.getName(), md, theUnit);
         writeTypeLine(sb, scope, md.getName(), md, theUnit, SUMMARY);
         writeValueLine(sb, scope, theUnit + "_count", timer.getCount(), md, tags, false);
-        writeTypeAndValue(sb, scope, theUnit + "_sum", timer.getElapsedTime().toNanos(), GAUGE, md, true, tags);
+        writeValueLine(sb, scope, theUnit + "_sum", timer.getElapsedTime().toNanos(), md, tags);
 
         writeSnapshotQuantiles(sb, scope, md, snapshot, theUnit, true, tags);
     }
