@@ -38,7 +38,7 @@
 
     <version.micrometer>1.7.5</version.micrometer>
 
-    <version.smallrye.config>2.5.1</version.smallrye.config>
+    <version.smallrye.config>2.8.0</version.smallrye.config>
     <version.smallrye.common>1.7.1</version.smallrye.common>
 
     <version.jakarta.servlet>4.0.4</version.jakarta.servlet>
