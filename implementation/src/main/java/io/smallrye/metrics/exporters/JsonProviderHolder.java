@@ -17,7 +17,7 @@
 
 package io.smallrye.metrics.exporters;
 
-import javax.json.spi.JsonProvider;
+import jakarta.json.spi.JsonProvider;
 
 class JsonProviderHolder {
 

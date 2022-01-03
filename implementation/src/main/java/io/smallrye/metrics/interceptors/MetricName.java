@@ -15,8 +15,8 @@
  */
 package io.smallrye.metrics.interceptors;
 
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 
 public interface MetricName {
 

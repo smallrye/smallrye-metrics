@@ -18,8 +18,8 @@ package io.smallrye.metrics.test.dependent;
 
 import static org.junit.Assert.assertEquals;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;

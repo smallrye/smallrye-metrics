@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.SortedMap;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;

@@ -18,6 +18,7 @@
 package io.smallrye.metrics.exporters;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -91,6 +92,7 @@ public class OpenMetricsExporter implements Exporter {
             // MP Config implementation is probably not available. Resort to default configuration.
             usePrefixForScope = true;
             writeHelpLine = true;
+            globalTags = Collections.emptyMap();
         }
 
     }

@@ -19,7 +19,7 @@ package io.smallrye.metrics.tck.optional;
 
 import java.io.File;
 
-import javax.ws.rs.ext.Providers;
+import jakarta.ws.rs.ext.Providers;
 
 import org.jboss.arquillian.container.test.spi.TestDeployment;
 import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
@@ -37,11 +37,11 @@ public class JaxRsMetricsActivatingProcessor implements ProtocolArchiveProcessor
         WebArchive war = (WebArchive) archive;
 
         String[] deps = {
-                "io.smallrye:smallrye-config",
+                //                "io.smallrye:smallrye-config",
                 "io.smallrye:smallrye-metrics",
                 "io.smallrye:smallrye-metrics-testsuite-common",
                 "org.eclipse.microprofile.metrics:microprofile-metrics-api",
-                "org.eclipse.microprofile.config:microprofile-config-api"
+                //                "org.eclipse.microprofile.config:microprofile-config-api"
         };
         File[] dependencies = Maven.resolver().loadPomFromFile(new File("pom.xml")).resolve(deps).withTransitivity().asFile();
         war.addAsLibraries(dependencies);

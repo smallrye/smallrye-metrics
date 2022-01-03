@@ -17,7 +17,7 @@
 
 package io.smallrye.metrics.test.inject;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Counted;

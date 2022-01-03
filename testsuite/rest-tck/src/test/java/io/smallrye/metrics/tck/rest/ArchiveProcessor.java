@@ -17,19 +17,11 @@ package io.smallrye.metrics.tck.rest;
 
 import java.io.File;
 
-import javax.enterprise.inject.spi.Extension;
-
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.arquillian.container.test.spi.TestDeployment;
 import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.weld.environment.deployment.discovery.BeanArchiveHandler;
-
-import io.smallrye.config.SmallRyeConfigProviderResolver;
-import io.smallrye.config.inject.ConfigExtension;
-import io.smallrye.metrics.testsuite.MetricsInitializer;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
@@ -46,19 +38,19 @@ public class ArchiveProcessor implements ProtocolArchiveProcessor {
                 "io.smallrye:smallrye-metrics",
                 "io.smallrye:smallrye-metrics-testsuite-common",
                 "org.eclipse.microprofile.metrics:microprofile-metrics-api",
-                "org.jboss.weld.servlet:weld-servlet-core"
+                //                "org.jboss.weld.servlet:weld-servlet-core"
         };
 
         File[] dependencies = Maven.resolver().loadPomFromFile(new File("pom.xml")).resolve(deps).withTransitivity().asFile();
 
         war.addAsLibraries(dependencies);
 
-        war.addClass(SmallRyeBeanArchiveHandler.class);
+        //        war.addClass(SmallRyeBeanArchiveHandler.class);
         war.addClass(MetricsHttpServlet.class);
-        war.addClass(MetricsInitializer.class);
+        //        war.addClass(MetricsInitializer.class);
         war.addAsResource("io/smallrye/metrics/base-metrics.properties", "/io/smallrye/metrics/base-metrics.properties");
-        war.addAsServiceProvider(BeanArchiveHandler.class, SmallRyeBeanArchiveHandler.class);
-        war.addAsServiceProvider(Extension.class, ConfigExtension.class);
-        war.addAsServiceProvider(ConfigProviderResolver.class, SmallRyeConfigProviderResolver.class);
+        //        war.addAsServiceProvider(BeanArchiveHandler.class, SmallRyeBeanArchiveHandler.class);
+        //        war.addAsServiceProvider(Extension.class, ConfigExtension.class);
+        //        war.addAsServiceProvider(ConfigProviderResolver.class, SmallRyeConfigProviderResolver.class);
     }
 }
