@@ -33,7 +33,7 @@
   <url>http://smallrye.io</url>
 
   <properties>
-    <version.microprofile-config>2.0</version.microprofile-config>
+    <version.microprofile-config>2.0.1</version.microprofile-config>
     <version.microprofile-metrics>3.0</version.microprofile-metrics>
 
     <version.smallrye.config>2.8.2</version.smallrye.config>
