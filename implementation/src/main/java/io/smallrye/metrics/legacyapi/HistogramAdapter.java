@@ -7,19 +7,18 @@ import org.eclipse.microprofile.metrics.Snapshot;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.smallrye.metrics.MetricRegistries;
 
 class HistogramAdapter implements Histogram, MeterHolder {
     DistributionSummary summary;
 
     HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
+        MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
         if (summary == null || metadata.cleanDirtyMetadata()) {
-            summary = DistributionSummary.builder(metricInfo.name())
-                    .description(metadata.getDescription())
-                    .baseUnit(metadata.getUnit())
-                    .tags(metricInfo.tags())
-                    .register(registry);
+            summary = DistributionSummary.builder(metricInfo.name()).description(metadata.getDescription())
+                    .baseUnit(metadata.getUnit()).tags(metricInfo.tags()).register(registry);
         }
-
+        MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
         return this;
     }
 
@@ -41,6 +40,8 @@ class HistogramAdapter implements Histogram, MeterHolder {
     @Override
     public long getSum() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
+        //If we keep this call.
+        //summary.takeSnapshot().total();
     }
 
     /** Not supported. */

@@ -51,7 +51,7 @@ public class GaugeInDependentScopedBeanTest {
 
     @After
     public void cleanupApplicationMetrics() {
-        MetricRegistries.get(MetricRegistry.Type.APPLICATION).removeMatching(MetricFilter.ALL);
+        MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION).removeMatching(MetricFilter.ALL);
     }
 
     @Inject

@@ -24,7 +24,6 @@ import java.time.Duration;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,7 +39,7 @@ import io.smallrye.metrics.MetricRegistries;
  */
 public class ReusabilityByDefaultTest {
 
-    private final MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+    private final MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
 
     @After
     public void removeMetrics() {
@@ -74,13 +73,13 @@ public class ReusabilityByDefaultTest {
         assertEquals(2, registry.histogram("myhistogram").getCount());
     }
 
-    @Test
-    public void testSimpleTimer() {
-        Metadata metadata = Metadata.builder().withName("mysimpletimer").build();
-        registry.simpleTimer(metadata).update(Duration.ofNanos(5));
-        registry.simpleTimer(metadata).update(Duration.ofNanos(7));
-        assertEquals(2, registry.simpleTimer("mysimpletimer").getCount());
-    }
+    //    @Test
+    //    public void testSimpleTimer() {
+    //        Metadata metadata = Metadata.builder().withName("mysimpletimer").build();
+    //        registry.simpleTimer(metadata).update(Duration.ofNanos(5));
+    //        registry.simpleTimer(metadata).update(Duration.ofNanos(7));
+    //        assertEquals(2, registry.simpleTimer("mysimpletimer").getCount());
+    //    }
 
     @Test
     public void testTimer() {
@@ -90,25 +89,25 @@ public class ReusabilityByDefaultTest {
         assertEquals(2, registry.timer("mytimer").getCount());
     }
 
-    @Test
-    public void testMeter() {
-        Metadata metadata = Metadata.builder().withName("mymeter").build();
-        registry.meter(metadata).mark(100);
-        registry.meter(metadata).mark(100);
-        assertEquals(200, registry.meter("mymeter").getCount());
-    }
-
-    @Test
-    public void testConcurrentGauge() {
-        Metadata metadata = Metadata.builder().withName("mycgauge").withUnit(MetricUnits.SECONDS).build();
-        try {
-            registry.concurrentGauge(metadata).inc();
-            registry.concurrentGauge(metadata).inc();
-            assertEquals(2, registry.concurrentGauge("mycgauge").getCount());
-        } finally {
-            registry.concurrentGauge(metadata).dec();
-            registry.concurrentGauge(metadata).dec();
-        }
-    }
+    //    @Test
+    //    public void testMeter() {
+    //        Metadata metadata = Metadata.builder().withName("mymeter").build();
+    //        registry.meter(metadata).mark(100);
+    //        registry.meter(metadata).mark(100);
+    //        assertEquals(200, registry.meter("mymeter").getCount());
+    //    }
+    //
+    //    @Test
+    //    public void testConcurrentGauge() {
+    //        Metadata metadata = Metadata.builder().withName("mycgauge").withUnit(MetricUnits.SECONDS).build();
+    //        try {
+    //            registry.concurrentGauge(metadata).inc();
+    //            registry.concurrentGauge(metadata).inc();
+    //            assertEquals(2, registry.concurrentGauge("mycgauge").getCount());
+    //        } finally {
+    //            registry.concurrentGauge(metadata).dec();
+    //            registry.concurrentGauge(metadata).dec();
+    //        }
+    //    }
 
 }

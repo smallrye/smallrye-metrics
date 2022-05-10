@@ -11,9 +11,9 @@ import org.eclipse.microprofile.metrics.Snapshot;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.smallrye.metrics.MetricRegistries;
 
-class TimerAdapter
-        implements org.eclipse.microprofile.metrics.Timer, SimpleTimer, MeterHolder {
+class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolder {
     final MeterRegistry registry;
     Timer timer;
 
@@ -26,12 +26,12 @@ class TimerAdapter
     }
 
     public TimerAdapter register(MpMetadata metadata, MetricDescriptor descriptor) {
+        MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
         if (timer == null || metadata.cleanDirtyMetadata()) {
-            timer = Timer.builder(descriptor.name())
-                    .description(metadata.getDescription())
-                    .tags(descriptor.tags())
+            timer = Timer.builder(descriptor.name()).description(metadata.getDescription()).tags(descriptor.tags())
                     .register(registry);
         }
+        MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
         if (metadata.type == MetricType.SIMPLE_TIMER) {
             metricType = MetricType.SIMPLE_TIMER;
         }
@@ -65,6 +65,8 @@ class TimerAdapter
     @Override
     public Duration getElapsedTime() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
+        //
+        //timer.takeSnapshot.total();
     }
 
     @Override
@@ -72,36 +74,31 @@ class TimerAdapter
         return timer.count();
     }
 
-    @Override
-    public Duration getMaxTimeDuration() {
-        return Duration.ofNanos(((long) timer.max(TimeUnit.NANOSECONDS)));
-    }
-
-    @Override
-    public Duration getMinTimeDuration() {
-        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
-    }
-
+    //TODO: remove
     @Override
     public double getFifteenMinuteRate() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
     }
 
+    //TODO: remove
     @Override
     public double getFiveMinuteRate() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
     }
 
+    //TODO: remove
     @Override
     public double getMeanRate() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
     }
 
+    //TODO: remove
     @Override
     public double getOneMinuteRate() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
     }
 
+    //TODO: remove
     @Override
     public Snapshot getSnapshot() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");

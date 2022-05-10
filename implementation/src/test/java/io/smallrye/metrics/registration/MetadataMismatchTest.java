@@ -36,7 +36,7 @@ import io.smallrye.metrics.MetricRegistries;
 
 public class MetadataMismatchTest {
 
-    private MetricRegistry registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+    private MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
 
     @After
     public void cleanupApplicationMetrics() {

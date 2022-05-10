@@ -10,6 +10,7 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 // TODO: This was taken from the Quarkus extension and maybe we could do without it?
 class MpMetadata implements Metadata {
 
+    //sanitize? just removes the display name (shares it with the metric name intead)
     public static MpMetadata sanitize(Metadata metadata, MetricType type) {
         if (metadata instanceof MpMetadata) {
             return (MpMetadata) metadata;
@@ -64,7 +65,10 @@ class MpMetadata implements Metadata {
         return false;
     }
 
+    //if invalid or same type
     public boolean mergeSameType(Metadata metadata) {
+        // If incoming metadata is INVALID  type(even if current metadata has a type)
+        // OR if we are the same metric type.
         if (metadata.getTypeRaw() == MetricType.INVALID || this.type == metadata.getTypeRaw()) {
             if (description == null) {
                 dirty = true;
@@ -106,10 +110,12 @@ class MpMetadata implements Metadata {
         return this;
     }
 
+    @Override
     public Optional<String> description() {
         return Optional.ofNullable(description);
     }
 
+    @Override
     public Optional<String> unit() {
         return Optional.ofNullable(unit);
     }

@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricType;
 
+//XXX: Do we need this?
 public class OriginAndMetadata implements Metadata {
 
     private final Object origin;
@@ -66,6 +67,16 @@ public class OriginAndMetadata implements Metadata {
     @Override
     public Optional<String> unit() {
         return metadata.unit();
+    }
+
+    @Override
+    public String toString() {
+        return metadata.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return metadata.equals(o);
     }
 
 }

@@ -35,7 +35,7 @@ public class TimedInterceptor {
 
     @Inject
     TimedInterceptor() {
-        this.registry = MetricRegistries.get(MetricRegistry.Type.APPLICATION);
+        this.registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
     }
 
     @AroundConstruct
