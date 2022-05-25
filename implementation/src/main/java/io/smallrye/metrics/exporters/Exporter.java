@@ -12,13 +12,7 @@ public interface Exporter {
 
     String getContentType();
 
-    /**
-     * Exports just one metric obtained from a scope using its MetricID.
-     */
     String exportOneMetric(MetricRegistry.Type scope, MetricID metricID);
 
-    /**
-     * Exports all metrics with the given name inside the given scope.
-     */
     String exportMetricsByName(MetricRegistry.Type scope, String name);
 }

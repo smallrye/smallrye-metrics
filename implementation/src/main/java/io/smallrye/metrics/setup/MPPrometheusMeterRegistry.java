@@ -8,7 +8,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 /**
  * Cheap way of setting "scope" information with the PrometheusMeterRegistry.
  * This is to allow the OpenMetricsExporter and JSON Exporter to scrape
- * the appropriate PrometheusMeterRegistry when using /metrics/<scope/[<metric>]
+ * the appropriate PrometheusMeterRegistry when using /metrics/scope/[metric]
  * query
  */
 public class MPPrometheusMeterRegistry extends PrometheusMeterRegistry {

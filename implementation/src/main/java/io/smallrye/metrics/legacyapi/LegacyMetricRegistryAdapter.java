@@ -49,9 +49,6 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     private final Map<MetricDescriptor, MeterHolder> constructedMeters = new ConcurrentHashMap<>();
     private final Map<String, MpMetadata> metadataMap = new ConcurrentHashMap<>();
 
-    /**
-     * This ConcurrentHashMap<String,Tag> holds the cached value of the MP Config mp.metrics.appName value for each appliation.
-     */
     protected final ConcurrentHashMap<String, io.micrometer.core.instrument.Tag> applicationMPConfigAppNameTagCache;
 
     protected final ConcurrentHashMap<String, ConcurrentLinkedQueue<MetricID>> applicationMap;
@@ -60,30 +57,12 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     private MemberToMetricMappings memberToMetricMappings;
 
-    /**
-     * This static Tag[] represents the server level global tags retrieved from MP Config for mp.metrics.appName. This value
-     * will be 'null' when not initialized. If during
-     * initialization and no global tag has been resolved this will be to an array of size 0. Using an array of size 0 is to
-     * represent that an attempt was made to
-     * resolve the value, but none was found. As the MP Config mp.metrics.appName is retrieved each time register/retrieve is
-     * used. This helps with performance tremendously.
-     *
-     * This server level value will not change at all throughout the life time of the server as it is defined by env vars or sys
-     * props.
-     */
     protected static io.micrometer.core.instrument.Tag[] SERVER_LEVEL_MPCONFIG_APPLICATION_NAME_TAG = null;
 
     public MeterRegistry getPrometheusMeterRegistry() {
         return registry;
     }
 
-    /**
-     * Adds the MetricID to an application map.
-     * This map is not a complete list of metrics owned by an application,
-     * produced metrics are managed in the MetricsExtension
-     *
-     * @param name
-     */
     protected void addNameToApplicationMap(MetricID metricID) {
         String appName = appNameResolver.getApplicationName();
         addNameToApplicationMap(metricID, appName);

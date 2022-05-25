@@ -17,7 +17,6 @@ public interface AnnotatedGaugeAdapter extends org.eclipse.microprofile.metrics.
 
     String baseUnit();
 
-    /** Called by MpRegistryAdapter to register the gauge */
     AnnotatedGaugeAdapter register(MetricDescriptor id, MeterRegistry registry);
 
     MetricDescriptor getId();

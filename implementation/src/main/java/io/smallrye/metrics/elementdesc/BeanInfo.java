@@ -12,9 +12,5 @@ public interface BeanInfo {
 
     <T extends Annotation> boolean isAnnotationPresent(Class<T> metric);
 
-    /**
-     * Returns BeanInfo of its superclass or null if there is no superclass.
-     */
     BeanInfo getSuperclass();
-
 }

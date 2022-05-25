@@ -43,13 +43,6 @@ public class TagsUtils {
             + " Global Tag values MUST escape equal signs `=` and commas `,`"
             + " with a backslash `\\` ";
 
-    /**
-     * Parses the global tags retrieved from environment variable {@code MP_METRICS_TAGS}.
-     *
-     * @param globalTags the string of global tags retrieved from MP_METRICS_TAGS
-     * @throws IllegalArgumentException if the global tags list does not adhere to
-     *         the appropriate format.
-     */
     public static Map<String, String> parseGlobalTags(String globalTags) throws IllegalArgumentException {
         if (globalTags == null || globalTags.length() == 0) {
             return Collections.emptyMap();
