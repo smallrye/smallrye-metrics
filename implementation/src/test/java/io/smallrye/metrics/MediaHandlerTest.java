@@ -146,4 +146,11 @@ public class MediaHandlerTest {
         assertThat(res.get()).isEqualTo("application/json");
     }
 
+    @Test
+    public void testDefaultMediaTypeWhenAcceptHeaderNotSet() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(Stream.empty());
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
+
 }

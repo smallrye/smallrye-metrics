@@ -264,6 +264,10 @@ public class MetricsRequestHandler {
             }
         });
 
+        if (tupleList.isEmpty()) {
+            return Optional.of(TEXT_PLAIN);
+        }
+
         WTTuple bestMatchTuple = new WTTuple(-1, null);
 
         // Iterate over the list and find the best match
