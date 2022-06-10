@@ -28,7 +28,12 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
     public TimerAdapter register(MpMetadata metadata, MetricDescriptor descriptor) {
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
         if (timer == null || metadata.cleanDirtyMetadata()) {
-            timer = Timer.builder(descriptor.name()).description(metadata.getDescription()).tags(descriptor.tags())
+            timer = Timer
+                    .builder(descriptor.name())
+                    .description(metadata.getDescription())
+                    .tags(descriptor.tags())
+                    .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
+                    .percentilePrecision(5) //from 0 - 5 , more precision == more memory usage
                     .register(registry);
         }
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
