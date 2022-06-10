@@ -9,6 +9,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.smallrye.metrics.MetricRegistries;
 
 interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
 
@@ -26,12 +27,14 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
         }
 
         public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
+            MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, f)
                     .description(metadata.getDescription())
                     .tags(metricInfo.tags())
                     .baseUnit(metadata.getUnit())
                     .strongReference(true)
                     .register(registry);
+            MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
             return this;
         }
 
@@ -63,12 +66,14 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
         }
 
         public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
+            MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, obj -> f.apply(obj).doubleValue())
                     .description(metadata.getDescription())
                     .tags(metricInfo.tags())
                     .baseUnit(metadata.getUnit())
                     .strongReference(true)
                     .register(registry);
+            MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
             return this;
         }
 
@@ -99,11 +104,13 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
         @Override
         public GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
             if (gauge == null || metadata.cleanDirtyMetadata()) {
+                MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
                 gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), (Supplier<Number>) supplier)
                         .description(metadata.getDescription())
                         .tags(metricInfo.tags())
                         .baseUnit(metadata.getUnit())
                         .strongReference(true).register(registry);
+                MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
             }
 
             return this;

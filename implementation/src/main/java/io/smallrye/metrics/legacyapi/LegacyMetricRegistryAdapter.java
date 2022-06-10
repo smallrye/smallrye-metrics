@@ -384,7 +384,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     @Override
     public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T o, Function<T, R> f, Tag... tags) {
         String name = metadata.getName();
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(metadata, MetricType.GAUGE),
                 new MetricDescriptor(name, withAppTags(tags)), o, f);
     }
 
@@ -425,7 +425,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     @Override
     public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> f, Tag... tags) {
         String name = metadata.getName();
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(metadata, MetricType.GAUGE),
                 new MetricDescriptor(name, withAppTags(tags)), f);
     }
 
