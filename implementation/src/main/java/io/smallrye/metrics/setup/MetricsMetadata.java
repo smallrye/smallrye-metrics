@@ -39,8 +39,7 @@ public class MetricsMetadata {
             registry.counter(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
                 //add this CDI MetricID into MetricRegistry's MetricID list....
-                MetricID metricID = new MetricID(metadata.getName(),
-                        appendScopeTags(tags, (LegacyMetricRegistryAdapter) registry));
+                MetricID metricID = new MetricID(metadata.getName());
                 metricIDs.add(metricID);
 
                 //Some list in MetricRegistry that maps the CDI element, metricID and metric type
@@ -57,8 +56,7 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
-                MetricID metricID = new MetricID(metadata.getName(),
-                        appendScopeTags(tags, (LegacyMetricRegistryAdapter) registry));
+                MetricID metricID = new MetricID(metadata.getName());
                 metricIDs.add(metricID);
                 ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addMetric(element, metricID,
                         MetricType.TIMER);
@@ -75,9 +73,4 @@ public class MetricsMetadata {
                 .withDisplayName(displayName).build();
         return new OriginAndMetadata(origin, metadata);
     }
-
-    private static Tag[] appendScopeTags(Tag[] tags, LegacyMetricRegistryAdapter adapter) {
-        return Stream.concat(Arrays.stream(tags), Arrays.stream(adapter.scopeTagsLegacy())).toArray(Tag[]::new);
-    }
-
 }
