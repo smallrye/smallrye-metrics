@@ -10,7 +10,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-metrics-parent</artifactId>
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
