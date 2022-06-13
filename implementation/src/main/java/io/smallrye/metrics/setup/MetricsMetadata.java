@@ -3,9 +3,7 @@ package io.smallrye.metrics.setup;
 import static io.smallrye.metrics.legacyapi.TagsUtils.parseTagsAsArray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;

@@ -16,7 +16,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
         if (summary == null || metadata.cleanDirtyMetadata()) {
             summary = DistributionSummary.builder(metricInfo.name())
-            		.description(metadata.getDescription())
+                    .description(metadata.getDescription())
                     .baseUnit(metadata.getUnit())
                     .tags(metricInfo.tags())
                     .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
