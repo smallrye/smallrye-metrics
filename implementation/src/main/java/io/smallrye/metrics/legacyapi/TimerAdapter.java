@@ -5,7 +5,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 import io.micrometer.core.instrument.Meter;
@@ -37,9 +36,6 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
                     .register(registry);
         }
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
-        if (metadata.type == MetricType.SIMPLE_TIMER) {
-            metricType = MetricType.SIMPLE_TIMER;
-        }
         return this;
     }
 
@@ -79,31 +75,6 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
         return timer.count();
     }
 
-    //TODO: remove
-    @Override
-    public double getFifteenMinuteRate() {
-        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
-    }
-
-    //TODO: remove
-    @Override
-    public double getFiveMinuteRate() {
-        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
-    }
-
-    //TODO: remove
-    @Override
-    public double getMeanRate() {
-        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
-    }
-
-    //TODO: remove
-    @Override
-    public double getOneMinuteRate() {
-        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
-    }
-
-    //TODO: remove
     @Override
     public Snapshot getSnapshot() {
         throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
@@ -122,7 +93,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
         sample.stop(timer);
     }
 
-    class SampleAdapter implements org.eclipse.microprofile.metrics.Timer.Context, SimpleTimer.Context {
+    class SampleAdapter implements org.eclipse.microprofile.metrics.Timer.Context {
         final Timer timer;
         final Timer.Sample sample;
 

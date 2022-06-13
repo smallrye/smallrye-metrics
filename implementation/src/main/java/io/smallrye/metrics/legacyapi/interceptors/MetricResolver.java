@@ -7,11 +7,8 @@ import javax.enterprise.inject.Vetoed;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.SmallRyeMetricsMessages;
@@ -30,24 +27,12 @@ public class MetricResolver {
         return resolverOf(topClass, element, Counted.class);
     }
 
-    public Of<ConcurrentGauge> concurrentGauge(BeanInfo topClass, MemberInfo element) {
-        return resolverOf(topClass, element, ConcurrentGauge.class);
-    }
-
     public Of<Gauge> gauge(BeanInfo topClass, MemberInfo method) {
         return resolverOf(topClass, method, Gauge.class);
     }
 
-    public Of<Metered> metered(BeanInfo topClass, MemberInfo element) {
-        return resolverOf(topClass, element, Metered.class);
-    }
-
     public Of<Timed> timed(BeanInfo bean, MemberInfo element) {
         return resolverOf(bean, element, Timed.class);
-    }
-
-    public Of<SimplyTimed> simplyTimed(BeanInfo bean, MemberInfo element) {
-        return resolverOf(bean, element, SimplyTimed.class);
     }
 
     private <T extends Annotation> Of<T> resolverOf(BeanInfo bean, MemberInfo element, Class<T> metric) {
