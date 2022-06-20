@@ -13,6 +13,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import io.micrometer.core.instrument.Tags;
 import io.smallrye.metrics.OriginAndMetadata;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
@@ -36,8 +37,22 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
+
+                //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
+                //so that interceptors can find the annotated metric
+                //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
+                Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
+
+                List<Tag> mpListTags = new ArrayList<Tag>();
+                mmTags.forEach(tag -> {
+                    Tag mpTag = new Tag(tag.getKey(), tag.getValue());
+                    mpListTags.add(mpTag);
+                });
+
+                Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
+
                 //add this CDI MetricID into MetricRegistry's MetricID list....
-                MetricID metricID = new MetricID(metadata.getName());
+                MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
                 metricIDs.add(metricID);
 
                 //Some list in MetricRegistry that maps the CDI element, metricID and metric type
