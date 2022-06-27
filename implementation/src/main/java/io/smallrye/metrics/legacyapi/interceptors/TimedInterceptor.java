@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
@@ -31,12 +30,7 @@ import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 public class TimedInterceptor {
 
-    private final MetricRegistry registry;
-
-    @Inject
-    TimedInterceptor() {
-        this.registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
-    }
+    private MetricRegistry registry;
 
     @AroundConstruct
     Object timedConstructor(InvocationContext context) throws Exception {
@@ -55,6 +49,13 @@ public class TimedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext invocationContext, E element)
             throws Exception {
+
+        Timed timedAnno = element.getAnnotation(Timed.class);
+        if (timedAnno != null)
+            registry = MetricRegistries.getOrCreate(timedAnno.scope());
+        else
+            registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+
         Set<MetricID> ids = ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings()
                 .getTimers(new CDIMemberInfoAdapter<>().convert(element));
 

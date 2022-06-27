@@ -14,6 +14,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.micrometer.core.instrument.Tags;
+import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.OriginAndMetadata;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
@@ -30,12 +31,17 @@ public class MetricsMetadata {
             MemberInfo element) {
         MetricResolver.Of<Counted> counted = resolver.counted(bean, element);
         List<MetricID> metricIDs = new ArrayList<>();
+
         if (counted.isPresent()) {
             AnnotationInfo t = counted.metricAnnotation();
+
+            registry = MetricRegistries.getOrCreate(t.scope());
+
             Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(), t.displayName(),
                     MetricType.COUNTER);
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
+
             if (registry instanceof LegacyMetricRegistryAdapter) {
 
                 //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
@@ -64,12 +70,14 @@ public class MetricsMetadata {
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
         if (timed.isPresent()) {
             AnnotationInfo t = timed.metricAnnotation();
+
+            registry = MetricRegistries.getOrCreate(t.scope());
+
             Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(), t.displayName(),
                     MetricType.TIMER);
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
-
                 //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
                 //so that interceptors can find the annotated metric
                 //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.

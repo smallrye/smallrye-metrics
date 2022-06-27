@@ -5,7 +5,6 @@ import java.lang.reflect.Member;
 import java.util.Set;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
@@ -29,12 +28,7 @@ import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 public class CountedInterceptor {
 
-    private final MetricRegistry registry;
-
-    @Inject
-    CountedInterceptor() {
-        this.registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
-    }
+    private MetricRegistry registry;
 
     @AroundConstruct
     Object countedConstructor(InvocationContext context) throws Exception {
@@ -53,6 +47,13 @@ public class CountedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object countedCallable(InvocationContext context, E element)
             throws Exception {
+
+        Counted countedAnno = element.getAnnotation(Counted.class);
+        if (countedAnno != null)
+            registry = MetricRegistries.getOrCreate(countedAnno.scope());
+        else
+            registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+
         Set<MetricID> ids = ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings()
                 .getCounters(new CDIMemberInfoAdapter<>().convert(element));
         if (ids == null || ids.isEmpty()) {
