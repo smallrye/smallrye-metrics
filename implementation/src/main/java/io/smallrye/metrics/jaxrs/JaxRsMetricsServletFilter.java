@@ -82,12 +82,12 @@ public class JaxRsMetricsServletFilter implements Filter {
     //TODO: Verify it works properly.
     private void updateAfterSuccess(long startTimestamp, MetricID metricID) {
         long duration = System.nanoTime() - startTimestamp;
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.BASE);
+        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.BASE_SCOPE);
         registry.getTimer(metricID).update(Duration.ofNanos(duration));
     }
 
     private void updateAfterFailure(MetricID metricID) {
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.BASE);
+        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.BASE_SCOPE);
         registry.getCounter(transformToMetricIDForFailedRequest(metricID)).inc();
     }
 
@@ -97,7 +97,7 @@ public class JaxRsMetricsServletFilter implements Filter {
 
     //TODO: Verify it works properly.
     private void createMetrics(MetricID metricID) {
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.BASE);
+        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.BASE_SCOPE);
         if (registry.getTimer(metricID) == null) {
             Metadata successMetadata = Metadata.builder()
                     .withName(metricID.getName())

@@ -14,7 +14,7 @@ import io.smallrye.metrics.MetricRegistries;
 
 interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
 
-    GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry);
+    GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope);
 
     static class DoubleFunctionGauge<S> implements GaugeAdapter<Double> {
         io.micrometer.core.instrument.Gauge gauge;
@@ -27,15 +27,19 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
             this.f = f;
         }
 
-        public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
+        public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
+                String scope) {
+
+            ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+            threadLocal.set(true);
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, f)
                     .description(metadata.getDescription())
                     .tags(metricInfo.tags())
+                    .tags("scope", scope)
                     .baseUnit(metadata.getUnit())
                     .strongReference(true)
                     .register(Metrics.globalRegistry);
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+            threadLocal.set(false);
             return this;
         }
 
@@ -66,15 +70,19 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
             this.f = f;
         }
 
-        public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
+        public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
+                String scope) {
+            ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+
+            threadLocal.set(true);
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, obj -> f.apply(obj).doubleValue())
                     .description(metadata.getDescription())
                     .tags(metricInfo.tags())
+                    .tags("scope", scope)
                     .baseUnit(metadata.getUnit())
                     .strongReference(true)
                     .register(Metrics.globalRegistry);
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+            threadLocal.set(false);
             return this;
         }
 
@@ -103,15 +111,19 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
         }
 
         @Override
-        public GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
+        public GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
+                String scope) {
             if (gauge == null || metadata.cleanDirtyMetadata()) {
-                MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
+
+                ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+                threadLocal.set(true);
                 gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), (Supplier<Number>) supplier)
                         .description(metadata.getDescription())
                         .tags(metricInfo.tags())
+                        .tags("scope", scope)
                         .baseUnit(metadata.getUnit())
                         .strongReference(true).register(Metrics.globalRegistry);
-                MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+                threadLocal.set(false);
             }
 
             return this;

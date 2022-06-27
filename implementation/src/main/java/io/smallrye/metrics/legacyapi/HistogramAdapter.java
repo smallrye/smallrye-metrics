@@ -13,18 +13,23 @@ import io.smallrye.metrics.MetricRegistries;
 class HistogramAdapter implements Histogram, MeterHolder {
     DistributionSummary summary;
 
-    HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
-        MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
+    HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope) {
+
+        ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+
+        threadLocal.set(true);
         if (summary == null || metadata.cleanDirtyMetadata()) {
             summary = DistributionSummary.builder(metricInfo.name())
                     .description(metadata.getDescription())
                     .baseUnit(metadata.getUnit())
                     .tags(metricInfo.tags())
+                    .tags("scope", scope)
                     .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
                     .percentilePrecision(5) //from 0 - 5 , more precision == more memory usage
                     .register(Metrics.globalRegistry);
         }
-        MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+
+        threadLocal.set(false);
         return this;
     }
 

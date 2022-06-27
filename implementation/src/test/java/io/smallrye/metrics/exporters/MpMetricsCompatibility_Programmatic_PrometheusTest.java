@@ -68,12 +68,12 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
 
     @After
     public void cleanupApplicationMetrics() {
-        MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION).removeMatching(MetricFilter.ALL);
+        MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE).removeMatching(MetricFilter.ALL);
     }
 
     @Test
     public void exportCounters() {
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
         Metadata metadata = Metadata
                 .builder()

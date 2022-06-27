@@ -9,6 +9,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -52,11 +53,12 @@ public class MetricRegistries {
      */
     protected static Tag[] SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = null;
 
-    public static final ThreadLocal<Boolean> MP_APP_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
-    public static final ThreadLocal<Boolean> MP_BASE_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
-    public static final ThreadLocal<Boolean> MP_VENDOR_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
+    //    public static final ThreadLocal<Boolean> MP_APP_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
+    //    public static final ThreadLocal<Boolean> MP_BASE_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
+    //    public static final ThreadLocal<Boolean> MP_VENDOR_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
 
-    private static final Map<MetricRegistry.Type, MetricRegistry> registries = new ConcurrentHashMap<>();
+    private static final Map<String, MetricRegistry> registries = new ConcurrentHashMap<>();
+    private static final Map<String, ThreadLocal<Boolean>> threadLocalMap = new ConcurrentHashMap<>();
 
     /**
      * Filter that only allows registration/retrieval of a Meter Registry by the MP shim
@@ -69,95 +71,105 @@ public class MetricRegistries {
      *
      * See the Counter/Histrogram/Timer Adapters and the base metric binder used below in resolveMeterRegistry()
      */
-    static final MeterFilter mpMeterAppRegistryAccessFilter = MeterFilter.accept(id -> {
-        return (MetricRegistries.MP_APP_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
-    });
-
-    static final MeterFilter mpMeterBaseRegistryAccessFilter = MeterFilter.accept(id -> {
-        return (MetricRegistries.MP_BASE_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
-    });
-
-    static final MeterFilter mpMeterVendorRegistryAccessFilter = MeterFilter.accept(id -> {
-        return (MetricRegistries.MP_VENDOR_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
-    });
+    //    static final MeterFilter mpMeterAppRegistryAccessFilter = MeterFilter.accept(id -> {
+    //        return (MetricRegistries.MP_APP_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
+    //    });
+    //
+    //    static final MeterFilter mpMeterBaseRegistryAccessFilter = MeterFilter.accept(id -> {
+    //        return (MetricRegistries.MP_BASE_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
+    //    });
+    //
+    //    static final MeterFilter mpMeterVendorRegistryAccessFilter = MeterFilter.accept(id -> {
+    //        return (MetricRegistries.MP_VENDOR_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
+    //    });
 
     @Produces
     @Default
-    @RegistryType(type = MetricRegistry.Type.APPLICATION)
-    @ApplicationScoped
-    public MetricRegistry getApplicationRegistry() {
-        return getOrCreate(MetricRegistry.Type.APPLICATION);
+    public MetricRegistry getApplicationRegistry(InjectionPoint ip) {
+
+        RegistryType registryTypeAnnotation = ip.getAnnotated().getAnnotation(RegistryType.class);
+
+        if (registryTypeAnnotation == null) {
+            return getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+        } else {
+            String annoScope = registryTypeAnnotation.scope();
+            return getOrCreate(annoScope);
+        }
+
     }
 
-    @Produces
-    @RegistryType(type = MetricRegistry.Type.BASE)
-    @ApplicationScoped
-    public MetricRegistry getBaseRegistry() {
-        return getOrCreate(MetricRegistry.Type.BASE);
-    }
-
-    @Produces
-    @RegistryType(type = MetricRegistry.Type.VENDOR)
-    @ApplicationScoped
-    public MetricRegistry getVendorRegistry() {
-        return getOrCreate(MetricRegistry.Type.VENDOR);
-    }
-
-    public static MetricRegistry getOrCreate(MetricRegistry.Type type) {
-        return getOrCreate(type, null);
+    public static MetricRegistry getOrCreate(String scope) {
+        return getOrCreate(scope, null);
     }
 
     //FIXME: cheap way of passing in the ApplicationNameResolvr from vendor code to the MetricRegistry
-    public static MetricRegistry getOrCreate(MetricRegistry.Type type, ApplicationNameResolver appNameResolver) {
-        return registries.computeIfAbsent(type,
-                t -> new LegacyMetricRegistryAdapter(type, resolveMeterRegistry(type), appNameResolver));
+    public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver appNameResolver) {
+        return registries.computeIfAbsent(scope,
+                t -> new LegacyMetricRegistryAdapter(scope, resolveMeterRegistry(scope), appNameResolver));
     }
 
-    private static MeterRegistry resolveMeterRegistry(MetricRegistry.Type type) {
+    private static MeterRegistry resolveMeterRegistry(String scope) {
         final MeterRegistry meterRegistry;
 
-        if (type == MetricRegistry.Type.BASE) {
-            meterRegistry = new MPPrometheusMeterRegistry(PrometheusConfig.DEFAULT, MetricRegistry.Type.BASE);
-            meterRegistry.config().commonTags("scope", MetricRegistry.Type.BASE.getName());
-            meterRegistry.config().meterFilter(mpMeterBaseRegistryAccessFilter);
+        meterRegistry = new MPPrometheusMeterRegistry(PrometheusConfig.DEFAULT, scope);
 
-        } else if (type == MetricRegistry.Type.APPLICATION) {
-            meterRegistry = new MPPrometheusMeterRegistry(PrometheusConfig.DEFAULT, MetricRegistry.Type.APPLICATION);
-            meterRegistry.config().commonTags("scope", MetricRegistry.Type.APPLICATION.getName());
-            meterRegistry.config().meterFilter(mpMeterAppRegistryAccessFilter);
-        } else if (type == MetricRegistry.Type.VENDOR) {
-            meterRegistry = new MPPrometheusMeterRegistry(PrometheusConfig.DEFAULT, MetricRegistry.Type.VENDOR);
-            meterRegistry.config().commonTags("scope", MetricRegistry.Type.VENDOR.getName());
-            meterRegistry.config().meterFilter(mpMeterVendorRegistryAccessFilter);
-        } else {
-            meterRegistry = Metrics.globalRegistry;
-        }
+        /*
+         * Apply Scope common tags
+         */
+        //meterRegistry.config().commonTags("scope", scope);
 
-        meterRegistry.config().meterFilter(MeterFilter.deny());
+        /*
+         * Apply Global tags (mp.metrics.global) as common tags
+         */
+
         Tag[] globalTags = resolveMPConfigGlobalTagsByServer();
         if (globalTags.length != 0) {
             meterRegistry.config().commonTags(Arrays.asList(globalTags));
         }
-        Metrics.addRegistry(meterRegistry);
 
         /*
-         * To avoid having to repeat the global tags logic once in the BASE IF stmt above
-         * and immediately above (to catch the app and vendor),
-         * using another If block to bind the base metrics :(
-         *
-         * FIXME: refactor
+         * Create ThreadLocal<Boolean> for the newly created registry
+         * and add to map and apply it as a filter
          */
-        if (type == MetricRegistry.Type.BASE) {
-            MetricRegistries.MP_BASE_METER_REG_ACCESS.set(true);
+        ThreadLocal<Boolean> threadLocal = createThreadLocal();
+
+        threadLocalMap.put(scope, threadLocal);
+        meterRegistry.config().meterFilter(MeterFilter.accept(id -> {
+            return threadLocal.get().booleanValue() == true ? true : false;
+        }));
+
+        meterRegistry.config().meterFilter(MeterFilter.deny());
+
+        Metrics.addRegistry(meterRegistry);
+        /*
+         * Bind LegacyBaseMetrics to Base Metric/Meter Registry
+         */
+        if (scope.equals(MetricRegistry.BASE_SCOPE)) {
+            ThreadLocal<Boolean> base_Tl = getThreadLocal(MetricRegistry.BASE_SCOPE);
+            base_Tl.set(true);
             new LegacyBaseMetrics().bindTo(Metrics.globalRegistry);
-            MetricRegistries.MP_BASE_METER_REG_ACCESS.set(false);
+            base_Tl.set(false);
         }
+
         return meterRegistry;
+    }
+
+    private static ThreadLocal<Boolean> createThreadLocal() {
+        ThreadLocal<Boolean> tlb = ThreadLocal.withInitial(() -> false);
+        return tlb;
+    }
+
+    public static ThreadLocal<Boolean> getThreadLocal(String scope) {
+        ThreadLocal<Boolean> tl = threadLocalMap.get(scope);
+        if (tl == null) {
+            throw new IllegalArgumentException("ThreadLocal for this registry does not exist");
+        }
+        return tl;
     }
 
     @PreDestroy
     public void cleanUp() {
-        registries.remove(MetricRegistry.Type.APPLICATION);
+        registries.remove(MetricRegistry.APPLICATION_SCOPE);
     }
 
     /**
@@ -166,8 +178,8 @@ public class MetricRegistries {
      *
      * @param type Type of registry that should be dropped.
      */
-    public static void drop(MetricRegistry.Type type) {
-        registries.remove(type);
+    public static void drop(String scope) {
+        registries.remove(scope);
     }
 
     /**
@@ -175,9 +187,7 @@ public class MetricRegistries {
      * is requested later, a new empty registry will be created for that purpose.
      */
     public static void dropAll() {
-        registries.remove(MetricRegistry.Type.APPLICATION);
-        registries.remove(MetricRegistry.Type.BASE);
-        registries.remove(MetricRegistry.Type.VENDOR);
+        registries.clear();
     }
 
     private synchronized static Tag[] resolveMPConfigGlobalTagsByServer() {

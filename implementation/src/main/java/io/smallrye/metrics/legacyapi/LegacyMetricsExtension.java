@@ -170,7 +170,7 @@ public class LegacyMetricsExtension implements Extension {
     void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
 
         // Produce and register custom metrics
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
         MetricResolver resolver = new MetricResolver();
@@ -216,7 +216,7 @@ public class LegacyMetricsExtension implements Extension {
     }
 
     void unregisterMetrics(@Observes BeforeShutdown shutdown) {
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
         metricIDs.forEach(metricId -> registry.remove(metricId));
     }
 

@@ -31,7 +31,7 @@ import io.smallrye.metrics.legacyapi.interceptors.MetricName;
 @ApplicationScoped
 public class MetricProducer {
 
-    MetricRegistry applicationRegistry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+    MetricRegistry applicationRegistry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
     @Inject
     MetricName metricName;

@@ -30,7 +30,7 @@ import io.smallrye.metrics.MetricRegistries;
 
 public class MetricTypeMismatchTest {
 
-    private MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+    private MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
     @After
     public void cleanupApplicationMetrics() {
