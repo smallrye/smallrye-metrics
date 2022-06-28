@@ -9,6 +9,7 @@ import org.eclipse.microprofile.metrics.Snapshot;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Timer;
 import io.smallrye.metrics.MetricRegistries;
 
@@ -33,7 +34,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
                     .tags(descriptor.tags())
                     .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
                     .percentilePrecision(5) //from 0 - 5 , more precision == more memory usage
-                    .register(registry);
+                    .register(Metrics.globalRegistry);
         }
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
         return this;
