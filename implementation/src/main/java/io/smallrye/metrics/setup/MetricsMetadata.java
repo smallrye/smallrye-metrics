@@ -3,9 +3,7 @@ package io.smallrye.metrics.setup;
 import static io.smallrye.metrics.legacyapi.TagsUtils.parseTagsAsArray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -15,6 +13,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import io.micrometer.core.instrument.Tags;
 import io.smallrye.metrics.OriginAndMetadata;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
@@ -38,9 +37,22 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
+
+                //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
+                //so that interceptors can find the annotated metric
+                //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
+                Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
+
+                List<Tag> mpListTags = new ArrayList<Tag>();
+                mmTags.forEach(tag -> {
+                    Tag mpTag = new Tag(tag.getKey(), tag.getValue());
+                    mpListTags.add(mpTag);
+                });
+
+                Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
+
                 //add this CDI MetricID into MetricRegistry's MetricID list....
-                MetricID metricID = new MetricID(metadata.getName(),
-                        appendScopeTags(tags, (LegacyMetricRegistryAdapter) registry));
+                MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
                 metricIDs.add(metricID);
 
                 //Some list in MetricRegistry that maps the CDI element, metricID and metric type
@@ -57,8 +69,7 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
-                MetricID metricID = new MetricID(metadata.getName(),
-                        appendScopeTags(tags, (LegacyMetricRegistryAdapter) registry));
+                MetricID metricID = new MetricID(metadata.getName());
                 metricIDs.add(metricID);
                 ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addMetric(element, metricID,
                         MetricType.TIMER);
@@ -75,9 +86,4 @@ public class MetricsMetadata {
                 .withDisplayName(displayName).build();
         return new OriginAndMetadata(origin, metadata);
     }
-
-    private static Tag[] appendScopeTags(Tag[] tags, LegacyMetricRegistryAdapter adapter) {
-        return Stream.concat(Arrays.stream(tags), Arrays.stream(adapter.scopeTagsLegacy())).toArray(Tag[]::new);
-    }
-
 }

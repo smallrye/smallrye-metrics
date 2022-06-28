@@ -79,10 +79,11 @@ public class JaxRsMetricsServletFilter implements Filter {
         }
     }
 
+    //TODO: Verify it works properly.
     private void updateAfterSuccess(long startTimestamp, MetricID metricID) {
         long duration = System.nanoTime() - startTimestamp;
         MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.BASE);
-        registry.getSimpleTimer(metricID).update(Duration.ofNanos(duration));
+        registry.getTimer(metricID).update(Duration.ofNanos(duration));
     }
 
     private void updateAfterFailure(MetricID metricID) {
@@ -94,9 +95,10 @@ public class JaxRsMetricsServletFilter implements Filter {
         return new MetricID("REST.request.unmappedException.total", metricID.getTagsAsArray());
     }
 
+    //TODO: Verify it works properly.
     private void createMetrics(MetricID metricID) {
         MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.BASE);
-        if (registry.getSimpleTimer(metricID) == null) {
+        if (registry.getTimer(metricID) == null) {
             Metadata successMetadata = Metadata.builder()
                     .withName(metricID.getName())
                     .withDescription(
@@ -104,7 +106,7 @@ public class JaxRsMetricsServletFilter implements Filter {
                                     "resource method since the start of the server.")
                     .withUnit(MetricUnits.NANOSECONDS)
                     .build();
-            registry.simpleTimer(successMetadata, metricID.getTagsAsArray());
+            registry.timer(successMetadata, metricID.getTagsAsArray());
         }
         MetricID metricIDForFailure = transformToMetricIDForFailedRequest(metricID);
         if (registry.getCounter(metricIDForFailure) == null) {

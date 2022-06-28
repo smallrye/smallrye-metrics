@@ -15,8 +15,13 @@ class HistogramAdapter implements Histogram, MeterHolder {
     HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
         if (summary == null || metadata.cleanDirtyMetadata()) {
-            summary = DistributionSummary.builder(metricInfo.name()).description(metadata.getDescription())
-                    .baseUnit(metadata.getUnit()).tags(metricInfo.tags()).register(registry);
+            summary = DistributionSummary.builder(metricInfo.name())
+                    .description(metadata.getDescription())
+                    .baseUnit(metadata.getUnit())
+                    .tags(metricInfo.tags())
+                    .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
+                    .percentilePrecision(5) //from 0 - 5 , more precision == more memory usage
+                    .register(registry);
         }
         MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
         return this;

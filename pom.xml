@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>smallrye-metrics-parent</artifactId>
-  <version>5.0.1-SNAPSHOT</version>
+  <version>5.0.0-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye: MicroProfile Metrics Parent</name>
@@ -34,7 +34,7 @@
 
   <properties>
     <version.microprofile-config>2.0</version.microprofile-config>
-    <version.microprofile-metrics>3.0</version.microprofile-metrics>
+    <version.microprofile-metrics>5.0.0-SNAPSHOT</version.microprofile-metrics>
 
     <version.micrometer>1.8.5</version.micrometer>
 
