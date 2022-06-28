@@ -31,7 +31,7 @@ import io.smallrye.metrics.legacyapi.interceptors.MetricName;
 @ApplicationScoped
 public class MetricProducer {
 
-    MetricRegistry applicationRegistry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+    MetricRegistry registry;
 
     @Inject
     MetricName metricName;
@@ -44,14 +44,20 @@ public class MetricProducer {
         // A forwarding Gauge must be returned as the Gauge creation happens when the declaring bean gets instantiated and the corresponding Gauge can be injected before which leads to producing a null value
         return () -> {
             // TODO: better error report when the gauge doesn't exist
-            SortedMap<MetricID, Gauge> gauges = applicationRegistry.getGauges();
+
+            registry = MetricRegistries.getOrCreate(getScope(ip));
+            SortedMap<MetricID, Gauge> gauges = registry.getGauges();
+
+            System.out.println("MetricProducer " + getScope(ip));
+
             String name = metricName.of(ip);
             Tag[] tags = getTags(ip);
 
             //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
             //so that interceptors can find the annotated metric
             //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
-            Tags mmTags = ((LegacyMetricRegistryAdapter) applicationRegistry).withAppTags(tags);
+
+            Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
 
             List<Tag> mpListTags = new ArrayList<Tag>();
             mmTags.forEach(tag -> {
@@ -61,10 +67,8 @@ public class MetricProducer {
 
             Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
 
-            //if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
             MetricID gaugeId = new MetricID(name, mpTagArray);
 
-            //}
             return ((Gauge<T>) gauges.get(gaugeId)).getValue();
         };
     }
@@ -72,10 +76,11 @@ public class MetricProducer {
     @Produces
     Counter getCounter(InjectionPoint ip) {
 
+        registry = MetricRegistries.getOrCreate(getScope(ip));
         Metadata metadata = getMetadata(ip, MetricType.COUNTER);
         Tag[] tags = getTags(ip);
 
-        Counter counter = applicationRegistry.counter(metadata, tags);
+        Counter counter = registry.counter(metadata, tags);
         //        if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
         //            MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags, (LegacyMetricRegistryAdapter) applicationRegistry));
         //            metricExtension.addMetricId(metricID);
@@ -86,10 +91,13 @@ public class MetricProducer {
 
     @Produces
     Timer getTimer(InjectionPoint ip) {
+
+        registry = MetricRegistries.getOrCreate(getScope(ip));
+
         Metadata metadata = getMetadata(ip, MetricType.TIMER);
         Tag[] tags = getTags(ip);
 
-        Timer timer = applicationRegistry.timer(metadata, tags);
+        Timer timer = registry.timer(metadata, tags);
         //        if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
         //            MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags, (LegacyMetricRegistryAdapter) applicationRegistry));
         //            metricExtension.addMetricId(metricID);
@@ -111,6 +119,15 @@ public class MetricProducer {
         }
 
         return metadata;
+    }
+
+    private String getScope(InjectionPoint ip) {
+        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
+        if (metric != null) {
+            return metric.scope();
+        } else {
+            return MetricRegistry.APPLICATION_SCOPE;
+        }
     }
 
     private Tag[] getTags(InjectionPoint ip) {
