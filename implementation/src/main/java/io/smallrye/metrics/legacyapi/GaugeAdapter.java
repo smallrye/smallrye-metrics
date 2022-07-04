@@ -9,6 +9,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.smallrye.metrics.MetricRegistries;
 
 interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
@@ -33,7 +34,7 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
                     .tags(metricInfo.tags())
                     .baseUnit(metadata.getUnit())
                     .strongReference(true)
-                    .register(registry);
+                    .register(Metrics.globalRegistry);
             MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
             return this;
         }
@@ -72,7 +73,7 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
                     .tags(metricInfo.tags())
                     .baseUnit(metadata.getUnit())
                     .strongReference(true)
-                    .register(registry);
+                    .register(Metrics.globalRegistry);
             MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
             return this;
         }
@@ -109,7 +110,7 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
                         .description(metadata.getDescription())
                         .tags(metricInfo.tags())
                         .baseUnit(metadata.getUnit())
-                        .strongReference(true).register(registry);
+                        .strongReference(true).register(Metrics.globalRegistry);
                 MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
             }
 

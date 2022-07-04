@@ -69,7 +69,21 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
-                MetricID metricID = new MetricID(metadata.getName());
+
+                //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
+                //so that interceptors can find the annotated metric
+                //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
+                Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
+
+                List<Tag> mpListTags = new ArrayList<Tag>();
+                mmTags.forEach(tag -> {
+                    Tag mpTag = new Tag(tag.getKey(), tag.getValue());
+                    mpListTags.add(mpTag);
+                });
+
+                Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
+
+                MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
                 metricIDs.add(metricID);
                 ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addMetric(element, metricID,
                         MetricType.TIMER);

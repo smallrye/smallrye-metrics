@@ -1,6 +1,8 @@
 package io.smallrye.metrics;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.stream.Stream;
 
@@ -20,6 +22,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
+import io.micrometer.core.instrument.Tags;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricsExtension;
 import io.smallrye.metrics.legacyapi.TagsUtils;
@@ -28,8 +31,6 @@ import io.smallrye.metrics.legacyapi.interceptors.MetricName;
 @ApplicationScoped
 public class MetricProducer {
 
-    // @Inject
-    // @RegistryType(type = MetricRegistry.Type.APPLICATION)
     MetricRegistry applicationRegistry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
 
     @Inject
@@ -47,8 +48,21 @@ public class MetricProducer {
             String name = metricName.of(ip);
             Tag[] tags = getTags(ip);
 
+            //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
+            //so that interceptors can find the annotated metric
+            //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
+            Tags mmTags = ((LegacyMetricRegistryAdapter) applicationRegistry).withAppTags(tags);
+
+            List<Tag> mpListTags = new ArrayList<Tag>();
+            mmTags.forEach(tag -> {
+                Tag mpTag = new Tag(tag.getKey(), tag.getValue());
+                mpListTags.add(mpTag);
+            });
+
+            Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
+
             //if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
-            MetricID gaugeId = new MetricID(name, appendScopeTags(tags, (LegacyMetricRegistryAdapter) applicationRegistry));
+            MetricID gaugeId = new MetricID(name, mpTagArray);
 
             //}
             return ((Gauge<T>) gauges.get(gaugeId)).getValue();
