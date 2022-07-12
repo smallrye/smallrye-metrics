@@ -157,6 +157,25 @@
           </gpgArguments>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.eclipse.transformer</groupId>
+        <artifactId>transformer-maven-plugin</artifactId>
+        <version>0.4.0</version>
+        <configuration>
+          <rules>
+            <jakartaDefaults>true</jakartaDefaults>
+          </rules>
+          <classifier>jakarta</classifier>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-transform</id>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
