@@ -575,22 +575,9 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         MeterHolder holder = constructedMeters.remove(match);
 
         if (holder != null) {
-
-            //XXX: Since we've been registering to the Global Reg, we need to 
-            //remove from global reg... This involves using the Thread Locals again.
-            //            ThreadLocal<Boolean> tlb = null;
-            //            if (scope.equals(APPLICATION_SCOPE)) {
-            //                tlb = MetricRegistries.MP_APP_METER_REG_ACCESS;
-            //            } else if (scope.equals(BASE_SCOPE)) {
-            //                tlb = MetricRegistries.MP_BASE_METER_REG_ACCESS;
-            //            } else {
-            //                tlb = MetricRegistries.MP_VENDOR_METER_REG_ACCESS;
-            //            }
-
             ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
 
             threadLocal.set(true);
-            //io.micrometer.core.instrument.Meter meter = registry.remove(holder.getMeter());
             io.micrometer.core.instrument.Meter meter = Metrics.globalRegistry.remove(holder.getMeter());
             threadLocal.set(false);
 

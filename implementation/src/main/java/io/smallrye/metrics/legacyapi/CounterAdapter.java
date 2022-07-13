@@ -18,8 +18,12 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
         threadLocal.set(true);
         //if we're creating a new counter... or we're "updating" an existing one with new metadata (but this doesnt actually register with micrometer)
         if (counter == null || metadata.cleanDirtyMetadata()) {
-            counter = Counter.builder(descriptor.name()).description(metadata.getDescription()).baseUnit(metadata.getUnit())
-                    .tags(descriptor.tags()).tags("scope", scope).register(Metrics.globalRegistry);
+            counter = Counter.builder(descriptor.name())
+                    .description(metadata.getDescription())
+                    .baseUnit(metadata.getUnit())
+                    .tags(descriptor.tags())
+                    .tags("scope", scope)
+                    .register(Metrics.globalRegistry);
         }
 
         threadLocal.set(false);

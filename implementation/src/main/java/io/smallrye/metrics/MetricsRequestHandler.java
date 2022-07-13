@@ -91,8 +91,7 @@ public class MetricsRequestHandler {
             // All metrics
             output = exporter.exportAllScopes();
 
-        } else if (scopePath.contains("/")) {
-            // One metric name in a scope
+        } else if (scopePath.contains("/")) { // One metric name in a scope
 
             String metricName = scopePath.substring(scopePath.indexOf('/') + 1);
 
@@ -104,36 +103,33 @@ public class MetricsRequestHandler {
 
             MetricRegistry registry = MetricRegistries.getOrCreate(scope);
 
-            // output = exporter.exportMetricsByName(scope, metricName);
-
             //XXX: Better error handling? exceptions?
             if (registry instanceof LegacyMetricRegistryAdapter &&
                     ((LegacyMetricRegistryAdapter) registry).getPrometheusMeterRegistry().find(metricName).meters()
                             .size() != 0) {
-                output = exporter.exportMetricsByName(scopePath, metricName);
+                output = exporter.exportMetricsByName(scope, metricName);
             } else {
                 responder.respondWith(404, "Metric " + scopePath + " not found", Collections.emptyMap());
                 return;
             }
 
-        } else {
-            // A single scope
-
-            //MetricRegistry.Type scope = getScopeFromPath(scopePath);
-            if (scopePath == null) {
-                responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
+        } else { // A single scope
+            //for readability
+            String scope = scopePath;
+            if (scope == null) {
+                responder.respondWith(404, "Scope " + scope + " not found", Collections.emptyMap());
                 return;
             }
 
-            MetricRegistry reg = MetricRegistries.getOrCreate(scopePath);
+            MetricRegistry reg = MetricRegistries.getOrCreate(scope);
 
             //XXX:  Re-evaluate: other types of "MeterRegistries".. prolly not, this is an OM exporter
             //Cast to LegacyMetricRegistryAdapter and check that registry contains meters
             if (reg instanceof LegacyMetricRegistryAdapter &&
                     ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
-                output = exporter.exportOneScope(scopePath);
+                output = exporter.exportOneScope(scope);
             } else {
-                responder.respondWith(204, "No data in scope " + scopePath, Collections.emptyMap());
+                responder.respondWith(204, "No data in scope " + scope, Collections.emptyMap());
                 return;
             }
 
@@ -146,16 +142,6 @@ public class MetricsRequestHandler {
 
         responder.respondWith(200, output, headers);
     }
-
-    //    private MetricRegistry.Type getScopeFromPath(String scopePath) throws IOException {
-    //        MetricRegistry.Type scope;
-    //        try {
-    //            scope = MetricRegistry.Type.valueOf(scopePath.toUpperCase());
-    //        } catch (IllegalArgumentException iae) {
-    //            return null;
-    //        }
-    //        return scope;
-    //    }
 
     /**
      * Determine which exporter we want.

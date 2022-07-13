@@ -48,8 +48,6 @@ public class MetricProducer {
             registry = MetricRegistries.getOrCreate(getScope(ip));
             SortedMap<MetricID, Gauge> gauges = registry.getGauges();
 
-            System.out.println("MetricProducer " + getScope(ip));
-
             String name = metricName.of(ip);
             Tag[] tags = getTags(ip);
 

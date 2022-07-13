@@ -26,6 +26,23 @@ import io.smallrye.metrics.setup.ApplicationNameResolver;
 import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
 /**
+ * MetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
+ * of a provided scope.
+ * 
+ * For each "scope" there exists an individual MicroProfile Metric MetricRegistry which is
+ * associated to an "underlying" Micrometer Prometheus MeterRegistry. Each of these Prometheus
+ * Meter Registries are registered under the default Micrometer global composite meter registry.
+ * With this implementation any creation/retrieval is negotiated with the global composite meter registry.
+ * 
+ * To ensure that the different "scoped" MetricRegistry->MeterRegistry contain their own appropriate
+ * metrics/meters a Meter Filter is provided to each Prometheus MeterRegistry. This filter makes use of a
+ * ThreadLocal<Boolean> to ensure that appropriate metrics/meters are registered/retrieved from the appropriate
+ * registry.
+ * 
+ * The ThreadLocal<Boolean> will be set to false to gate registration/retrieval. And it will be set to true
+ * before interacting with the global registry. A Map<String, ThreadLocal<Boolean>> holds a mapping between the
+ * scope and ThreadLocal. This map is interrogated when the MP MetricRegistry shim interacts with the global registry.
+ * 
  * @author hrupp
  */
 @ApplicationScoped
@@ -53,35 +70,8 @@ public class MetricRegistries {
      */
     protected static Tag[] SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = null;
 
-    //    public static final ThreadLocal<Boolean> MP_APP_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
-    //    public static final ThreadLocal<Boolean> MP_BASE_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
-    //    public static final ThreadLocal<Boolean> MP_VENDOR_METER_REG_ACCESS = ThreadLocal.withInitial(() -> false);
-
     private static final Map<String, MetricRegistry> registries = new ConcurrentHashMap<>();
     private static final Map<String, ThreadLocal<Boolean>> threadLocalMap = new ConcurrentHashMap<>();
-
-    /**
-     * Filter that only allows registration/retrieval of a Meter Registry by the MP shim
-     * ThreadLocal will be set to TRUE right before interfacing with the Micrometer meter registry
-     *
-     * Since all calls on the MP side w.r.t to Micrometer will be against the global composite registry
-     * (for propogation of meters to any future configured meter registries) we need to avoid adding
-     * to each of the other existing base, vendor or app registries. Therefore there are individual threadlocals
-     * and meter filters.
-     *
-     * See the Counter/Histrogram/Timer Adapters and the base metric binder used below in resolveMeterRegistry()
-     */
-    //    static final MeterFilter mpMeterAppRegistryAccessFilter = MeterFilter.accept(id -> {
-    //        return (MetricRegistries.MP_APP_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
-    //    });
-    //
-    //    static final MeterFilter mpMeterBaseRegistryAccessFilter = MeterFilter.accept(id -> {
-    //        return (MetricRegistries.MP_BASE_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
-    //    });
-    //
-    //    static final MeterFilter mpMeterVendorRegistryAccessFilter = MeterFilter.accept(id -> {
-    //        return (MetricRegistries.MP_VENDOR_METER_REG_ACCESS.get().booleanValue() == true) ? true : false;
-    //    });
 
     @Produces
     @Default
@@ -89,13 +79,13 @@ public class MetricRegistries {
 
         RegistryType registryTypeAnnotation = ip.getAnnotated().getAnnotation(RegistryType.class);
 
+        //default to app scope
         if (registryTypeAnnotation == null) {
             return getOrCreate(MetricRegistry.APPLICATION_SCOPE);
         } else {
             String annoScope = registryTypeAnnotation.scope();
             return getOrCreate(annoScope);
         }
-
     }
 
     public static MetricRegistry getOrCreate(String scope) {
@@ -114,11 +104,6 @@ public class MetricRegistries {
         meterRegistry = new MPPrometheusMeterRegistry(PrometheusConfig.DEFAULT, scope);
 
         /*
-         * Apply Scope common tags
-         */
-        //meterRegistry.config().commonTags("scope", scope);
-
-        /*
          * Apply Global tags (mp.metrics.global) as common tags
          */
 
@@ -131,7 +116,7 @@ public class MetricRegistries {
          * Create ThreadLocal<Boolean> for the newly created registry
          * and add to map and apply it as a filter
          */
-        ThreadLocal<Boolean> threadLocal = createThreadLocal();
+        ThreadLocal<Boolean> threadLocal = ThreadLocal.withInitial(() -> false);
 
         threadLocalMap.put(scope, threadLocal);
         meterRegistry.config().meterFilter(MeterFilter.accept(id -> {
