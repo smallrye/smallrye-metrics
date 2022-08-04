@@ -8,14 +8,14 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 class HistogramAdapter implements Histogram, MeterHolder {
     DistributionSummary summary;
 
     HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope) {
 
-        ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+        ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
 
         threadLocal.set(true);
         if (summary == null || metadata.cleanDirtyMetadata()) {

@@ -40,7 +40,7 @@ import org.junit.Test;
 
 public class MetricRegistryThreadSafetyTest {
 
-    private final MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+    private final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
     @After
     public void cleanup() {

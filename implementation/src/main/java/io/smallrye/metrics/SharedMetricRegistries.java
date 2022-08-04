@@ -5,15 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PreDestroy;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
-
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -26,7 +19,7 @@ import io.smallrye.metrics.setup.ApplicationNameResolver;
 import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
 /**
- * MetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
+ * SharedMetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
  * of a provided scope.
  * 
  * For each "scope" there exists an individual MicroProfile Metric MetricRegistry which is
@@ -43,10 +36,8 @@ import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
  * before interacting with the global registry. A Map<String, ThreadLocal<Boolean>> holds a mapping between the
  * scope and ThreadLocal. This map is interrogated when the MP MetricRegistry shim interacts with the global registry.
  * 
- * @author hrupp
  */
-@ApplicationScoped
-public class MetricRegistries {
+public class SharedMetricRegistries {
 
     protected static final String GLOBAL_TAG_MALFORMED_EXCEPTION = "Malformed list of Global Tags. Tag names "
             + "must match the following regex [a-zA-Z_][a-zA-Z0-9_]*."
@@ -72,21 +63,6 @@ public class MetricRegistries {
 
     private static final Map<String, MetricRegistry> registries = new ConcurrentHashMap<>();
     private static final Map<String, ThreadLocal<Boolean>> threadLocalMap = new ConcurrentHashMap<>();
-
-    @Produces
-    @Default
-    public MetricRegistry getApplicationRegistry(InjectionPoint ip) {
-
-        RegistryType registryTypeAnnotation = ip.getAnnotated().getAnnotation(RegistryType.class);
-
-        //default to app scope
-        if (registryTypeAnnotation == null) {
-            return getOrCreate(MetricRegistry.APPLICATION_SCOPE);
-        } else {
-            String annoScope = registryTypeAnnotation.scope();
-            return getOrCreate(annoScope);
-        }
-    }
 
     public static MetricRegistry getOrCreate(String scope) {
         return getOrCreate(scope, null);
@@ -139,22 +115,12 @@ public class MetricRegistries {
         return meterRegistry;
     }
 
-    private static ThreadLocal<Boolean> createThreadLocal() {
-        ThreadLocal<Boolean> tlb = ThreadLocal.withInitial(() -> false);
-        return tlb;
-    }
-
     public static ThreadLocal<Boolean> getThreadLocal(String scope) {
         ThreadLocal<Boolean> tl = threadLocalMap.get(scope);
         if (tl == null) {
             throw new IllegalArgumentException("ThreadLocal for this registry does not exist");
         }
         return tl;
-    }
-
-    @PreDestroy
-    public void cleanUp() {
-        registries.remove(MetricRegistry.APPLICATION_SCOPE);
     }
 
     /**

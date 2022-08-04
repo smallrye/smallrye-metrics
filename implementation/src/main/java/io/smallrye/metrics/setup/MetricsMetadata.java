@@ -14,8 +14,8 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.micrometer.core.instrument.Tags;
-import io.smallrye.metrics.MetricRegistries;
 import io.smallrye.metrics.OriginAndMetadata;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
 import io.smallrye.metrics.elementdesc.MemberInfo;
@@ -35,7 +35,7 @@ public class MetricsMetadata {
         if (counted.isPresent()) {
             AnnotationInfo t = counted.metricAnnotation();
 
-            registry = MetricRegistries.getOrCreate(t.scope());
+            registry = SharedMetricRegistries.getOrCreate(t.scope());
 
             Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(), t.displayName(),
                     MetricType.COUNTER);
@@ -71,7 +71,7 @@ public class MetricsMetadata {
         if (timed.isPresent()) {
             AnnotationInfo t = timed.metricAnnotation();
 
-            registry = MetricRegistries.getOrCreate(t.scope());
+            registry = SharedMetricRegistries.getOrCreate(t.scope());
 
             Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(), t.displayName(),
                     MetricType.TIMER);

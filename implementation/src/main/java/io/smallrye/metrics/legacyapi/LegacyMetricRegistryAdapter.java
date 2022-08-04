@@ -31,7 +31,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tags;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
 
 public class LegacyMetricRegistryAdapter implements MetricRegistry {
@@ -92,6 +92,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public void unRegisterApplicationMetrics(String appName) {
+
         /*
          * This would be the case if the ApplicationListener30's ApplicatinInfo does not contain
          * the application's deployment name (corrupt application?) or if this MetricRegistry is
@@ -575,7 +576,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         MeterHolder holder = constructedMeters.remove(match);
 
         if (holder != null) {
-            ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
 
             threadLocal.set(true);
             io.micrometer.core.instrument.Meter meter = Metrics.globalRegistry.remove(holder.getMeter());

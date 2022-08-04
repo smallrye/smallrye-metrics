@@ -30,7 +30,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
@@ -74,7 +74,7 @@ public class GaugeRegistrationInterceptor {
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
                             g.displayName(), MetricType.GAUGE);
 
-                    registry = MetricRegistries.getOrCreate(g.scope());
+                    registry = SharedMetricRegistries.getOrCreate(g.scope());
 
                     registry.gauge(metadata,
                             context.getTarget(),

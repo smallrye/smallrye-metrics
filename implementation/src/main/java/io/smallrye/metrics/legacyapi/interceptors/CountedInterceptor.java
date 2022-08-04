@@ -17,7 +17,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
@@ -50,9 +50,9 @@ public class CountedInterceptor {
 
         Counted countedAnno = element.getAnnotation(Counted.class);
         if (countedAnno != null)
-            registry = MetricRegistries.getOrCreate(countedAnno.scope());
+            registry = SharedMetricRegistries.getOrCreate(countedAnno.scope());
         else
-            registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+            registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
         Set<MetricID> ids = ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings()
                 .getCounters(new CDIMemberInfoAdapter<>().convert(element));

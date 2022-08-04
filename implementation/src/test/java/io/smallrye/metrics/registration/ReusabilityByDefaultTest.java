@@ -32,14 +32,14 @@ import org.junit.Test;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 /**
  * Verify that programmatically created metrics can be reused.
  */
 public class ReusabilityByDefaultTest {
 
-    private final MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+    private final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
     @After
     public void removeMetrics() {

@@ -19,7 +19,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
@@ -52,9 +52,9 @@ public class TimedInterceptor {
 
         Timed timedAnno = element.getAnnotation(Timed.class);
         if (timedAnno != null)
-            registry = MetricRegistries.getOrCreate(timedAnno.scope());
+            registry = SharedMetricRegistries.getOrCreate(timedAnno.scope());
         else
-            registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+            registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
         Set<MetricID> ids = ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings()
                 .getTimers(new CDIMemberInfoAdapter<>().convert(element));

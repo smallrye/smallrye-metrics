@@ -10,7 +10,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
 
@@ -30,7 +30,7 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
         public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
                 String scope) {
 
-            ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
             threadLocal.set(true);
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, f)
                     .description(metadata.getDescription())
@@ -72,7 +72,7 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
 
         public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
                 String scope) {
-            ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
 
             threadLocal.set(true);
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, obj -> f.apply(obj).doubleValue())
@@ -115,7 +115,7 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
                 String scope) {
             if (gauge == null || metadata.cleanDirtyMetadata()) {
 
-                ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+                ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
                 threadLocal.set(true);
                 gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), (Supplier<Number>) supplier)
                         .description(metadata.getDescription())

@@ -38,7 +38,7 @@ import org.junit.Test;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 /**
  * Verifies functionality of the legacy MetricRegistry adapter - puts a Prometheus MeterRegistry behind it,
@@ -68,12 +68,12 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
 
     @After
     public void cleanupApplicationMetrics() {
-        MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE).removeMatching(MetricFilter.ALL);
+        SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE).removeMatching(MetricFilter.ALL);
     }
 
     @Test
     public void exportCounters() {
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
         Metadata metadata = Metadata
                 .builder()

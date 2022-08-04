@@ -11,7 +11,7 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Timer;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolder {
     final MeterRegistry registry;
@@ -27,7 +27,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
 
     public TimerAdapter register(MpMetadata metadata, MetricDescriptor descriptor, String scope) {
 
-        ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+        ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
         threadLocal.set(true);
         if (timer == null || metadata.cleanDirtyMetadata()) {
             timer = Timer

@@ -101,7 +101,7 @@ public class MetricsRequestHandler {
                 return;
             }
 
-            MetricRegistry registry = MetricRegistries.getOrCreate(scope);
+            MetricRegistry registry = SharedMetricRegistries.getOrCreate(scope);
 
             //XXX: Better error handling? exceptions?
             if (registry instanceof LegacyMetricRegistryAdapter &&
@@ -121,7 +121,7 @@ public class MetricsRequestHandler {
                 return;
             }
 
-            MetricRegistry reg = MetricRegistries.getOrCreate(scope);
+            MetricRegistry reg = SharedMetricRegistries.getOrCreate(scope);
 
             //XXX:  Re-evaluate: other types of "MeterRegistries".. prolly not, this is an OM exporter
             //Cast to LegacyMetricRegistryAdapter and check that registry contains meters

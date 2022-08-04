@@ -45,7 +45,7 @@ public class MetricProducer {
         return () -> {
             // TODO: better error report when the gauge doesn't exist
 
-            registry = MetricRegistries.getOrCreate(getScope(ip));
+            registry = SharedMetricRegistries.getOrCreate(getScope(ip));
             SortedMap<MetricID, Gauge> gauges = registry.getGauges();
 
             String name = metricName.of(ip);
@@ -74,7 +74,7 @@ public class MetricProducer {
     @Produces
     Counter getCounter(InjectionPoint ip) {
 
-        registry = MetricRegistries.getOrCreate(getScope(ip));
+        registry = SharedMetricRegistries.getOrCreate(getScope(ip));
         Metadata metadata = getMetadata(ip, MetricType.COUNTER);
         Tag[] tags = getTags(ip);
 
@@ -90,7 +90,7 @@ public class MetricProducer {
     @Produces
     Timer getTimer(InjectionPoint ip) {
 
-        registry = MetricRegistries.getOrCreate(getScope(ip));
+        registry = SharedMetricRegistries.getOrCreate(getScope(ip));
 
         Metadata metadata = getMetadata(ip, MetricType.TIMER);
         Tag[] tags = getTags(ip);

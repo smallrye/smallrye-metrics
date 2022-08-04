@@ -34,8 +34,9 @@ import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.MetricProducer;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.MetricRegistryProducer;
 import io.smallrye.metrics.MetricsRequestHandler;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.SmallRyeMetricsLogging;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
@@ -97,7 +98,7 @@ public class LegacyMetricsExtension implements Extension {
         for (Class clazz : new Class[] {
                 MetricProducer.class,
                 MetricNameFactory.class,
-                MetricRegistries.class,
+                MetricRegistryProducer.class,
                 MetricsRequestHandler.class,
                 CountedInterceptor.class,
                 GaugeRegistrationInterceptor.class,
@@ -170,7 +171,7 @@ public class LegacyMetricsExtension implements Extension {
     void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
 
         // Produce and register custom metrics
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         CDIMemberInfoAdapter memberInfoAdapter = new CDIMemberInfoAdapter();
         MetricResolver resolver = new MetricResolver();
@@ -216,7 +217,7 @@ public class LegacyMetricsExtension implements Extension {
     }
 
     void unregisterMetrics(@Observes BeforeShutdown shutdown) {
-        MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
         metricIDs.forEach(metricId -> registry.remove(metricId));
     }
 

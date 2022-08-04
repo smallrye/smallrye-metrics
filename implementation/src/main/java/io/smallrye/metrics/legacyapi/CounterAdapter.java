@@ -6,7 +6,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterHolder {
 
@@ -14,7 +14,7 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
 
     public CounterAdapter register(MpMetadata metadata, MetricDescriptor descriptor, MeterRegistry registry, String scope) {
 
-        ThreadLocal<Boolean> threadLocal = MetricRegistries.getThreadLocal(scope);
+        ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
         threadLocal.set(true);
         //if we're creating a new counter... or we're "updating" an existing one with new metadata (but this doesnt actually register with micrometer)
         if (counter == null || metadata.cleanDirtyMetadata()) {
