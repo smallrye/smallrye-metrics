@@ -13,6 +13,7 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -101,6 +102,18 @@ public class MetricProducer {
         //            metricExtension.addMetricId(metricID);
         //        }
         return timer;
+    }
+
+    @Produces
+    Histogram getHistogram(InjectionPoint ip) {
+
+        registry = SharedMetricRegistries.getOrCreate(getScope(ip));
+        Metadata metadata = getMetadata(ip, MetricType.HISTOGRAM);
+        Tag[] tags = getTags(ip);
+
+        Histogram histogram = registry.histogram(metadata, tags);
+
+        return histogram;
     }
 
     private Metadata getMetadata(InjectionPoint ip, MetricType type) {
