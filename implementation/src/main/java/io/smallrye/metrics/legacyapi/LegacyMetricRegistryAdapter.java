@@ -539,22 +539,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return metadataMap.get(name);
     }
 
-    TimerAdapter internalSimpleTimer(MpMetadata metadata, MetricDescriptor id) {
-        // SimpleTimer --> Micrometer Timer
-        TimerAdapter result = checkCast(TimerAdapter.class, metadata,
-                constructedMeters.computeIfAbsent(id, k -> new TimerAdapter(registry)));
-        return result.register(metadata, id, scope);
-    }
-
     @Override
     public boolean remove(String name) {
         for (Map.Entry<MetricDescriptor, MeterHolder> e : constructedMeters.entrySet()) {
             if (e.getKey().name().equals(name)) {
-                constructedMeters.remove(e.getKey());
-                registry.remove(e.getValue().getMeter());
+                return internalRemove(e.getKey());
             }
         }
-        return metadataMap.remove(name) != null;
+        return false;
+
     }
 
     @Override
