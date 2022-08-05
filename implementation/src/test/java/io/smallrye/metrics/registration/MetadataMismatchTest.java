@@ -32,11 +32,11 @@ import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 public class MetadataMismatchTest {
 
-    private MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+    private MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
     @After
     public void cleanupApplicationMetrics() {

@@ -32,14 +32,14 @@ import org.junit.Test;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 
 /**
  * Verify that programmatically created metrics can be reused.
  */
 public class ReusabilityByDefaultTest {
 
-    private final MetricRegistry registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
+    private final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
     @After
     public void removeMetrics() {
@@ -73,14 +73,6 @@ public class ReusabilityByDefaultTest {
         assertEquals(2, registry.histogram("myhistogram").getCount());
     }
 
-    //    @Test
-    //    public void testSimpleTimer() {
-    //        Metadata metadata = Metadata.builder().withName("mysimpletimer").build();
-    //        registry.simpleTimer(metadata).update(Duration.ofNanos(5));
-    //        registry.simpleTimer(metadata).update(Duration.ofNanos(7));
-    //        assertEquals(2, registry.simpleTimer("mysimpletimer").getCount());
-    //    }
-
     @Test
     public void testTimer() {
         Metadata metadata = Metadata.builder().withName("mytimer").build();
@@ -88,26 +80,5 @@ public class ReusabilityByDefaultTest {
         registry.timer(metadata).update(Duration.ofNanos(7));
         assertEquals(2, registry.timer("mytimer").getCount());
     }
-
-    //    @Test
-    //    public void testMeter() {
-    //        Metadata metadata = Metadata.builder().withName("mymeter").build();
-    //        registry.meter(metadata).mark(100);
-    //        registry.meter(metadata).mark(100);
-    //        assertEquals(200, registry.meter("mymeter").getCount());
-    //    }
-    //
-    //    @Test
-    //    public void testConcurrentGauge() {
-    //        Metadata metadata = Metadata.builder().withName("mycgauge").withUnit(MetricUnits.SECONDS).build();
-    //        try {
-    //            registry.concurrentGauge(metadata).inc();
-    //            registry.concurrentGauge(metadata).inc();
-    //            assertEquals(2, registry.concurrentGauge("mycgauge").getCount());
-    //        } finally {
-    //            registry.concurrentGauge(metadata).dec();
-    //            registry.concurrentGauge(metadata).dec();
-    //        }
-    //    }
 
 }

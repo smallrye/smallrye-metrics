@@ -1,7 +1,5 @@
 package io.smallrye.metrics.setup;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
@@ -13,15 +11,15 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
  */
 public class MPPrometheusMeterRegistry extends PrometheusMeterRegistry {
 
-    private final MetricRegistry.Type registryType;
+    private final String registryScope;
 
-    public MPPrometheusMeterRegistry(PrometheusConfig config, MetricRegistry.Type registryType) {
+    public MPPrometheusMeterRegistry(PrometheusConfig config, String registryScope) {
         super(config);
-        this.registryType = registryType;
+        this.registryScope = registryScope;
     }
 
-    public MetricRegistry.Type getType() {
-        return registryType;
+    public String getScope() {
+        return registryScope;
     }
 
 }

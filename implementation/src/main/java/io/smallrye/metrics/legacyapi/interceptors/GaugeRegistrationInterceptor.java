@@ -21,7 +21,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
@@ -31,6 +30,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.MemberInfoAdapter;
@@ -45,13 +45,11 @@ import io.smallrye.metrics.setup.MetricsMetadata;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
 public class GaugeRegistrationInterceptor {
 
-    private final MetricRegistry registry;
+    private MetricRegistry registry;
 
     private final MetricResolver resolver;
 
-    @Inject
-    GaugeRegistrationInterceptor(MetricRegistry registry) {
-        this.registry = registry;
+    GaugeRegistrationInterceptor() {
         this.resolver = new MetricResolver();
     }
 
@@ -63,6 +61,7 @@ public class GaugeRegistrationInterceptor {
 
         BeanInfoAdapter<Class<?>> beanInfoAdapter = new CDIBeanInfoAdapter();
         MemberInfoAdapter<Member> memberInfoAdapter = new CDIMemberInfoAdapter();
+
         // Registers the gauges over the bean type hierarchy after the target is constructed as it is required for the gauge invocations
         do {
             // TODO: discover annotations declared on implemented interfaces
@@ -74,6 +73,9 @@ public class GaugeRegistrationInterceptor {
                     AnnotationInfo g = gauge.metricAnnotation();
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
                             g.displayName(), MetricType.GAUGE);
+
+                    registry = SharedMetricRegistries.getOrCreate(g.scope());
+
                     registry.gauge(metadata,
                             context.getTarget(),
                             i -> (Number) invokeMethod(method, i),

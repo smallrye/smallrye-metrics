@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Meter.Type;
@@ -28,7 +27,6 @@ public class OpenMetricsExporter implements Exporter {
             throw new IllegalStateException("Prometheus registry was not found in the global registry");
             //TODO:  logging
         }
-
     }
 
     @Override
@@ -43,10 +41,11 @@ public class OpenMetricsExporter implements Exporter {
     }
 
     @Override
-    public String exportOneScope(MetricRegistry.Type scope) {
+    public String exportOneScope(String scope) {
+
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             MPPrometheusMeterRegistry promMeterRegistry = (MPPrometheusMeterRegistry) meterRegistry;
-            if (promMeterRegistry.getType() == scope) {
+            if (promMeterRegistry.getScope().equals(scope)) {
                 return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("\r?\n?# EOF", "");
             }
         }
@@ -57,12 +56,12 @@ public class OpenMetricsExporter implements Exporter {
      * Not used.
      */
     @Override
-    public String exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
+    public String exportOneMetric(String scope, MetricID metricID) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String exportMetricsByName(MetricRegistry.Type scope, String name) {
+    public String exportMetricsByName(String scope, String name) {
 
         /**
          * FIXME: Refactor
@@ -76,7 +75,8 @@ public class OpenMetricsExporter implements Exporter {
          */
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             MPPrometheusMeterRegistry promMeterRegistry = (MPPrometheusMeterRegistry) meterRegistry;
-            if (promMeterRegistry.getType() == scope) {
+
+            if (promMeterRegistry.getScope().equals(scope)) {
                 Set<String> unitTypesSet = new HashSet<String>();
                 unitTypesSet.add("");
                 Set<String> meterSuffixSet = new HashSet<String>();
@@ -88,7 +88,6 @@ public class OpenMetricsExporter implements Exporter {
                 }
 
                 Set<String> scrapeMeterNames = calculateMeterNamesToScrape(name, meterSuffixSet, unitTypesSet);
-
                 //Strip #EOF from output
                 return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100, scrapeMeterNames)
                         .replaceFirst("\r?\n?# EOF", "");

@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.AroundTimeout;
@@ -20,7 +19,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.smallrye.metrics.MetricRegistries;
+import io.smallrye.metrics.SharedMetricRegistries;
 import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
@@ -31,12 +30,7 @@ import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE + 10)
 public class TimedInterceptor {
 
-    private final MetricRegistry registry;
-
-    @Inject
-    TimedInterceptor() {
-        this.registry = MetricRegistries.getOrCreate(MetricRegistry.Type.APPLICATION);
-    }
+    private MetricRegistry registry;
 
     @AroundConstruct
     Object timedConstructor(InvocationContext context) throws Exception {
@@ -55,6 +49,13 @@ public class TimedInterceptor {
 
     private <E extends Member & AnnotatedElement> Object timedCallable(InvocationContext invocationContext, E element)
             throws Exception {
+
+        Timed timedAnno = element.getAnnotation(Timed.class);
+        if (timedAnno != null)
+            registry = SharedMetricRegistries.getOrCreate(timedAnno.scope());
+        else
+            registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
+
         Set<MetricID> ids = ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings()
                 .getTimers(new CDIMemberInfoAdapter<>().convert(element));
 

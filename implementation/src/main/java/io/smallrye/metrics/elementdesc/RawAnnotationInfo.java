@@ -16,12 +16,14 @@ public class RawAnnotationInfo implements AnnotationInfo {
 
     private String annotationName;
 
+    private String scope;
+
     public RawAnnotationInfo() {
 
     }
 
     public RawAnnotationInfo(String name, boolean absolute, String[] tags, String unit,
-            String description, String displayName, String annotationName) {
+            String description, String displayName, String annotationName, String scope) {
         this.name = name;
         this.absolute = absolute;
         this.tags = tags;
@@ -29,6 +31,7 @@ public class RawAnnotationInfo implements AnnotationInfo {
         this.description = description;
         this.displayName = displayName;
         this.annotationName = annotationName;
+        this.scope = scope;
     }
 
     public String getName() {
@@ -87,6 +90,14 @@ public class RawAnnotationInfo implements AnnotationInfo {
         this.annotationName = annotationName;
     }
 
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
     @Override
     public String name() {
         return name;
@@ -120,6 +131,11 @@ public class RawAnnotationInfo implements AnnotationInfo {
     @Override
     public String annotationName() {
         return annotationName;
+    }
+
+    @Override
+    public String scope() {
+        return scope;
     }
 
 }
