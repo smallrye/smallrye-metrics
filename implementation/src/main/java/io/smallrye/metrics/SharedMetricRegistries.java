@@ -155,6 +155,16 @@ public class SharedMetricRegistries {
     }
 
     /**
+     * Returns true/false if registry with this scope exists
+     * 
+     * @param scope name of scope
+     * @return true/false if registry with this scope exists
+     */
+    public static boolean doesScopeExist(String scope) {
+        return registries.containsKey(scope);
+    }
+
+    /**
      * This will return server level global tag
      * i.e defined in env var or sys props
      *
