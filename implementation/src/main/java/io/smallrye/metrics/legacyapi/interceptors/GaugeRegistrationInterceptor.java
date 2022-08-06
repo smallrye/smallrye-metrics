@@ -66,7 +66,7 @@ public class GaugeRegistrationInterceptor {
         do {
             // TODO: discover annotations declared on implemented interfaces
             for (Method method : type.getDeclaredMethods()) {
-                // TODO: check that the method returns a Number?
+
                 MetricResolver.Of<Gauge> gauge = resolver.gauge(beanInfoAdapter.convert(type),
                         memberInfoAdapter.convert(method));
                 if (gauge.isPresent()) {
@@ -76,6 +76,10 @@ public class GaugeRegistrationInterceptor {
 
                     registry = SharedMetricRegistries.getOrCreate(g.scope());
 
+                    /*
+                     * Error/warning will be emitted by the runtime if return value
+                     * is not a `Number`
+                     */
                     registry.gauge(metadata,
                             context.getTarget(),
                             i -> (Number) invokeMethod(method, i),
