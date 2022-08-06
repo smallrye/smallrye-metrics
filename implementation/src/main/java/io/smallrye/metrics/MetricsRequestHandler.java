@@ -24,6 +24,8 @@ public class MetricsRequestHandler {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String APPLICATION_JSON = "application/json";
     private static final String STAR_STAR = "*/*";
+    private static final String SCOPE_PARAM_KEY = "scope";
+    private static final String NAME_PARAM_KEY = "name";
 
     static {
         corsHeaders = new HashMap<>();
@@ -37,6 +39,7 @@ public class MetricsRequestHandler {
      * @param requestPath e.g. request.getRequestURI for an HttpServlet
      * @param method http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
+     * @param parameterMap Map containing query parameters and values
      * @param responder a method that returns a response to the caller. See {@link Responder}
      * @throws IOException rethrows IOException if thrown by the responder
      *
@@ -45,8 +48,9 @@ public class MetricsRequestHandler {
     public void handleRequest(String requestPath,
             String method,
             Stream<String> acceptHeaders,
+            Map<String, String[]> parameterMap,
             Responder responder) throws IOException {
-        handleRequest(requestPath, "/metrics", method, acceptHeaders, responder);
+        handleRequest(requestPath, "/metrics", method, acceptHeaders, parameterMap, responder);
     }
 
     /**
@@ -55,6 +59,7 @@ public class MetricsRequestHandler {
      * @param contextRoot the root at which Metrics are exposed, usually "/metrics"
      * @param method http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
+     * @param parameterMap Map containing query parameters and values
      * @param responder a method that returns a response to the caller. See {@link Responder}
      *
      * @throws IOException rethrows IOException if thrown by the responder
@@ -65,7 +70,9 @@ public class MetricsRequestHandler {
             String contextRoot,
             String method,
             Stream<String> acceptHeaders,
+            Map<String, String[]> parameterMap,
             Responder responder) throws IOException {
+
         Exporter exporter = obtainExporter(method, acceptHeaders, responder);
         if (exporter == null) {
             return;
@@ -79,27 +86,74 @@ public class MetricsRequestHandler {
         }
 
         String scopePath = requestPath.substring(contextRoot.length());
-        if (scopePath.startsWith("/")) {
-            scopePath = scopePath.substring(1);
+        /*
+         * Allow user to request with "/metrics/" -- maybe not?
+         * Return 404 if request path is more than just /metrics or /metrics/
+         * Bad request!
+         */
+        if (scopePath.length() != 0 && !scopePath.equals("/")) {
+            responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
+                    + " or /metrics?scope=<scope>&name=<name>",
+                    Collections.emptyMap());
+            return;
         }
-        if (scopePath.endsWith("/")) {
-            scopePath = scopePath.substring(0, scopePath.length() - 1);
-        }
 
-        String output;
-        if (scopePath.isEmpty()) {
-            // All metrics
-            output = exporter.exportAllScopes();
+        String scope = null;
+        String metricName = null;
+        /*
+         * Retrieve first scope value
+         */
+        String[] scopeParameters = parameterMap.get(SCOPE_PARAM_KEY);
+        if (scopeParameters != null && scopeParameters.length != 0) {
+            scope = scopeParameters[0];
 
-        } else if (scopePath.contains("/")) { // One metric name in a scope
+            if (scopeParameters.length > 0) {
+                // TODO: logging warning about using only the first value?
+            }
 
-            String metricName = scopePath.substring(scopePath.indexOf('/') + 1);
-
-            String scope = scopePath.substring(0, scopePath.indexOf('/'));
-            if (scope == null) {
+            /*
+             * 404 if scope does not exist.
+             */
+            if (!SharedMetricRegistries.doesScopeExist(scope)) {
                 responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
                 return;
             }
+
+        }
+
+        /*
+         * Retrieve first name value
+         */
+        String[] NameParameters = parameterMap.get(NAME_PARAM_KEY);
+        if (NameParameters != null && NameParameters.length != 0) {
+            metricName = NameParameters[0];
+            if (NameParameters.length > 0) {
+                //TODO: logging warning about using only the first value?
+            }
+        }
+
+        /*
+         * Metric name defined without scope
+         */
+        if (scope == null && metricName != null) {
+            responder.respondWith(404, "Cannot query metric name without scope."
+                    + " The expected requests are /metrics, /metric?scope=<scope>"
+                    + " or /metrics?scope=<scope>&name=<name>",
+                    Collections.emptyMap());
+            return;
+        }
+
+        String output;
+        /*
+         * All Metrics
+         */
+        if (scope == null) {
+            output = exporter.exportAllScopes();
+        }
+        /*
+         * Specific metric in a scope
+         */
+        else if (scope != null && metricName != null) {
 
             MetricRegistry registry = SharedMetricRegistries.getOrCreate(scope);
 
@@ -109,17 +163,15 @@ public class MetricsRequestHandler {
                             .size() != 0) {
                 output = exporter.exportMetricsByName(scope, metricName);
             } else {
-                responder.respondWith(404, "Metric " + scopePath + " not found", Collections.emptyMap());
+                responder.respondWith(404, "Metric " + metricName + " not found in scope " + scope, Collections.emptyMap());
                 return;
             }
 
-        } else { // A single scope
-            //for readability
-            String scope = scopePath;
-            if (scope == null) {
-                responder.respondWith(404, "Scope " + scope + " not found", Collections.emptyMap());
-                return;
-            }
+        }
+        /*
+         * Single Scope
+         */
+        else {
 
             MetricRegistry reg = SharedMetricRegistries.getOrCreate(scope);
 

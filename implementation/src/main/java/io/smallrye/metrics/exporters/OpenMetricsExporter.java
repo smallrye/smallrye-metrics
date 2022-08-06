@@ -35,7 +35,8 @@ public class OpenMetricsExporter implements Exporter {
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             PrometheusMeterRegistry promMeterRegistry = (PrometheusMeterRegistry) meterRegistry;
             //strip "# EOF"
-            sb.append(promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("\r?\n?# EOF", ""));
+            String scraped = promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("# EOF\r?\n?", "");
+            sb.append(scraped);
         }
         return sb.toString();
     }
@@ -46,7 +47,7 @@ public class OpenMetricsExporter implements Exporter {
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             MPPrometheusMeterRegistry promMeterRegistry = (MPPrometheusMeterRegistry) meterRegistry;
             if (promMeterRegistry.getScope().equals(scope)) {
-                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("\r?\n?# EOF", "");
+                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("# EOF\r?\n?", "");
             }
         }
         return null; //FIXME: throw exception, logging?
