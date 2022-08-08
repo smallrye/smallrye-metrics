@@ -84,7 +84,7 @@ public class OpenMetricsExporter implements Exporter {
                 meterSuffixSet.add("");
 
                 for (Meter m : meterRegistry.find(name).meters()) {
-                    unitTypesSet.add(m.getId().getBaseUnit());
+                    unitTypesSet.add("_" + m.getId().getBaseUnit());
                     resolveMeterSuffixes(meterSuffixSet, m.getId().getType());
                 }
 
