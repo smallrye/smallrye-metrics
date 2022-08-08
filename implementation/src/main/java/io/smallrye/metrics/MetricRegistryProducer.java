@@ -6,7 +6,7 @@ import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 
 @ApplicationScoped
 public class MetricRegistryProducer {
@@ -15,15 +15,15 @@ public class MetricRegistryProducer {
     @Default
     public MetricRegistry getMetricRegistry(InjectionPoint ip) {
 
-        RegistryType registryTypeAnnotation = ip.getAnnotated().getAnnotation(RegistryType.class);
+        RegistryScope registryScopeAnnotation = ip.getAnnotated().getAnnotation(RegistryScope.class);
 
         /*
          * Defaults to "application" scope if no scope parameter value is detected
          */
-        if (registryTypeAnnotation == null) {
+        if (registryScopeAnnotation == null) {
             return SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
         } else {
-            String annoScope = registryTypeAnnotation.scope();
+            String annoScope = registryScopeAnnotation.scope();
             return SharedMetricRegistries.getOrCreate(annoScope);
         }
     }

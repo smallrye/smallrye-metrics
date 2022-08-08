@@ -15,7 +15,7 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.smallrye.metrics.SharedMetricRegistries;
 
-interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
+interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
 
     GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope);
 
