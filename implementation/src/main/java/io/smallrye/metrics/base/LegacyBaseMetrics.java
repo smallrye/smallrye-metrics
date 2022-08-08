@@ -8,6 +8,8 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
+import org.eclipse.microprofile.metrics.MetricUnits;
+
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -63,8 +65,11 @@ public class LegacyBaseMetrics implements MeterBinder {
                     .tag("name",
                             gc.getName())
                     .tag("scope", "base").register(registry);
-            FunctionCounter.builder("gc.time", gc, GarbageCollectorMXBean::getCollectionTime).description(
-                    "Displays the approximate accumulated collection elapsed time in milliseconds. This attribute "
+            /*
+             * Need to convert from milliseconds to seconds.
+             */
+            FunctionCounter.builder("gc.time", gc, gcObj -> (gcObj.getCollectionTime()/1e+3)).description(
+                    "Displays the approximate accumulated collection elapsed time in seconds. This attribute "
                             +
                             "displays -1 if the collection elapsed time is undefined for this collector. The Java "
                             +
@@ -75,7 +80,9 @@ public class LegacyBaseMetrics implements MeterBinder {
                             "count has been incremented if the collection elapsed time is very short.")
                     .tag("name",
                             gc.getName())
-                    .tag("scope", "base").register(registry);
+                    .tag("scope", "base")
+                    .baseUnit(MetricUnits.SECONDS)
+                    .register(registry);
         }
     }
 
@@ -137,11 +144,17 @@ public class LegacyBaseMetrics implements MeterBinder {
                                 "the JVM process and the whole system. " +
                                 "If the Java Virtual Machine recent CPU usage is not available, the method returns a negative value.")
                         .baseUnit(BaseUnits.PERCENT).tag("scope", "base").register(registry);
+                //TODO: Probably change to RATIO base unit
+                //TODO: Needs to be addressed in a MP Metrics PR first/discussion - do this later.
+                
 
+                /*
+                 * Must convert from nanoseconds to seconds.
+                 */
                 Gauge.builder(PROCESS_CPU_TIME,
-                        internalOperatingSystemMXBean::getProcessCpuTime)
-                        .description("Displays the CPU time used by the process on which the Java virtual machine is running.")
-                        .baseUnit("").tag("scope", "base").register(registry);
+                        () -> (internalOperatingSystemMXBean.getProcessCpuTime() / 1e+9))
+                        .description("Displays the CPU time used by the process on which the Java virtual machine is running in seconds.")
+                        .baseUnit(MetricUnits.SECONDS).tag("scope", "base").register(registry);
             } catch (ClassCastException ignored) {
             }
         }
@@ -163,8 +176,12 @@ public class LegacyBaseMetrics implements MeterBinder {
 
     private void runtimeMetrics(MeterRegistry registry) {
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-        Gauge.builder(JVM_UPTIME, runtimeMXBean::getUptime)
-                .description("Displays the time from the start of the Java virtual machine in milliseconds.")
+        /*
+         * Need to convert from milliseconds to seconds.
+         */
+        Gauge.builder(JVM_UPTIME, () -> (runtimeMXBean.getUptime()/1e+3))
+                .description("Displays the time from the start of the Java virtual machine in seconds.")
+                .baseUnit(MetricUnits.SECONDS)
                 .tag("scope", "base").register(registry);
     }
 
@@ -188,6 +205,6 @@ public class LegacyBaseMetrics implements MeterBinder {
                 .baseUnit(BaseUnits.BYTES).tag("scope", "base").register(registry);
         Gauge.builder(MEMORY_USED_HEAP,
                 memoryMXBean.getHeapMemoryUsage()::getUsed).description("Displays the amount of used heap memory in bytes.")
-                .baseUnit(BaseUnits.MILLISECONDS).tag("scope", "base").register(registry);
+                .baseUnit(BaseUnits.BYTES).tag("scope", "base").register(registry);
     }
 }
