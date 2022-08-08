@@ -15,11 +15,11 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
-public class OpenMetricsExporter implements Exporter {
+public class PrometheusMetricsExporter implements Exporter {
 
     private final List<MeterRegistry> prometheusRegistryList;
 
-    public OpenMetricsExporter() {
+    public PrometheusMetricsExporter() {
         prometheusRegistryList = Metrics.globalRegistry.getRegistries().stream()
                 .filter(registry -> registry instanceof MPPrometheusMeterRegistry).collect(Collectors.toList());
 
@@ -35,7 +35,7 @@ public class OpenMetricsExporter implements Exporter {
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             PrometheusMeterRegistry promMeterRegistry = (PrometheusMeterRegistry) meterRegistry;
             //strip "# EOF"
-            String scraped = promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("# EOF\r?\n?", "");
+            String scraped = promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004).replaceFirst("# EOF\r?\n?", "");
             sb.append(scraped);
         }
         return sb.toString();
@@ -47,7 +47,7 @@ public class OpenMetricsExporter implements Exporter {
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             MPPrometheusMeterRegistry promMeterRegistry = (MPPrometheusMeterRegistry) meterRegistry;
             if (promMeterRegistry.getScope().equals(scope)) {
-                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("# EOF\r?\n?", "");
+                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004).replaceFirst("# EOF\r?\n?", "");
             }
         }
         return null; //FIXME: throw exception, logging?
@@ -90,7 +90,7 @@ public class OpenMetricsExporter implements Exporter {
 
                 Set<String> scrapeMeterNames = calculateMeterNamesToScrape(name, meterSuffixSet, unitTypesSet);
                 //Strip #EOF from output
-                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100, scrapeMeterNames)
+                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004, scrapeMeterNames)
                         .replaceFirst("\r?\n?# EOF", "");
             }
         }
