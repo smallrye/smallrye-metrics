@@ -171,7 +171,7 @@ public class MetricsRequestHandler {
         else {
 
             MetricRegistry reg = SharedMetricRegistries.getOrCreate(scope);
-            
+
             // Cast to LegacyMetricRegistryAdapter and check that registry contains meters
             if (reg instanceof LegacyMetricRegistryAdapter
                     && ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {

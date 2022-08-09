@@ -68,7 +68,7 @@ public class LegacyBaseMetrics implements MeterBinder {
             /*
              * Need to convert from milliseconds to seconds.
              */
-            FunctionCounter.builder("gc.time", gc, gcObj -> (gcObj.getCollectionTime()/1e+3)).description(
+            FunctionCounter.builder("gc.time", gc, gcObj -> (gcObj.getCollectionTime() / 1e+3)).description(
                     "Displays the approximate accumulated collection elapsed time in seconds. This attribute "
                             +
                             "displays -1 if the collection elapsed time is undefined for this collector. The Java "
@@ -146,14 +146,14 @@ public class LegacyBaseMetrics implements MeterBinder {
                         .baseUnit(BaseUnits.PERCENT).tag("scope", "base").register(registry);
                 //TODO: Probably change to RATIO base unit
                 //TODO: Needs to be addressed in a MP Metrics PR first/discussion - do this later.
-                
 
                 /*
                  * Must convert from nanoseconds to seconds.
                  */
                 Gauge.builder(PROCESS_CPU_TIME,
                         () -> (internalOperatingSystemMXBean.getProcessCpuTime() / 1e+9))
-                        .description("Displays the CPU time used by the process on which the Java virtual machine is running in seconds.")
+                        .description(
+                                "Displays the CPU time used by the process on which the Java virtual machine is running in seconds.")
                         .baseUnit(MetricUnits.SECONDS).tag("scope", "base").register(registry);
             } catch (ClassCastException ignored) {
             }
@@ -179,7 +179,7 @@ public class LegacyBaseMetrics implements MeterBinder {
         /*
          * Need to convert from milliseconds to seconds.
          */
-        Gauge.builder(JVM_UPTIME, () -> (runtimeMXBean.getUptime()/1e+3))
+        Gauge.builder(JVM_UPTIME, () -> (runtimeMXBean.getUptime() / 1e+3))
                 .description("Displays the time from the start of the Java virtual machine in seconds.")
                 .baseUnit(MetricUnits.SECONDS)
                 .tag("scope", "base").register(registry);
