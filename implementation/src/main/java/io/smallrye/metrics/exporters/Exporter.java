@@ -1,8 +1,5 @@
 package io.smallrye.metrics.exporters;
 
-import org.eclipse.microprofile.metrics.MetricID;
-
-// TODO: create Json exporter
 public interface Exporter {
 
     String exportOneScope(String scope);
@@ -11,7 +8,7 @@ public interface Exporter {
 
     String getContentType();
 
-    String exportOneMetric(String scope, MetricID metricID);
+    String exportOneMetricAcrossScopes(String name);
 
     String exportMetricsByName(String scope, String name);
 }

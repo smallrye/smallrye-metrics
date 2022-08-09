@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.metrics.MetricID;
-
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Meter.Type;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -53,14 +51,6 @@ public class PrometheusMetricsExporter implements Exporter {
         return null; //FIXME: throw exception, logging?
     }
 
-    /*
-     * Not used.
-     */
-    @Override
-    public String exportOneMetric(String scope, MetricID metricID) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public String exportMetricsByName(String scope, String name) {
 
@@ -95,6 +85,40 @@ public class PrometheusMetricsExporter implements Exporter {
             }
         }
         return null;
+    }
+
+    @Override
+    public String exportOneMetricAcrossScopes(String name) {
+        StringBuilder sb = new StringBuilder();
+        for (MeterRegistry meterRegistry : prometheusRegistryList) {
+            PrometheusMeterRegistry promMeterRegistry = (PrometheusMeterRegistry) meterRegistry;
+            /*
+             * For each Prometheus registry found:
+             * 1. Calculate potential formatted names
+             * 2. Scrape with Set of names
+             * 3. Append to StringBuilder
+             * 4. return.
+             * Note: See above's exportMetricsByName if we need
+             * to refactor for a better way.
+             */
+            Set<String> unitTypesSet = new HashSet<String>();
+            unitTypesSet.add("");
+            Set<String> meterSuffixSet = new HashSet<String>();
+            meterSuffixSet.add("");
+
+            for (Meter m : meterRegistry.find(name).meters()) {
+                unitTypesSet.add("_" + m.getId().getBaseUnit());
+                resolveMeterSuffixes(meterSuffixSet, m.getId().getType());
+            }
+
+            Set<String> scrapeMeterNames = calculateMeterNamesToScrape(name, meterSuffixSet, unitTypesSet);
+            //Strip #EOF from output
+            String output = promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004, scrapeMeterNames)
+                    .replaceFirst("\r?\n?# EOF", "");
+
+            sb.append(output);
+        }
+        return sb.toString();
     }
 
     /**

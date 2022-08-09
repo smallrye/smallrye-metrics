@@ -90,7 +90,7 @@ public class MetricsRequestHandler {
          */
         if (scopePath.length() != 0 && !scopePath.equals("/")) {
             responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
-                    + " or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
+                    + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
             return;
         }
 
@@ -128,24 +128,30 @@ public class MetricsRequestHandler {
             }
         }
 
-        /*
-         * Metric name defined without scope
-         */
-        if (scope == null && metricName != null) {
-            responder.respondWith(404,
-                    "Cannot query metric name without scope."
-                            + " The expected requests are /metrics, /metric?scope=<scope>"
-                            + " or /metrics?scope=<scope>&name=<name>",
-                    Collections.emptyMap());
-            return;
-        }
-
-        String output;
+        String output = null;
         /*
          * All Metrics
          */
-        if (scope == null) {
+        if (scope == null && metricName == null) {
             output = exporter.exportAllScopes();
+        }
+
+        /*
+         * Single Scope
+         */
+        else if (scope != null && metricName == null) {
+
+            MetricRegistry reg = SharedMetricRegistries.getOrCreate(scope);
+
+            // Cast to LegacyMetricRegistryAdapter and check that registry contains meters
+            if (reg instanceof LegacyMetricRegistryAdapter
+                    && ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
+                output = exporter.exportOneScope(scope);
+            } else {
+                responder.respondWith(204, "No data in scope " + scope, Collections.emptyMap());
+                return;
+            }
+
         }
         /*
          * Specific metric in a scope
@@ -166,21 +172,18 @@ public class MetricsRequestHandler {
 
         }
         /*
-         * Single Scope
+         * Specific metric ACROSS scopes
+         */
+        else if (scope == null && metricName != null) {
+            output = exporter.exportOneMetricAcrossScopes(metricName);
+        }
+        /*
+         * Something went wrong :(
          */
         else {
-
-            MetricRegistry reg = SharedMetricRegistries.getOrCreate(scope);
-
-            // Cast to LegacyMetricRegistryAdapter and check that registry contains meters
-            if (reg instanceof LegacyMetricRegistryAdapter
-                    && ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
-                output = exporter.exportOneScope(scope);
-            } else {
-                responder.respondWith(204, "No data in scope " + scope, Collections.emptyMap());
-                return;
-            }
-
+            responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
+                    + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
+            return;
         }
 
         Map<String, String> headers = new HashMap<>();
