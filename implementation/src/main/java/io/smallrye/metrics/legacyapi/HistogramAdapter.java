@@ -106,10 +106,13 @@ class HistogramAdapter implements Histogram, MeterHolder {
         return (long) summary.takeSnapshot().total();
     }
 
-    /** TODO: Separate Issue/PR impl Snapshot adapter */
     @Override
     public Snapshot getSnapshot() {
-        throw new UnsupportedOperationException("This operation is not supported when used with micrometer");
+        DistributionSummary promDistSum = registry.find(descriptor.name()).tags(tagsSet).summary();
+        if (promDistSum != null) {
+            return new SnapshotAdapter(promDistSum.takeSnapshot());
+        }
+        return new SnapshotAdapter(summary.takeSnapshot());
     }
 
     @Override
