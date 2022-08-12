@@ -121,11 +121,11 @@ public class MetricProducer {
         Metadata metadata;
         if (metric != null) {
             Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withType(type).withUnit(metric.unit())
-                    .withDescription(metric.description()).withDisplayName(metric.displayName()).build();
+                    .withDescription(metric.description()).build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         } else {
             Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withType(type).withUnit(MetricUnits.NONE)
-                    .withDescription("").withDisplayName("").build();
+                    .withDescription("").build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         }
 

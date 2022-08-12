@@ -72,7 +72,7 @@ public class GaugeRegistrationInterceptor {
                 if (gauge.isPresent()) {
                     AnnotationInfo g = gauge.metricAnnotation();
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
-                            g.displayName(), MetricType.GAUGE);
+                            MetricType.GAUGE);
 
                     registry = SharedMetricRegistries.getOrCreate(g.scope());
 
