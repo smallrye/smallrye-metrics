@@ -391,6 +391,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     <T extends Number> GaugeAdapter<T> internalGauge(MpMetadata metadata, MetricDescriptor id, Supplier<T> f) {
         GaugeAdapter<T> result = checkCast(GaugeAdapter.NumberSupplierGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<T>(f)));
+        addNameToApplicationMap(id.toMetricID());
         return result.register(metadata, id, registry, scope);
     }
 
@@ -541,12 +542,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public boolean remove(String name) {
+
+        boolean isRemoveSuccess = false;
         for (Map.Entry<MetricDescriptor, MeterHolder> e : constructedMeters.entrySet()) {
             if (e.getKey().name().equals(name)) {
-                return internalRemove(e.getKey());
+                isRemoveSuccess = internalRemove(e.getKey());
             }
         }
-        return false;
+        return isRemoveSuccess;
 
     }
 
