@@ -27,16 +27,6 @@ public class UnspecifiedMetadata implements Metadata {
     }
 
     @Override
-    public String getDisplayName() {
-        throw new IllegalStateException("Unspecified metadata only contains name and type.");
-    }
-
-    @Override
-    public Optional<String> displayName() {
-        throw new IllegalStateException("Unspecified metadata only contains name and type.");
-    }
-
-    @Override
     public String getDescription() {
         throw new IllegalStateException("Unspecified metadata only contains name and type.");
     }

@@ -138,16 +138,6 @@ class MpMetadata implements Metadata {
     }
 
     @Override
-    public String getDisplayName() {
-        return name;
-    }
-
-    @Override
-    public Optional<String> displayName() {
-        return Optional.ofNullable(name);
-    }
-
-    @Override
     public String getDescription() {
         return description;
     }
