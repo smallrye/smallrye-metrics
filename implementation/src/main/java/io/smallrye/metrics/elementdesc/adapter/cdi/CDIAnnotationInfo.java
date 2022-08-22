@@ -83,19 +83,6 @@ public class CDIAnnotationInfo implements AnnotationInfo {
     }
 
     @Override
-    public String displayName() {
-        if (annotation instanceof Counted) {
-            return ((Counted) annotation).displayName();
-        } else if (annotation instanceof Gauge) {
-            return ((Gauge) annotation).displayName();
-        } else if (annotation instanceof Timed) {
-            return ((Timed) annotation).displayName();
-        } else {
-            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
-        }
-    }
-
-    @Override
     public String annotationName() {
         return annotation.annotationType().getName();
     }

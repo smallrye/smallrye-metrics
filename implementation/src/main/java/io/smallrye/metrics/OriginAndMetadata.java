@@ -30,16 +30,6 @@ public class OriginAndMetadata implements Metadata {
     }
 
     @Override
-    public String getDisplayName() {
-        return metadata.getDisplayName();
-    }
-
-    @Override
-    public Optional<String> displayName() {
-        return metadata.displayName();
-    }
-
-    @Override
     public String getDescription() {
         return metadata.getDescription();
     }

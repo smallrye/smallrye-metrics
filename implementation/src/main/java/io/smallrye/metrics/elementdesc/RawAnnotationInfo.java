@@ -124,11 +124,6 @@ public class RawAnnotationInfo implements AnnotationInfo {
     }
 
     @Override
-    public String displayName() {
-        return displayName;
-    }
-
-    @Override
     public String annotationName() {
         return annotationName;
     }

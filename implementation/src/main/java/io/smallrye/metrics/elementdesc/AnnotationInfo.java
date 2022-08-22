@@ -12,8 +12,6 @@ public interface AnnotationInfo {
 
     String description();
 
-    String displayName();
-
     String annotationName();
 
     String scope();

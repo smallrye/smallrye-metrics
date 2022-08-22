@@ -37,7 +37,7 @@ public class MetricsMetadata {
 
             registry = SharedMetricRegistries.getOrCreate(t.scope());
 
-            Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(), t.displayName(),
+            Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(),
                     MetricType.COUNTER);
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
@@ -73,7 +73,7 @@ public class MetricsMetadata {
 
             registry = SharedMetricRegistries.getOrCreate(t.scope());
 
-            Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(), t.displayName(),
+            Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(),
                     MetricType.TIMER);
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
@@ -102,10 +102,10 @@ public class MetricsMetadata {
     }
 
     //XXX: this was just to create a OriginAndMetadata.. is this needed?
-    public static Metadata getMetadata(Object origin, String name, String unit, String description, String displayName,
+    public static Metadata getMetadata(Object origin, String name, String unit, String description,
             MetricType type) {
         Metadata metadata = Metadata.builder().withName(name).withType(type).withUnit(unit).withDescription(description)
-                .withDisplayName(displayName).build();
+                .build();
         return new OriginAndMetadata(origin, metadata);
     }
 }
