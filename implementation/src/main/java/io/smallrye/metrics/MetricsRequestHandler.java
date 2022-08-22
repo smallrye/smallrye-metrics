@@ -14,7 +14,7 @@ import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import io.smallrye.metrics.exporters.Exporter;
-import io.smallrye.metrics.exporters.OpenMetricsExporter;
+import io.smallrye.metrics.exporters.PrometheusMetricsExporter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 
 @ApplicationScoped
@@ -22,8 +22,9 @@ public class MetricsRequestHandler {
 
     private static final Map<String, String> corsHeaders;
     private static final String TEXT_PLAIN = "text/plain";
-    private static final String APPLICATION_JSON = "application/json";
     private static final String STAR_STAR = "*/*";
+    private static final String SCOPE_PARAM_KEY = "scope";
+    private static final String NAME_PARAM_KEY = "name";
 
     static {
         corsHeaders = new HashMap<>();
@@ -37,106 +38,152 @@ public class MetricsRequestHandler {
      * @param requestPath e.g. request.getRequestURI for an HttpServlet
      * @param method http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
-     * @param responder a method that returns a response to the caller. See {@link Responder}
+     * @param parameterMap Map containing query parameters and values
+     * @param responder a method that returns a response to the caller. See
+     *        {@link Responder}
      * @throws IOException rethrows IOException if thrown by the responder
      *
-     *         You can find example usage in the tests, in io.smallrye.metrics.tck.rest.MetricsHttpServlet
+     *         You can find example usage in the tests, in
+     *         io.smallrye.metrics.tck.rest.MetricsHttpServlet
      */
-    public void handleRequest(String requestPath,
-            String method,
-            Stream<String> acceptHeaders,
-            Responder responder) throws IOException {
-        handleRequest(requestPath, "/metrics", method, acceptHeaders, responder);
+    public void handleRequest(String requestPath, String method, Stream<String> acceptHeaders,
+            Map<String, String[]> parameterMap, Responder responder) throws IOException {
+        handleRequest(requestPath, "/metrics", method, acceptHeaders, parameterMap, responder);
     }
 
     /**
      *
      * @param requestPath e.g. request.getRequestURI for an HttpServlet
-     * @param contextRoot the root at which Metrics are exposed, usually "/metrics"
+     * @param contextRoot the root at which Metrics are exposed, usually
+     *        "/metrics"
      * @param method http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
-     * @param responder a method that returns a response to the caller. See {@link Responder}
+     * @param parameterMap Map containing query parameters and values
+     * @param responder a method that returns a response to the caller. See
+     *        {@link Responder}
      *
      * @throws IOException rethrows IOException if thrown by the responder
      *
-     *         You can find example usage in the tests, in io.smallrye.metrics.tck.rest.MetricsHttpServlet
+     *         You can find example usage in the tests, in
+     *         io.smallrye.metrics.tck.rest.MetricsHttpServlet
      */
-    public void handleRequest(String requestPath,
-            String contextRoot,
-            String method,
-            Stream<String> acceptHeaders,
-            Responder responder) throws IOException {
+    public void handleRequest(String requestPath, String contextRoot, String method, Stream<String> acceptHeaders,
+            Map<String, String[]> parameterMap, Responder responder) throws IOException {
+
         Exporter exporter = obtainExporter(method, acceptHeaders, responder);
         if (exporter == null) {
             return;
         }
 
         if (!requestPath.startsWith(contextRoot)) {
-            responder.respondWith(500, "The expected context root of metrics is "
-                    + contextRoot + ", but a request with a different path was routed to MetricsRequestHandler",
+            responder.respondWith(500,
+                    "The expected context root of metrics is " + contextRoot
+                            + ", but a request with a different path was routed to MetricsRequestHandler",
                     Collections.emptyMap());
             return;
         }
 
         String scopePath = requestPath.substring(contextRoot.length());
-        if (scopePath.startsWith("/")) {
-            scopePath = scopePath.substring(1);
-        }
-        if (scopePath.endsWith("/")) {
-            scopePath = scopePath.substring(0, scopePath.length() - 1);
+        /*
+         * Allow user to request with "/metrics/" -- maybe not? Return 404 if request
+         * path is more than just /metrics or /metrics/ Bad request!
+         */
+        if (scopePath.length() != 0 && !scopePath.equals("/")) {
+            responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
+                    + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
+            return;
         }
 
-        String output;
-        if (scopePath.isEmpty()) {
-            // All metrics
+        String scope = null;
+        String metricName = null;
+        /*
+         * Retrieve first scope value
+         */
+        String[] scopeParameters = parameterMap.get(SCOPE_PARAM_KEY);
+        if (scopeParameters != null && scopeParameters.length != 0) {
+            scope = scopeParameters[0];
+
+            if (scopeParameters.length > 0) {
+                // TODO: logging warning about using only the first value?
+            }
+
+            /*
+             * 404 if scope does not exist.
+             */
+            if (!SharedMetricRegistries.doesScopeExist(scope)) {
+                responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
+                return;
+            }
+
+        }
+
+        /*
+         * Retrieve first name value
+         */
+        String[] NameParameters = parameterMap.get(NAME_PARAM_KEY);
+        if (NameParameters != null && NameParameters.length != 0) {
+            metricName = NameParameters[0];
+            if (NameParameters.length > 0) {
+                // TODO: logging warning about using only the first value?
+            }
+        }
+
+        String output = null;
+        /*
+         * All Metrics
+         */
+        if (scope == null && metricName == null) {
             output = exporter.exportAllScopes();
+        }
 
-        } else if (scopePath.contains("/")) {
-            // One metric name in a scope
+        /*
+         * Single Scope
+         */
+        else if (scope != null && metricName == null) {
 
-            String metricName = scopePath.substring(scopePath.indexOf('/') + 1);
+            MetricRegistry reg = SharedMetricRegistries.getOrCreate(scope);
 
-            MetricRegistry.Type scope = getScopeFromPath(scopePath.substring(0, scopePath.indexOf('/')));
-            if (scope == null) {
-                responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
-                return;
-            }
-
-            MetricRegistry registry = MetricRegistries.getOrCreate(scope);
-
-            // output = exporter.exportMetricsByName(scope, metricName);
-
-            //XXX: Better error handling? exceptions?
-            if (registry instanceof LegacyMetricRegistryAdapter &&
-                    ((LegacyMetricRegistryAdapter) registry).getPrometheusMeterRegistry().find(metricName).meters()
-                            .size() != 0) {
-                output = exporter.exportMetricsByName(scope, metricName);
-            } else {
-                responder.respondWith(404, "Metric " + scopePath + " not found", Collections.emptyMap());
-                return;
-            }
-
-        } else {
-            // A single scope
-
-            MetricRegistry.Type scope = getScopeFromPath(scopePath);
-            if (scope == null) {
-                responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
-                return;
-            }
-
-            MetricRegistry reg = MetricRegistries.getOrCreate(scope);
-
-            //XXX:  Re-evaluate: other types of "MeterRegistries".. prolly not, this is an OM exporter
-            //Cast to LegacyMetricRegistryAdapter and check that registry contains meters
-            if (reg instanceof LegacyMetricRegistryAdapter &&
-                    ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
+            // Cast to LegacyMetricRegistryAdapter and check that registry contains meters
+            if (reg instanceof LegacyMetricRegistryAdapter
+                    && ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
                 output = exporter.exportOneScope(scope);
             } else {
-                responder.respondWith(204, "No data in scope " + scopePath, Collections.emptyMap());
+                responder.respondWith(204, "No data in scope " + scope, Collections.emptyMap());
                 return;
             }
 
+        }
+        /*
+         * Specific metric in a scope
+         */
+        else if (scope != null && metricName != null) {
+
+            MetricRegistry registry = SharedMetricRegistries.getOrCreate(scope);
+
+            // XXX: Better error handling? exceptions?
+            if (registry instanceof LegacyMetricRegistryAdapter && ((LegacyMetricRegistryAdapter) registry)
+                    .getPrometheusMeterRegistry().find(metricName).meters().size() != 0) {
+                output = exporter.exportMetricsByName(scope, metricName);
+            } else {
+                responder.respondWith(404, "Metric " + metricName + " not found in scope " + scope,
+                        Collections.emptyMap());
+                return;
+            }
+
+        }
+        /*
+         * Specific metric ACROSS scopes
+         */
+        else if (scope == null && metricName != null) {
+            output = exporter.exportOneMetricAcrossScopes(metricName);
+        }
+        /*
+         * Something went wrong :(
+         */
+        else {
+            responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
+                    + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
+            return;
         }
 
         Map<String, String> headers = new HashMap<>();
@@ -147,62 +194,39 @@ public class MetricsRequestHandler {
         responder.respondWith(200, output, headers);
     }
 
-    private MetricRegistry.Type getScopeFromPath(String scopePath) throws IOException {
-        MetricRegistry.Type scope;
-        try {
-            scope = MetricRegistry.Type.valueOf(scopePath.toUpperCase());
-        } catch (IllegalArgumentException iae) {
-            return null;
-        }
-        return scope;
-    }
-
     /**
      * Determine which exporter we want.
      *
      * @param method http method (GET, POST, etc)
      * @param acceptHeaders accepted content types
      * @param responder the responder to use if an error occurs
-     * @return An exporter instance. If an exporter cannot be obtained for some reason, this method will use the responder
-     *         to inform the user and will return null.
+     * @return An exporter instance. If an exporter cannot be obtained for some
+     *         reason, this method will use the responder to inform the user and
+     *         will return null.
      */
-    private Exporter obtainExporter(String method, Stream<String> acceptHeaders, Responder responder) throws IOException {
-        if (!method.equals("GET") && !method.equals("OPTIONS")) {
-            responder.respondWith(405, "Only GET and OPTIONS methods are accepted.", Collections.emptyMap());
+    private Exporter obtainExporter(String method, Stream<String> acceptHeaders, Responder responder)
+            throws IOException {
+
+        /*
+         * Only support GET ... and we will only return Prometheus Exporter OpenMetrics
+         * Exporting to be supported in the future.
+         */
+
+        if (!method.equals("GET")) {
+            responder.respondWith(405, "Only GET method is accepted.", Collections.emptyMap());
             return null;
         } else if (acceptHeaders == null) {
-            // use OpenMetrics exporter
-            if (method.equals("GET")) {
-                return new OpenMetricsExporter();
-            } else {
-                responder.respondWith(405, "OPTIONS method is only allowed with application/json media type.",
-                        Collections.emptyMap());
-                return null;
-            }
+            // Use PrometheusMetricsExporter
+            return new PrometheusMetricsExporter();
+
         } else {
-            // Header can look like "application/json, text/plain, */*"
+            // Header can look like "text/plain, */*"
             Optional<String> mt = getBestMatchingMediaType(acceptHeaders);
             if (mt.isPresent()) {
                 String mediaType = mt.get();
 
-                if (mediaType.startsWith(APPLICATION_JSON)) {
+                return new PrometheusMetricsExporter();
 
-                    throw new UnsupportedOperationException("JSON export not implemented yet");
-                    //                    if (method.equals("GET")) {
-                    //                        return new JsonExporter();
-                    //                    } else {
-                    //                        return new JsonMetadataExporter();
-                    //                    }
-                } else {
-                    // This is the fallback, but only for GET, as OpenMetrics does not support OPTIONS
-                    if (method.equals("GET")) {
-                        return new OpenMetricsExporter();
-                    } else {
-                        responder.respondWith(406, "OPTIONS method is only allowed with application/json media type.",
-                                Collections.emptyMap());
-                        return null;
-                    }
-                }
             } else {
                 responder.respondWith(406, "Couldn't determine a suitable media type for the given Accept header.",
                         Collections.emptyMap());
@@ -212,9 +236,9 @@ public class MetricsRequestHandler {
     }
 
     /**
-     * Find the best matching media type (i.e. the one with highest prio.
-     * If two have the same prio, and one is text/plain, then use this.
-     * Return empty if no match can be found
+     * Find the best matching media type (i.e. the one with highest prio. If two
+     * have the same prio, and one is text/plain, then use this. Return empty if no
+     * match can be found
      *
      * @param acceptHeaders A steam of Accept: headers
      * @return best media type as string or null if no match
@@ -224,7 +248,7 @@ public class MetricsRequestHandler {
 
         List<WTTuple> tupleList = new ArrayList<>();
 
-        // Dissect the heades into type and prio and put them in a list
+        // Dissect the headers into type and prioritize and put them in a list
         acceptHeaders.forEach(h -> {
             String[] headers = h.split(",");
             for (String header : headers) {
@@ -258,7 +282,8 @@ public class MetricsRequestHandler {
             }
         }
 
-        // We found a match. Now if this is */* return text/plain. Otherwise return the type found
+        // We found a match. Now if this is */* return text/plain. Otherwise return the
+        // type found
         if (bestMatchTuple.weight > 0) {
             return bestMatchTuple.type.equals(STAR_STAR) ? Optional.of(TEXT_PLAIN) : Optional.of(bestMatchTuple.type);
         }
@@ -268,7 +293,7 @@ public class MetricsRequestHandler {
     }
 
     private boolean isKnownMediaType(WTTuple tuple) {
-        return tuple.type.equals(TEXT_PLAIN) || tuple.type.equals(APPLICATION_JSON) || tuple.type.equals(STAR_STAR);
+        return tuple.type.equals(TEXT_PLAIN) || tuple.type.equals(STAR_STAR);
     }
 
     /**
@@ -280,8 +305,9 @@ public class MetricsRequestHandler {
          * @param message message to be returned
          * @param headers a map of http headers
          * @throws IOException this method may be implemented to throw an IOException.
-         *         In such case the {@link MetricsRequestHandler#handleRequest(String, String, Stream, Responder)} will
-         *         propagate the exception
+         *         In such case the
+         *         {@link MetricsRequestHandler#handleRequest(String, String, Stream, Responder)}
+         *         will propagate the exception
          */
         void respondWith(int status, String message, Map<String, String> headers) throws IOException;
     }

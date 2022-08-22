@@ -104,4 +104,17 @@ public class CDIAnnotationInfo implements AnnotationInfo {
     public String toString() {
         return annotation.toString();
     }
+
+    @Override
+    public String scope() {
+        if (annotation instanceof Counted) {
+            return ((Counted) annotation).scope();
+        } else if (annotation instanceof Gauge) {
+            return ((Gauge) annotation).scope();
+        } else if (annotation instanceof Timed) {
+            return ((Timed) annotation).scope();
+        } else {
+            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
+        }
+    }
 }

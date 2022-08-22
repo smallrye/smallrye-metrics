@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Meter.Type;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -16,11 +13,11 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
-public class OpenMetricsExporter implements Exporter {
+public class PrometheusMetricsExporter implements Exporter {
 
     private final List<MeterRegistry> prometheusRegistryList;
 
-    public OpenMetricsExporter() {
+    public PrometheusMetricsExporter() {
         prometheusRegistryList = Metrics.globalRegistry.getRegistries().stream()
                 .filter(registry -> registry instanceof MPPrometheusMeterRegistry).collect(Collectors.toList());
 
@@ -28,7 +25,6 @@ public class OpenMetricsExporter implements Exporter {
             throw new IllegalStateException("Prometheus registry was not found in the global registry");
             //TODO:  logging
         }
-
     }
 
     @Override
@@ -37,32 +33,26 @@ public class OpenMetricsExporter implements Exporter {
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             PrometheusMeterRegistry promMeterRegistry = (PrometheusMeterRegistry) meterRegistry;
             //strip "# EOF"
-            sb.append(promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("\r?\n?# EOF", ""));
+            String scraped = promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004).replaceFirst("# EOF\r?\n?", "");
+            sb.append(scraped);
         }
         return sb.toString();
     }
 
     @Override
-    public String exportOneScope(MetricRegistry.Type scope) {
+    public String exportOneScope(String scope) {
+
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             MPPrometheusMeterRegistry promMeterRegistry = (MPPrometheusMeterRegistry) meterRegistry;
-            if (promMeterRegistry.getType() == scope) {
-                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100).replaceFirst("\r?\n?# EOF", "");
+            if (promMeterRegistry.getScope().equals(scope)) {
+                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004).replaceFirst("# EOF\r?\n?", "");
             }
         }
         return null; //FIXME: throw exception, logging?
     }
 
-    /*
-     * Not used.
-     */
     @Override
-    public String exportOneMetric(MetricRegistry.Type scope, MetricID metricID) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String exportMetricsByName(MetricRegistry.Type scope, String name) {
+    public String exportMetricsByName(String scope, String name) {
 
         /**
          * FIXME: Refactor
@@ -76,25 +66,59 @@ public class OpenMetricsExporter implements Exporter {
          */
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             MPPrometheusMeterRegistry promMeterRegistry = (MPPrometheusMeterRegistry) meterRegistry;
-            if (promMeterRegistry.getType() == scope) {
+
+            if (promMeterRegistry.getScope().equals(scope)) {
                 Set<String> unitTypesSet = new HashSet<String>();
                 unitTypesSet.add("");
                 Set<String> meterSuffixSet = new HashSet<String>();
                 meterSuffixSet.add("");
 
                 for (Meter m : meterRegistry.find(name).meters()) {
-                    unitTypesSet.add(m.getId().getBaseUnit());
+                    unitTypesSet.add("_" + m.getId().getBaseUnit());
                     resolveMeterSuffixes(meterSuffixSet, m.getId().getType());
                 }
 
                 Set<String> scrapeMeterNames = calculateMeterNamesToScrape(name, meterSuffixSet, unitTypesSet);
-
                 //Strip #EOF from output
-                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100, scrapeMeterNames)
+                return promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004, scrapeMeterNames)
                         .replaceFirst("\r?\n?# EOF", "");
             }
         }
         return null;
+    }
+
+    @Override
+    public String exportOneMetricAcrossScopes(String name) {
+        StringBuilder sb = new StringBuilder();
+        for (MeterRegistry meterRegistry : prometheusRegistryList) {
+            PrometheusMeterRegistry promMeterRegistry = (PrometheusMeterRegistry) meterRegistry;
+            /*
+             * For each Prometheus registry found:
+             * 1. Calculate potential formatted names
+             * 2. Scrape with Set of names
+             * 3. Append to StringBuilder
+             * 4. return.
+             * Note: See above's exportMetricsByName if we need
+             * to refactor for a better way.
+             */
+            Set<String> unitTypesSet = new HashSet<String>();
+            unitTypesSet.add("");
+            Set<String> meterSuffixSet = new HashSet<String>();
+            meterSuffixSet.add("");
+
+            for (Meter m : meterRegistry.find(name).meters()) {
+                unitTypesSet.add("_" + m.getId().getBaseUnit());
+                resolveMeterSuffixes(meterSuffixSet, m.getId().getType());
+            }
+
+            Set<String> scrapeMeterNames = calculateMeterNamesToScrape(name, meterSuffixSet, unitTypesSet);
+            //Strip #EOF from output
+            String output = promMeterRegistry.scrape(TextFormat.CONTENT_TYPE_004, scrapeMeterNames)
+                    .replaceFirst("\r?\n?# EOF", "");
+
+            sb.append(output);
+        }
+        return sb.toString();
     }
 
     /**

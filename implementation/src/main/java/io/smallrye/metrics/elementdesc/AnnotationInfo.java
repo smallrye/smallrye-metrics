@@ -16,4 +16,6 @@ public interface AnnotationInfo {
 
     String annotationName();
 
+    String scope();
+
 }

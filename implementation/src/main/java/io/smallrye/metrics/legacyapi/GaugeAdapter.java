@@ -1,5 +1,7 @@
 package io.smallrye.metrics.legacyapi;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -10,11 +12,12 @@ import org.eclipse.microprofile.metrics.MetricType;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.smallrye.metrics.MetricRegistries;
+import io.micrometer.core.instrument.Tag;
+import io.smallrye.metrics.SharedMetricRegistries;
 
-interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
+interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
 
-    GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry);
+    GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope);
 
     static class DoubleFunctionGauge<S> implements GaugeAdapter<Double> {
         io.micrometer.core.instrument.Gauge gauge;
@@ -27,15 +30,22 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
             this.f = f;
         }
 
-        public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
+        public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
+                String scope) {
+
+            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
+            threadLocal.set(true);
+
+            Set<Tag> tagsSet = new HashSet<Tag>();
+            for (Tag t : metricInfo.tags()) {
+                tagsSet.add(t);
+            }
+            tagsSet.add(Tag.of("scope", scope));
+
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, f)
-                    .description(metadata.getDescription())
-                    .tags(metricInfo.tags())
-                    .baseUnit(metadata.getUnit())
-                    .strongReference(true)
-                    .register(Metrics.globalRegistry);
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+                    .description(metadata.getDescription()).tags(tagsSet).baseUnit(metadata.getUnit())
+                    .strongReference(true).register(Metrics.globalRegistry);
+            threadLocal.set(false);
             return this;
         }
 
@@ -46,7 +56,12 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
 
         @Override
         public Double getValue() {
-            return gauge.value();
+            /*
+             * We need to cheat to get value if Gauge is removed from registries and we still
+             * have a ref to this (MP) Gauge, we should still be able to retrieve the value
+             * instead of querying the meter registry for non-existing gauge.
+             */
+            return f.applyAsDouble(obj);
         }
 
         @Override
@@ -66,15 +81,22 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
             this.f = f;
         }
 
-        public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
-            gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, obj -> f.apply(obj).doubleValue())
-                    .description(metadata.getDescription())
-                    .tags(metricInfo.tags())
-                    .baseUnit(metadata.getUnit())
-                    .strongReference(true)
-                    .register(Metrics.globalRegistry);
-            MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+        public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
+                String scope) {
+            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
+            threadLocal.set(true);
+
+            Set<Tag> tagsSet = new HashSet<Tag>();
+            for (Tag t : metricInfo.tags()) {
+                tagsSet.add(t);
+            }
+            tagsSet.add(Tag.of("scope", scope));
+
+            gauge = io.micrometer.core.instrument.Gauge
+                    .builder(metricInfo.name(), obj, obj -> f.apply(obj).doubleValue())
+                    .description(metadata.getDescription()).tags(tagsSet).baseUnit(metadata.getUnit())
+                    .strongReference(true).register(Metrics.globalRegistry);
+            threadLocal.set(false);
             return this;
         }
 
@@ -85,7 +107,16 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
 
         @Override
         public R getValue() {
-            return (R) (Double) gauge.value();
+            /*
+             * We need to cheat. Micrometer returns a double. The generic parameter R is a
+             * Number Or possibly any other boxed Number value. Can't cast to R... Since we
+             * already have the object and function... just call it...
+             * 
+             * Also if Gauge is removed from registries and we still have a ref to this (MP)
+             * Gauge, we should still be able to retrieve the value instead of querying the
+             * meter registry for non-existing gauge.
+             */
+            return (R) f.apply(obj);
         }
 
         @Override
@@ -103,15 +134,17 @@ interface GaugeAdapter<T> extends Gauge<T>, MeterHolder {
         }
 
         @Override
-        public GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry) {
+        public GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
+                String scope) {
             if (gauge == null || metadata.cleanDirtyMetadata()) {
-                MetricRegistries.MP_APP_METER_REG_ACCESS.set(true);
+
+                ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
+                threadLocal.set(true);
+
                 gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), (Supplier<Number>) supplier)
-                        .description(metadata.getDescription())
-                        .tags(metricInfo.tags())
-                        .baseUnit(metadata.getUnit())
-                        .strongReference(true).register(Metrics.globalRegistry);
-                MetricRegistries.MP_APP_METER_REG_ACCESS.set(false);
+                        .description(metadata.getDescription()).tags(metricInfo.tags()).tags("scope", scope)
+                        .baseUnit(metadata.getUnit()).strongReference(true).register(Metrics.globalRegistry);
+                threadLocal.set(false);
             }
 
             return this;
