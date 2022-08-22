@@ -309,7 +309,25 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 new MetricDescriptor(annotation.name(), annotation.tags()));
     }
 
+    private void validateTagNamesMatch(MetricDescriptor id) {
+        /*
+         * Check that if there are metrics registered with same metric name that the tag
+         * set is the same. Specifically that the tag key values are the same. Values
+         * can differ.
+         */
+        for (MetricDescriptor md : constructedMeters.keySet()) {
+            if (md.name().equals(id.name) && !id.isTagNamesMatch(md.tags())) {
+                throw new IllegalArgumentException(String.format(
+                        "The set of tags names provided do not match those of an existing metric with the same name. Provided = %s Existing = %s ",
+                        id.tags.toString(), md.tags.toString()));
+            }
+        }
+    }
+
     CounterAdapter internalCounter(MpMetadata metadata, MetricDescriptor id) {
+
+        validateTagNamesMatch(id);
+
         CounterAdapter result = checkCast(CounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new CounterAdapter()));
         addNameToApplicationMap(id.toMetricID());
@@ -348,6 +366,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     <T> GaugeAdapter<Double> internalGauge(MpMetadata metadata, MetricDescriptor id, T obj, ToDoubleFunction<T> f) {
+        validateTagNamesMatch(id);
         GaugeAdapter.DoubleFunctionGauge<T> result = checkCast(GaugeAdapter.DoubleFunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.DoubleFunctionGauge<>(obj, f)));
         addNameToApplicationMap(id.toMetricID());
@@ -356,6 +375,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     <T, R extends Number> GaugeAdapter<R> internalGauge(MpMetadata metadata, MetricDescriptor id, T obj, Function<T, R> f) {
+        validateTagNamesMatch(id);
         GaugeAdapter.FunctionGauge<T, R> result = checkCast(GaugeAdapter.FunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.FunctionGauge<>(obj, f)));
         addNameToApplicationMap(id.toMetricID());
@@ -389,6 +409,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     <T extends Number> GaugeAdapter<T> internalGauge(MpMetadata metadata, MetricDescriptor id, Supplier<T> f) {
+        validateTagNamesMatch(id);
         GaugeAdapter<T> result = checkCast(GaugeAdapter.NumberSupplierGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<T>(f)));
         addNameToApplicationMap(id.toMetricID());
@@ -446,6 +467,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     HistogramAdapter internalHistogram(MpMetadata metadata, MetricDescriptor id) {
+        validateTagNamesMatch(id);
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter()));
         addNameToApplicationMap(id.toMetricID());
@@ -495,6 +517,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     TimerAdapter internalTimer(MpMetadata metadata, MetricDescriptor id) {
+        validateTagNamesMatch(id);
         TimerAdapter result = checkCast(TimerAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new TimerAdapter(registry)));
         addNameToApplicationMap(id.toMetricID());
@@ -719,29 +742,49 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     private MpMetadata internalGetMetadata(String name, MetricType type) {
+
         MpMetadata result = metadataMap.computeIfAbsent(name, k -> new MpMetadata(name, type));
+
         if (result.type != type) {
-            throw new IllegalStateException(String.format("Metric %s already defined using a different type (%s)",
-                    name, result.getType()));
+            throw new IllegalStateException(
+                    String.format("Metric %s already defined using a different type (%s)", name, result.getType()));
         }
-        //TODO: Checked type.. Check other aspects of metadata? Or are we not strict?
+
+        /*
+         * Check that metadata of metric being registered/retrieved matches existing
+         * existing metadata (if it exists)
+         */
+        if (!result.equals(MpMetadata.sanitize(new MpMetadata(name, type), type))) {
+            throw new IllegalArgumentException(
+                    String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
+                            result.toString(), new MpMetadata(name, type).toString()));
+        }
+
         return result;
     }
 
     private MpMetadata internalGetMetadata(Metadata metadata, MetricType type) {
         MpMetadata result = metadataMap.computeIfAbsent(metadata.getName(), k -> MpMetadata.sanitize(metadata, type));
 
+        /*
+         * Check that metric being registered/retrieved matches existing type of
+         * existing metadata (if it exists)
+         */
         if (!result.mergeSameType(metadata)) {
             throw new IllegalArgumentException(String.format("Metric %s already defined using a different type (%s)",
                     metadata.getName(), result.getType()));
         }
 
+        /*
+         * Check that metadata of metric being registered/retrieved matches existing
+         * existing metadata (if it exists)
+         */
         if (!result.equals(MpMetadata.sanitize(metadata, type))) {
             throw new IllegalArgumentException(
                     String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
                             result.toString(), metadata.toString()));
         }
-        //TODO: Checked type.. Check other aspects of metadata? Or are we not strict?
+
         return result;
     }
 

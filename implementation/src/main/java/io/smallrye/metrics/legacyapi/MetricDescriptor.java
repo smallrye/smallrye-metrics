@@ -2,8 +2,10 @@ package io.smallrye.metrics.legacyapi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Tag;
@@ -69,6 +71,49 @@ class MetricDescriptor {
 
     public String toString() {
         return name + Arrays.asList(tags);
+    }
+
+    /**
+     * Checks if this MetricDescriptor's {@link Tags} contain the same tag
+     * keys/names as the {@link Tags} provided
+     * 
+     * @param otherTags The other {@link Tags}
+     * @return true if the tags key/names match
+     */
+    public boolean isTagNamesMatch(Tags otherTags) {
+
+        /*
+         * No need to null check as the withAppTags() call used during every
+         * registration/retrieval initializes with an "empty" Tags.
+         */
+
+        /*
+         * Exactly the same!
+         * 
+         * Don't check if they don't "equal", that will check for values as well, which
+         * we don't care about.
+         */
+        if (tags.equals(otherTags)) {
+            return true;
+        }
+
+        Set<String> tagNameSet = new HashSet<String>();
+        Set<String> otherTagNameSet = new HashSet<String>();
+
+        tags.stream().forEach(tag -> tagNameSet.add(tag.getKey()));
+        otherTags.stream().forEach(tag -> otherTagNameSet.add(tag.getKey()));
+
+        // Size of tags is different
+        if (tagNameSet.size() != otherTagNameSet.size()) {
+            return false;
+        } else { // Check if same names
+            tagNameSet.stream().forEach(name -> {
+                if (otherTagNameSet.contains(name)) {
+                    otherTagNameSet.remove(name);
+                }
+            });
+            return otherTagNameSet.size() == 0;
+        }
     }
 
     // Deal with ubiquitous MetricID containing nefarious TreeSet and arbitrary

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019, 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,11 @@ package io.smallrye.metrics.registration;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import org.eclipse.microprofile.metrics.Histogram;
@@ -61,15 +63,32 @@ public class MetadataMismatchTest {
     }
 
     @Test
-    public void reusingMetadata() {
-        Metadata metadata1 = Metadata.builder().withName("myhistogram").withDescription("description1").build();
+    public void reusingMetadataTags() {
+        Metadata metadata = Metadata.builder().withName("myhistogram").withDescription("description1").build();
 
-        Histogram histogram1 = registry.histogram(metadata1);
-        Histogram histogram2 = registry.histogram("myhistogram", new Tag("color", "blue"));
+        Histogram histogram1 = registry.histogram(metadata, new Tag("color", "blue"));
+        Histogram histogram2 = registry.histogram(metadata, new Tag("color", "red"));
 
         assertNotEquals(histogram1, histogram2);
         assertEquals(2, registry.getMetrics().size());
         assertThat(registry.getMetadata().get("myhistogram").description().get(), equalTo("description1"));
+    }
+
+    @Test
+    public void mismatchMetadataWithSameMetricName() {
+        final String METRIC_NAME = "myhistogram";
+
+        Metadata metadata1 = Metadata.builder().withName(METRIC_NAME).withDescription("description1").build();
+
+        Histogram histogram1 = registry.histogram(metadata1);
+
+        // Mismatched metadata - expect IAE
+        Histogram histogram2 = registry.histogram(METRIC_NAME);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> registry.histogram("myhistogram", new Tag("color", "blue")));
+
+        assertNotNull(e);
     }
 
     @Test
