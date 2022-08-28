@@ -92,6 +92,12 @@ public class PrometheusMetricsExporter implements Exporter {
         StringBuilder sb = new StringBuilder();
         for (MeterRegistry meterRegistry : prometheusRegistryList) {
             PrometheusMeterRegistry promMeterRegistry = (PrometheusMeterRegistry) meterRegistry;
+
+            //Skip scrape if meter doesn't contain this metric
+            if (promMeterRegistry.find(name).meter() == null) {
+                continue;
+            }
+
             /*
              * For each Prometheus registry found:
              * 1. Calculate potential formatted names
