@@ -83,12 +83,12 @@ public class MetricsRequestHandler {
             return;
         }
 
-        String scopePath = requestPath.substring(contextRoot.length());
+        String pathAfterContextRoot = requestPath.substring(contextRoot.length());
         /*
          * Allow user to request with "/metrics/" -- maybe not? Return 404 if request
          * path is more than just /metrics or /metrics/ Bad request!
          */
-        if (scopePath.length() != 0 && !scopePath.equals("/")) {
+        if (pathAfterContextRoot.length() != 0 && !pathAfterContextRoot.equals("/")) {
             responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
                     + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
             return;
@@ -111,7 +111,7 @@ public class MetricsRequestHandler {
              * 404 if scope does not exist.
              */
             if (!SharedMetricRegistries.doesScopeExist(scope)) {
-                responder.respondWith(404, "Scope " + scopePath + " not found", Collections.emptyMap());
+                responder.respondWith(404, "Scope " + scope + " not found", Collections.emptyMap());
                 return;
             }
 
