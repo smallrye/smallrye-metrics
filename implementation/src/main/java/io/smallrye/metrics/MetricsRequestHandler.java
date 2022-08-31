@@ -176,6 +176,12 @@ public class MetricsRequestHandler {
          */
         else if (scope == null && metricName != null) {
             output = exporter.exportOneMetricAcrossScopes(metricName);
+
+            if (output == null || output.isEmpty() || output.length() == 0) {
+                responder.respondWith(404, "Metric " + metricName + " not found in any scope  ",
+                        Collections.emptyMap());
+                return;
+            }
         }
         /*
          * Something went wrong :(
