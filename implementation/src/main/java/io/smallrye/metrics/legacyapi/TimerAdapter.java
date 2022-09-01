@@ -58,7 +58,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
             for (Tag t : descriptor.tags()) {
                 tagsSet.add(t);
             }
-            tagsSet.add(Tag.of("mp_scope", scope));
+            tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             globalCompositeTimer = Timer.builder(descriptor.name())
                     .description(metadata.getDescription())
