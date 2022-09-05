@@ -20,7 +20,7 @@
   <parent>
     <artifactId>smallrye-metrics-testsuite-parent</artifactId>
     <groupId>io.smallrye</groupId>
-    <version>4.0.0</version>
+    <version>4.0.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
