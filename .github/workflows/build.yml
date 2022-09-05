@@ -3,7 +3,7 @@ name: SmallRye Build
 on:
   push:
     branches:
-      - 4.x
+      - main
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
