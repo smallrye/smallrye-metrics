@@ -52,7 +52,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
             for (Tag t : metricInfo.tags()) {
                 tagsSet.add(t);
             }
-            tagsSet.add(Tag.of("mp_scope", scope));
+            tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             globalCompositeSummary = DistributionSummary.builder(metricInfo.name())
                     .description(metadata.getDescription())

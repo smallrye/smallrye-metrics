@@ -52,7 +52,7 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
             for (Tag t : descriptor.tags()) {
                 tagsSet.add(t);
             }
-            tagsSet.add(Tag.of("mp_scope", scope));
+            tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             globalCompositeCounter = Counter.builder(descriptor.name()).description(metadata.getDescription())
                     .baseUnit(metadata.getUnit()).tags(tagsSet).register(Metrics.globalRegistry);
