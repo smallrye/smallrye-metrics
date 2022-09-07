@@ -112,7 +112,6 @@ public class JaxRsMetricsServletFilter implements Filter {
         if (registry.getCounter(metricIDForFailure) == null) {
             Metadata failureMetadata = Metadata.builder()
                     .withName(metricIDForFailure.getName())
-                    .withDisplayName("Total Unmapped Exceptions count")
                     .withDescription(
                             "The total number of unmapped exceptions that occurred from this RESTful resource " +
                                     "method since the start of the server.")

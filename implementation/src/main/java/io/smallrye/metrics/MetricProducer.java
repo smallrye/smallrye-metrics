@@ -1,10 +1,8 @@
 package io.smallrye.metrics;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
-import java.util.stream.Stream;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -121,11 +119,11 @@ public class MetricProducer {
         Metadata metadata;
         if (metric != null) {
             Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withType(type).withUnit(metric.unit())
-                    .withDescription(metric.description()).withDisplayName(metric.displayName()).build();
+                    .withDescription(metric.description()).build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         } else {
             Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withType(type).withUnit(MetricUnits.NONE)
-                    .withDescription("").withDisplayName("").build();
+                    .withDescription("").build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         }
 
@@ -148,10 +146,6 @@ public class MetricProducer {
         } else {
             return new Tag[0];
         }
-    }
-
-    private static Tag[] appendScopeTags(Tag[] tags, LegacyMetricRegistryAdapter adapter) {
-        return Stream.concat(Arrays.stream(tags), Arrays.stream(adapter.scopeTagsLegacy())).toArray(Tag[]::new);
     }
 
 }

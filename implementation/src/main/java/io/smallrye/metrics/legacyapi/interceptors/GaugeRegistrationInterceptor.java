@@ -19,6 +19,8 @@ package io.smallrye.metrics.legacyapi.interceptors;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.annotation.Priority;
 import javax.interceptor.AroundConstruct;
@@ -72,9 +74,14 @@ public class GaugeRegistrationInterceptor {
                 if (gauge.isPresent()) {
                     AnnotationInfo g = gauge.metricAnnotation();
                     Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
-                            g.displayName(), MetricType.GAUGE);
+                            MetricType.GAUGE);
 
                     registry = SharedMetricRegistries.getOrCreate(g.scope());
+
+                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                        method.setAccessible(true);
+                        return null;
+                    });
 
                     /*
                      * Error/warning will be emitted by the runtime if return value

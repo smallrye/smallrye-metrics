@@ -169,6 +169,9 @@ public class LegacyMetricsExtension implements Extension {
     }
 
     void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
+        // create the "base" registry, this will allow the base metrics to be added
+        // should this be done here, or should it be called by servers consuming this library?
+        MetricRegistry baseRegistry = SharedMetricRegistries.getOrCreate(MetricRegistry.BASE_SCOPE);
 
         // register configured meter registries
 

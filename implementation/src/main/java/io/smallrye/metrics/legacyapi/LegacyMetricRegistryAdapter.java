@@ -39,7 +39,9 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     private final String scope;
     private final MeterRegistry registry;
 
-    protected static final String MP_APPLICATION_NAME_TAG = "mp_app";
+    public static final String MP_APPLICATION_NAME_TAG = "mp_app";
+
+    public static final String MP_SCOPE_TAG = "mp_scope";
 
     protected static final String MP_APPLICATION_NAME_VAR = "mp.metrics.appName";
 
@@ -275,8 +277,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Counter counter(String name, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalCounter(internalGetMetadata(name, MetricType.COUNTER),
-                new MetricDescriptor(name, withAppTags(tags)));
+                new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
@@ -294,8 +303,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalCounter(internalGetMetadata(metadata, MetricType.COUNTER),
-                new MetricDescriptor(metadata.getName(), withAppTags(tags)));
+                new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     Counter interceptorCounter(Metadata metadata, String... tags) {
@@ -309,7 +325,25 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 new MetricDescriptor(annotation.name(), annotation.tags()));
     }
 
+    private void validateTagNamesMatch(MetricDescriptor id) {
+        /*
+         * Check that if there are metrics registered with same metric name that the tag
+         * set is the same. Specifically that the tag key values are the same. Values
+         * can differ.
+         */
+        for (MetricDescriptor md : constructedMeters.keySet()) {
+            if (md.name().equals(id.name) && !id.isTagNamesMatch(md.tags())) {
+                throw new IllegalArgumentException(String.format(
+                        "The set of tags names provided do not match those of an existing metric with the same name. Provided = %s Existing = %s ",
+                        id.tags.toString(), md.tags.toString()));
+            }
+        }
+    }
+
     CounterAdapter internalCounter(MpMetadata metadata, MetricDescriptor id) {
+
+        validateTagNamesMatch(id);
+
         CounterAdapter result = checkCast(CounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new CounterAdapter()));
         addNameToApplicationMap(id.toMetricID());
@@ -322,14 +356,28 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public <T> Gauge<Double> gauge(String name, T o, ToDoubleFunction<T> f, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
-                new MetricDescriptor(name, withAppTags(tags)), o, f);
+                new MetricDescriptor(name, unifiedTags), o, f);
     }
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(String name, T o, Function<T, R> f, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
-                new MetricDescriptor(name, withAppTags(tags)), o, f);
+                new MetricDescriptor(name, unifiedTags), o, f);
     }
 
     @Override
@@ -342,12 +390,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     @Override
     public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T o, Function<T, R> f, Tag... tags) {
         String name = metadata.getName();
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalGauge(internalGetMetadata(metadata, MetricType.GAUGE),
-                new MetricDescriptor(name, withAppTags(tags)), o, f);
+                new MetricDescriptor(name, unifiedTags), o, f);
     }
 
     @SuppressWarnings("unchecked")
     <T> GaugeAdapter<Double> internalGauge(MpMetadata metadata, MetricDescriptor id, T obj, ToDoubleFunction<T> f) {
+        validateTagNamesMatch(id);
         GaugeAdapter.DoubleFunctionGauge<T> result = checkCast(GaugeAdapter.DoubleFunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.DoubleFunctionGauge<>(obj, f)));
         addNameToApplicationMap(id.toMetricID());
@@ -356,6 +412,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     <T, R extends Number> GaugeAdapter<R> internalGauge(MpMetadata metadata, MetricDescriptor id, T obj, Function<T, R> f) {
+        validateTagNamesMatch(id);
         GaugeAdapter.FunctionGauge<T, R> result = checkCast(GaugeAdapter.FunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.FunctionGauge<>(obj, f)));
         addNameToApplicationMap(id.toMetricID());
@@ -369,8 +426,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> f, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
-                new MetricDescriptor(name, withAppTags(tags)), f);
+                new MetricDescriptor(name, unifiedTags), f);
     }
 
     @Override
@@ -383,14 +447,23 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     @Override
     public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> f, Tag... tags) {
         String name = metadata.getName();
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalGauge(internalGetMetadata(metadata, MetricType.GAUGE),
-                new MetricDescriptor(name, withAppTags(tags)), f);
+                new MetricDescriptor(name, unifiedTags), f);
     }
 
     @SuppressWarnings("unchecked")
     <T extends Number> GaugeAdapter<T> internalGauge(MpMetadata metadata, MetricDescriptor id, Supplier<T> f) {
+        validateTagNamesMatch(id);
         GaugeAdapter<T> result = checkCast(GaugeAdapter.NumberSupplierGauge.class, metadata,
-                constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<>(f)));
+                constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<T>(f)));
+        addNameToApplicationMap(id.toMetricID());
         return result.register(metadata, id, registry, scope);
     }
 
@@ -415,8 +488,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Histogram histogram(String name, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalHistogram(internalGetMetadata(name, MetricType.HISTOGRAM),
-                new MetricDescriptor(name, withAppTags(tags)));
+                new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
@@ -434,8 +514,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalHistogram(internalGetMetadata(metadata, MetricType.HISTOGRAM),
-                new MetricDescriptor(metadata.getName(), withAppTags(tags)));
+                new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     HistogramAdapter injectedHistogram(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
@@ -445,6 +532,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     HistogramAdapter internalHistogram(MpMetadata metadata, MetricDescriptor id) {
+        validateTagNamesMatch(id);
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter()));
         addNameToApplicationMap(id.toMetricID());
@@ -459,8 +547,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Timer timer(String name, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalTimer(internalGetMetadata(name, MetricType.TIMER),
-                new MetricDescriptor(name, withAppTags(tags)));
+                new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
@@ -478,8 +573,15 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
         return internalTimer(internalGetMetadata(metadata, MetricType.TIMER),
-                new MetricDescriptor(metadata.getName(), withAppTags(tags)));
+                new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     TimerAdapter injectedTimer(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
@@ -494,6 +596,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     TimerAdapter internalTimer(MpMetadata metadata, MetricDescriptor id) {
+        validateTagNamesMatch(id);
         TimerAdapter result = checkCast(TimerAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new TimerAdapter(registry)));
         addNameToApplicationMap(id.toMetricID());
@@ -541,12 +644,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public boolean remove(String name) {
+
+        boolean isRemoveSuccess = false;
         for (Map.Entry<MetricDescriptor, MeterHolder> e : constructedMeters.entrySet()) {
             if (e.getKey().name().equals(name)) {
-                return internalRemove(e.getKey());
+                isRemoveSuccess = internalRemove(e.getKey());
             }
         }
-        return false;
+        return isRemoveSuccess;
 
     }
 
@@ -696,12 +801,39 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return scope;
     }
 
+    /**
+     * Must be called before any internalGetMetadata calls
+     * We may throw an IllegalArgumentException. So we don't
+     * want metadata to be registered if it was not necessary.
+     * 
+     * 
+     * @param tags
+     * @return
+     */
     public Tags withAppTags(Tag... tags) {
 
         Tags out = Tags.empty();
 
-        for (Tag t : tags) {
-            out = out.and(t.getTagName(), t.getTagValue());
+        if (tags != null) {
+            for (Tag t : tags) {
+                /*
+                 * Need to check if tags being passed in are
+                 * 'mp_scope' or 'mp_app'; throw IAE as per spec
+                 * 
+                 * mp_scope is provided to micrometer registry
+                 * during metric/meter registration in the adapters
+                 * 
+                 * mp_app is resolved with the resolveMPConfigAppNameTag()
+                 * logic
+                 */
+                if (t.getTagName().equals(MP_APPLICATION_NAME_TAG)
+                        || t.getTagName().equals(MP_SCOPE_TAG)) {
+                    throw new IllegalArgumentException("Can not use "
+                            + "reserved tag names: \"mp_scope\" "
+                            + "or \"mp_app\"");
+                }
+                out = out.and(t.getTagName(), t.getTagValue());
+            }
         }
 
         out = combineApplicationTagsWithMPConfigAppNameTag(out);
@@ -714,29 +846,49 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     private MpMetadata internalGetMetadata(String name, MetricType type) {
+
         MpMetadata result = metadataMap.computeIfAbsent(name, k -> new MpMetadata(name, type));
+
         if (result.type != type) {
-            throw new IllegalStateException(String.format("Metric %s already defined using a different type (%s)",
-                    name, result.getType()));
+            throw new IllegalStateException(
+                    String.format("Metric %s already defined using a different type (%s)", name, result.getType()));
         }
-        //TODO: Checked type.. Check other aspects of metadata? Or are we not strict?
+
+        /*
+         * Check that metadata of metric being registered/retrieved matches existing
+         * existing metadata (if it exists)
+         */
+        if (!result.equals(MpMetadata.sanitize(new MpMetadata(name, type), type))) {
+            throw new IllegalArgumentException(
+                    String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
+                            result.toString(), new MpMetadata(name, type).toString()));
+        }
+
         return result;
     }
 
     private MpMetadata internalGetMetadata(Metadata metadata, MetricType type) {
         MpMetadata result = metadataMap.computeIfAbsent(metadata.getName(), k -> MpMetadata.sanitize(metadata, type));
 
+        /*
+         * Check that metric being registered/retrieved matches existing type of
+         * existing metadata (if it exists)
+         */
         if (!result.mergeSameType(metadata)) {
             throw new IllegalArgumentException(String.format("Metric %s already defined using a different type (%s)",
                     metadata.getName(), result.getType()));
         }
 
+        /*
+         * Check that metadata of metric being registered/retrieved matches existing
+         * existing metadata (if it exists)
+         */
         if (!result.equals(MpMetadata.sanitize(metadata, type))) {
             throw new IllegalArgumentException(
                     String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
                             result.toString(), metadata.toString()));
         }
-        //TODO: Checked type.. Check other aspects of metadata? Or are we not strict?
+
         return result;
     }
 
