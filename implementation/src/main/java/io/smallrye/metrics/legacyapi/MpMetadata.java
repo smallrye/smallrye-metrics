@@ -19,50 +19,30 @@ class MpMetadata implements Metadata {
     }
 
     final String name;
-    final MetricType type;
     String description;
     String unit;
     boolean dirty = false;
 
     MpMetadata(String name, MetricType type) {
         this.name = name;
-        this.type = type;
     }
 
-    MpMetadata(Metric annotation, MetricType type) {
+    MpMetadata(Metric annotation) {
         this.name = annotation.name();
         this.description = stringOrNull(annotation.description());
         this.unit = stringOrNull(annotation.unit());
-        this.type = type;
     }
 
     MpMetadata(String name, String description, String unit, MetricType type) {
         this.name = name;
         this.description = stringOrNull(description);
         this.unit = stringOrNull(unit);
-        this.type = type;
     }
 
     MpMetadata(Metadata other, MetricType type) {
-        this.type = type;
         this.name = other.getName();
         this.description = other.description().orElse(null);
         this.unit = other.unit().orElse(null);
-    }
-
-    public boolean mergeSameType(MpMetadata metadata) {
-        if (this.type == metadata.type) {
-            if (description == null) {
-                dirty = true;
-                description = stringOrNull(metadata.description);
-            }
-            if (unit == null) {
-                dirty = true;
-                unit = stringOrNull(metadata.unit);
-            }
-            return true;
-        }
-        return false;
     }
 
     //if invalid or same type
@@ -77,21 +57,6 @@ class MpMetadata implements Metadata {
             if (unit == null) {
                 dirty = true;
                 unit = stringOrNull(metadata.unit().orElse(null));
-            }
-            return true;
-        }
-        return false;
-    }
-
-    public boolean mergeSameType(AnnotatedGaugeAdapter annotation) {
-        if (this.type == MetricType.GAUGE) {
-            if (description == null) {
-                dirty = true;
-                description = stringOrNull(annotation.description());
-            }
-            if (unit == null) {
-                dirty = true;
-                unit = stringOrNull(annotation.baseUnit());
             }
             return true;
         }
