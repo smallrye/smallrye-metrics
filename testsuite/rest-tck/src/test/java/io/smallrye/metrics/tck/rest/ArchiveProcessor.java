@@ -17,7 +17,7 @@ package io.smallrye.metrics.tck.rest;
 
 import java.io.File;
 
-import javax.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.Extension;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.arquillian.container.test.spi.TestDeployment;

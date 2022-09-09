@@ -3,7 +3,7 @@ package io.smallrye.metrics.legacyapi.interceptors;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 
-import javax.enterprise.inject.Vetoed;
+import jakarta.enterprise.inject.Vetoed;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;

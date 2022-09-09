@@ -1,6 +1,6 @@
 package io.smallrye.metrics.test.inject;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;

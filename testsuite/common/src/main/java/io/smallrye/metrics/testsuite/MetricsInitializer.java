@@ -17,9 +17,9 @@ package io.smallrye.metrics.testsuite;
 
 import java.io.IOException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
