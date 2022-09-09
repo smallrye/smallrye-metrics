@@ -14,7 +14,6 @@ import javax.interceptor.InvocationContext;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import io.smallrye.metrics.SharedMetricRegistries;
@@ -63,7 +62,7 @@ public class CountedInterceptor {
                 .map(metricID -> {
                     Counter metric = registry.getCounters().get(metricID);
                     if (metric == null) {
-                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.COUNTER, metricID);
+                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(metricID);
                     }
                     return metric;
                 })

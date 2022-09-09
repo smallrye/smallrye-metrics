@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 import io.micrometer.core.instrument.Meter;
@@ -154,10 +153,5 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
         public void close() {
             sample.stop(timer);
         }
-    }
-
-    @Override
-    public MetricType getType() {
-        return MetricType.TIMER;
     }
 }

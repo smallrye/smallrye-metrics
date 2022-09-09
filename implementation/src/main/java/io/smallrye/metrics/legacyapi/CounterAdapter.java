@@ -3,8 +3,6 @@ package io.smallrye.metrics.legacyapi;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.microprofile.metrics.MetricType;
-
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -92,10 +90,5 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
     @Override
     public Meter getMeter() {
         return globalCompositeCounter;
-    }
-
-    @Override
-    public MetricType getType() {
-        return MetricType.COUNTER;
     }
 }

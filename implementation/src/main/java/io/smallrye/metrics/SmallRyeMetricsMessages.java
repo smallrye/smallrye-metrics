@@ -7,7 +7,6 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.management.MalformedObjectNameException;
 
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
@@ -21,8 +20,8 @@ public interface SmallRyeMetricsMessages {
     @Message(id = 0, value = "Unknown metric type")
     IllegalArgumentException unknownMetricType();
 
-    @Message(id = 2, value = "No metric of type %s and ID %s found in registry")
-    IllegalStateException noMetricFoundInRegistry(MetricType metricType, MetricID metricID);
+    @Message(id = 2, value = "No metric with ID %s found in registry")
+    IllegalStateException noMetricFoundInRegistry(MetricID metricID);
 
     @Message(id = 3, value = "No metric mapped for %s")
     IllegalStateException noMetricMappedForMember(Member member);
@@ -65,12 +64,6 @@ public interface SmallRyeMetricsMessages {
 
     @Message(id = 16, value = "Unable to infer a metric type")
     IllegalStateException unableToInferMetricType();
-
-    @Message(id = 17, value = "Attempting to register a %s, but the passed metadata contains type=%s")
-    IllegalArgumentException typeMismatch(MetricType beingRegistered, MetricType typeInMetadata);
-
-    @Message(id = 18, value = "Ambiguous metric type, %s and %s are possible")
-    IllegalArgumentException ambiguousMetricType(MetricType eligibleType1, MetricType eligibleType2);
 
     @Message(id = 19, value = "Unknown metric annotation type %s")
     IllegalArgumentException unknownMetricAnnotationType(Class<?> annotationType);

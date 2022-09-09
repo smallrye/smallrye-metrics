@@ -15,7 +15,6 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
@@ -74,7 +73,7 @@ public class MetricProducer {
     Counter getCounter(InjectionPoint ip) {
 
         registry = SharedMetricRegistries.getOrCreate(getScope(ip));
-        Metadata metadata = getMetadata(ip, MetricType.COUNTER);
+        Metadata metadata = getMetadata(ip);
         Tag[] tags = getTags(ip);
 
         Counter counter = registry.counter(metadata, tags);
@@ -91,7 +90,7 @@ public class MetricProducer {
 
         registry = SharedMetricRegistries.getOrCreate(getScope(ip));
 
-        Metadata metadata = getMetadata(ip, MetricType.TIMER);
+        Metadata metadata = getMetadata(ip);
         Tag[] tags = getTags(ip);
 
         Timer timer = registry.timer(metadata, tags);
@@ -106,7 +105,7 @@ public class MetricProducer {
     Histogram getHistogram(InjectionPoint ip) {
 
         registry = SharedMetricRegistries.getOrCreate(getScope(ip));
-        Metadata metadata = getMetadata(ip, MetricType.HISTOGRAM);
+        Metadata metadata = getMetadata(ip);
         Tag[] tags = getTags(ip);
 
         Histogram histogram = registry.histogram(metadata, tags);
@@ -114,15 +113,15 @@ public class MetricProducer {
         return histogram;
     }
 
-    private Metadata getMetadata(InjectionPoint ip, MetricType type) {
+    private Metadata getMetadata(InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         Metadata metadata;
         if (metric != null) {
-            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withType(type).withUnit(metric.unit())
+            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withUnit(metric.unit())
                     .withDescription(metric.description()).build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         } else {
-            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withType(type).withUnit(MetricUnits.NONE)
+            Metadata actualMetadata = Metadata.builder().withName(metricName.of(ip)).withUnit(MetricUnits.NONE)
                     .withDescription("").build();
             metadata = new OriginAndMetadata(ip, actualMetadata);
         }
