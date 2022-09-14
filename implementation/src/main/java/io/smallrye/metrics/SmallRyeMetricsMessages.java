@@ -2,9 +2,10 @@ package io.smallrye.metrics;
 
 import java.lang.reflect.Member;
 
-import javax.enterprise.inject.spi.AnnotatedParameter;
-import javax.enterprise.inject.spi.InjectionPoint;
 import javax.management.MalformedObjectNameException;
+
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.jboss.logging.Messages;

@@ -21,8 +21,8 @@
 
   <parent>
     <groupId>io.smallrye</groupId>
-    <artifactId>smallrye-parent</artifactId>
-    <version>31</version>
+    <artifactId>smallrye-jakarta-parent</artifactId>
+    <version>34</version>
   </parent>
 
   <artifactId>smallrye-metrics-parent</artifactId>
@@ -33,15 +33,15 @@
   <url>http://smallrye.io</url>
 
   <properties>
-    <version.microprofile-config>2.0</version.microprofile-config>
+    <version.microprofile-config>3.0.1</version.microprofile-config>
     <version.microprofile-metrics>5.0.0-SNAPSHOT</version.microprofile-metrics>
 
     <version.micrometer>1.9.3</version.micrometer>
 
-    <version.smallrye.config>2.5.1</version.smallrye.config>
-    <version.smallrye.common>1.7.1</version.smallrye.common>
+    <version.smallrye.config>3.0.0</version.smallrye.config>
+    <version.smallrye.common>2.0.0</version.smallrye.common>
 
-    <version.jakarta.servlet>4.0.4</version.jakarta.servlet>
+    <version.jakarta.servlet>5.0.0</version.jakarta.servlet>
 
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
@@ -156,25 +156,6 @@
             <arg>loopback</arg>
           </gpgArguments>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.eclipse.transformer</groupId>
-        <artifactId>transformer-maven-plugin</artifactId>
-        <version>0.4.0</version>
-        <configuration>
-          <rules>
-            <jakartaDefaults>true</jakartaDefaults>
-          </rules>
-          <classifier>jakarta</classifier>
-        </configuration>
-        <executions>
-          <execution>
-            <id>default-transform</id>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

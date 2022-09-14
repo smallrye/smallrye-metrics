@@ -19,7 +19,7 @@ package io.smallrye.metrics.tck.optional;
 
 import java.io.File;
 
-import javax.ws.rs.ext.Providers;
+import jakarta.ws.rs.ext.Providers;
 
 import org.jboss.arquillian.container.test.spi.TestDeployment;
 import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;

@@ -2,9 +2,9 @@ package io.smallrye.metrics.legacyapi.interceptors;
 
 import java.util.Collections;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.BeanManager;
 
 @ApplicationScoped
 public class MetricNameFactory {
