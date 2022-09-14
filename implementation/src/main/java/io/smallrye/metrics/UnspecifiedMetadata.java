@@ -3,7 +3,6 @@ package io.smallrye.metrics;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * This is a special class to internally mark that no metadata was specified for a metric registration. We can't simply use null
@@ -14,11 +13,9 @@ import org.eclipse.microprofile.metrics.MetricType;
 public class UnspecifiedMetadata implements Metadata {
 
     private final String name;
-    private final MetricType type;
 
-    public UnspecifiedMetadata(String name, MetricType type) {
+    public UnspecifiedMetadata(String name) {
         this.name = name;
-        this.type = type;
     }
 
     @Override
@@ -37,16 +34,6 @@ public class UnspecifiedMetadata implements Metadata {
     }
 
     @Override
-    public String getType() {
-        return type.toString();
-    }
-
-    @Override
-    public MetricType getTypeRaw() {
-        return type;
-    }
-
-    @Override
     public String getUnit() {
         throw new IllegalStateException("Unspecified metadata only contains name and type.");
     }
@@ -59,7 +46,6 @@ public class UnspecifiedMetadata implements Metadata {
     public Metadata convertToRealMetadata() {
         return Metadata.builder()
                 .withName(name)
-                .withType(type)
                 .build();
     }
 }

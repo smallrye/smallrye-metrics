@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 import io.micrometer.core.instrument.DistributionSummary;
@@ -107,10 +106,5 @@ class HistogramAdapter implements Histogram, MeterHolder {
     @Override
     public Meter getMeter() {
         return globalCompositeSummary;
-    }
-
-    @Override
-    public MetricType getType() {
-        return MetricType.HISTOGRAM;
     }
 }

@@ -3,14 +3,14 @@ package io.smallrye.metrics.jaxrs;
 import java.io.IOException;
 import java.time.Duration;
 
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -64,6 +64,16 @@ public class JaxRsMetricsServletFilter implements Filter {
 
                         @Override
                         public void onStartAsync(AsyncEvent event) {
+                            // from the Servlet specification for startAsync():
+                            // "This method clears the list of AsyncListener instances (if any)
+                            // that were registered with the AsyncContext returned by the
+                            // previous call to one of the startAsync methods, after calling
+                            // each AsyncListener at its onStartAsync method."
+                            //
+                            // if onStartAsync is call, its likely we need to register this
+                            // listener again in order for the other callbacks to be called.
+
+                            event.getAsyncContext().addListener(this);
                         }
                     });
                 }

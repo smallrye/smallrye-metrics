@@ -3,7 +3,7 @@ package io.smallrye.metrics.elementdesc.adapter.cdi;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 
-import javax.enterprise.inject.Stereotype;
+import jakarta.enterprise.inject.Stereotype;
 
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;

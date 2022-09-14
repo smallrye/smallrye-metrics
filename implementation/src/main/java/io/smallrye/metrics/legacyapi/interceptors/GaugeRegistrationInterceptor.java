@@ -22,14 +22,13 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.annotation.Priority;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
+import jakarta.annotation.Priority;
+import jakarta.interceptor.AroundConstruct;
+import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
 import io.smallrye.metrics.SharedMetricRegistries;
@@ -73,8 +72,7 @@ public class GaugeRegistrationInterceptor {
                         memberInfoAdapter.convert(method));
                 if (gauge.isPresent()) {
                     AnnotationInfo g = gauge.metricAnnotation();
-                    Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description(),
-                            MetricType.GAUGE);
+                    Metadata metadata = MetricsMetadata.getMetadata(g, gauge.metricName(), g.unit(), g.description());
 
                     registry = SharedMetricRegistries.getOrCreate(g.scope());
 

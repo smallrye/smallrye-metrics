@@ -22,7 +22,6 @@ import static org.junit.Assert.*;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.After;
 import org.junit.Test;
 
@@ -53,20 +52,4 @@ public class MetricTypeMismatchTest {
             assertEquals(1, registry.getMetrics().size());
         }
     }
-
-    @Test
-    public void wrongTypeInMetadata() {
-        Metadata metadata1 = Metadata.builder()
-                .withName("metric1")
-                .withType(MetricType.COUNTER)
-                .build();
-        try {
-            registry.timer(metadata1);
-            fail("Must not be able to register a metric if the type in its metadata is different than the what we specified by using a particular registration method.");
-        } catch (Exception e) {
-            assertThat(e, instanceOf(IllegalArgumentException.class));
-            assertEquals(0, registry.getMetrics().size());
-        }
-    }
-
 }

@@ -2,9 +2,9 @@ package io.smallrye.metrics.test.initialization;
 
 import static org.junit.Assert.assertTrue;
 
-import javax.annotation.security.PermitAll;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.annotation.security.PermitAll;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;

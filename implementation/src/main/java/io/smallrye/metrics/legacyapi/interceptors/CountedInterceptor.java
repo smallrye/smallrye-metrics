@@ -4,17 +4,16 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.util.Set;
 
-import javax.annotation.Priority;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.AroundTimeout;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
+import jakarta.annotation.Priority;
+import jakarta.interceptor.AroundConstruct;
+import jakarta.interceptor.AroundInvoke;
+import jakarta.interceptor.AroundTimeout;
+import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import io.smallrye.metrics.SharedMetricRegistries;
@@ -63,7 +62,7 @@ public class CountedInterceptor {
                 .map(metricID -> {
                     Counter metric = registry.getCounters().get(metricID);
                     if (metric == null) {
-                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.COUNTER, metricID);
+                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(metricID);
                     }
                     return metric;
                 })

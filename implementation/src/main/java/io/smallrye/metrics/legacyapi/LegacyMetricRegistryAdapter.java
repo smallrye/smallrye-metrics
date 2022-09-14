@@ -24,7 +24,6 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -145,7 +144,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     /**
      *
-     * @param sorted boolean to choose if the Tag array returned is sorted by key or not
+     * @param isSorted boolean to choose if the Tag array returned is sorted by key or not
      * @param tags the application tags to be merged with the MP Config mp.metrics.appName tag
      * @return combined Tag array of the MP Config mp.metrics.appName tag with application tags; can return null
      */
@@ -271,7 +270,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Counter counter(String name) {
-        return internalCounter(internalGetMetadata(name, MetricType.COUNTER),
+        return internalCounter(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()));
     }
 
@@ -284,20 +283,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalCounter(internalGetMetadata(name, MetricType.COUNTER),
+        return internalCounter(internalGetMetadata(name),
                 new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
     public Counter counter(MetricID metricID) {
         String name = metricID.getName();
-        return internalCounter(internalGetMetadata(name, MetricType.COUNTER),
+        return internalCounter(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags(metricID.getTagsAsArray())));
     }
 
     @Override
     public Counter counter(Metadata metadata) {
-        return internalCounter(internalGetMetadata(metadata, MetricType.COUNTER),
+        return internalCounter(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), withAppTags()));
     }
 
@@ -310,18 +309,18 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalCounter(internalGetMetadata(metadata, MetricType.COUNTER),
+        return internalCounter(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     Counter interceptorCounter(Metadata metadata, String... tags) {
-        return internalCounter(internalGetMetadata(metadata, MetricType.COUNTER),
+        return internalCounter(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), tags));
     }
 
     Counter injectedCounter(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
         return internalCounter(
-                internalGetMetadata(annotation.name(), MetricType.COUNTER).merge(annotation),
+                internalGetMetadata(annotation.name()).merge(annotation),
                 new MetricDescriptor(annotation.name(), annotation.tags()));
     }
 
@@ -351,7 +350,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public <T> Gauge<Double> gauge(String name, T o, ToDoubleFunction<T> f) {
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()), o, f);
     }
 
@@ -363,7 +362,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, unifiedTags), o, f);
     }
 
@@ -376,14 +375,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, unifiedTags), o, f);
     }
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T o, Function<T, R> f) {
         String name = metricID.getName();
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()), o, f);
     }
 
@@ -397,7 +396,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalGauge(internalGetMetadata(metadata, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(metadata),
                 new MetricDescriptor(name, unifiedTags), o, f);
     }
 
@@ -420,7 +419,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> f) {
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()), f);
     }
 
@@ -433,14 +432,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, unifiedTags), f);
     }
 
     @Override
     public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> f) {
         String name = metricID.getName();
-        return internalGauge(internalGetMetadata(name, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()), f);
     }
 
@@ -454,7 +453,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalGauge(internalGetMetadata(metadata, MetricType.GAUGE),
+        return internalGauge(internalGetMetadata(metadata),
                 new MetricDescriptor(name, unifiedTags), f);
     }
 
@@ -482,7 +481,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Histogram histogram(String name) {
-        return internalHistogram(internalGetMetadata(name, MetricType.HISTOGRAM),
+        return internalHistogram(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()));
     }
 
@@ -495,20 +494,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalHistogram(internalGetMetadata(name, MetricType.HISTOGRAM),
+        return internalHistogram(internalGetMetadata(name),
                 new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
     public Histogram histogram(MetricID metricID) {
         String name = metricID.getName();
-        return internalHistogram(internalGetMetadata(name, MetricType.HISTOGRAM),
+        return internalHistogram(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags(metricID.getTagsAsArray())));
     }
 
     @Override
     public Histogram histogram(Metadata metadata) {
-        return internalHistogram(internalGetMetadata(metadata, MetricType.HISTOGRAM),
+        return internalHistogram(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), withAppTags()));
     }
 
@@ -521,13 +520,13 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalHistogram(internalGetMetadata(metadata, MetricType.HISTOGRAM),
+        return internalHistogram(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     HistogramAdapter injectedHistogram(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
         return internalHistogram(
-                internalGetMetadata(annotation.name(), MetricType.HISTOGRAM).merge(annotation),
+                internalGetMetadata(annotation.name()).merge(annotation),
                 new MetricDescriptor(annotation.name(), annotation.tags()));
     }
 
@@ -541,7 +540,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Timer timer(String name) {
-        return internalTimer(internalGetMetadata(name, MetricType.TIMER),
+        return internalTimer(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()));
     }
 
@@ -554,20 +553,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalTimer(internalGetMetadata(name, MetricType.TIMER),
+        return internalTimer(internalGetMetadata(name),
                 new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
     public Timer timer(MetricID metricID) {
         String name = metricID.getName();
-        return internalTimer(internalGetMetadata(name, MetricType.TIMER),
+        return internalTimer(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags(metricID.getTagsAsArray())));
     }
 
     @Override
     public Timer timer(Metadata metadata) {
-        return internalTimer(internalGetMetadata(metadata, MetricType.TIMER),
+        return internalTimer(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), withAppTags()));
     }
 
@@ -580,18 +579,18 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalTimer(internalGetMetadata(metadata, MetricType.TIMER),
+        return internalTimer(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     TimerAdapter injectedTimer(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
         return internalTimer(
-                internalGetMetadata(annotation.name(), MetricType.TIMER).merge(annotation),
+                internalGetMetadata(annotation.name()).merge(annotation),
                 new MetricDescriptor(annotation.name(), annotation.tags()));
     }
 
     TimerAdapter interceptorTimer(Metadata metadata, String... tags) {
-        return internalTimer(internalGetMetadata(metadata, MetricType.TIMER),
+        return internalTimer(internalGetMetadata(metadata),
                 new MetricDescriptor(metadata.getName(), tags));
     }
 
@@ -709,7 +708,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Gauge> getGauges(MetricFilter metricFilter) {
-        return getMetrics(MetricType.GAUGE, metricFilter);
+        return getMetrics(Gauge.class, metricFilter);
     }
 
     @Override
@@ -719,7 +718,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Counter> getCounters(MetricFilter metricFilter) {
-        return getMetrics(MetricType.COUNTER, metricFilter);
+        return getMetrics(Counter.class, metricFilter);
     }
 
     @Override
@@ -729,7 +728,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Histogram> getHistograms(MetricFilter metricFilter) {
-        return getMetrics(MetricType.HISTOGRAM, metricFilter);
+        return getMetrics(Histogram.class, metricFilter);
     }
 
     @Override
@@ -739,7 +738,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Timer> getTimers(MetricFilter metricFilter) {
-        return getMetrics(MetricType.TIMER, metricFilter);
+        return getMetrics(Timer.class, metricFilter);
     }
 
     @Override
@@ -758,7 +757,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
         SortedMap<MetricID, T> out = new TreeMap<>();
         for (Map.Entry<MetricDescriptor, MeterHolder> e : constructedMeters.entrySet()) {
-            if (e.getValue().getType().equals(MetricType.from(ofType))) {
+            if (ofType.isAssignableFrom(e.getValue().getClass())) {
                 MetricID mid = e.getKey().toMetricID();
                 if (filter.matches(mid, e.getValue())) {
                     out.put(e.getKey().toMetricID(), (T) e.getValue());
@@ -773,20 +772,6 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         SortedMap<MetricID, Metric> out = new TreeMap<>();
         for (Map.Entry<MetricDescriptor, MeterHolder> e : constructedMeters.entrySet()) {
             out.put(e.getKey().toMetricID(), e.getValue());
-        }
-        return out;
-    }
-
-    @SuppressWarnings("unchecked")
-    <T extends Metric> SortedMap<MetricID, T> getMetrics(MetricType type, MetricFilter filter) {
-        SortedMap<MetricID, T> out = new TreeMap<>();
-        for (Map.Entry<MetricDescriptor, MeterHolder> e : constructedMeters.entrySet()) {
-            if (e.getValue().getType() == type) {
-                MetricID mid = e.getKey().toMetricID();
-                if (filter.matches(mid, e.getValue())) {
-                    out.put(e.getKey().toMetricID(), (T) e.getValue());
-                }
-            }
         }
         return out;
     }
@@ -845,45 +830,31 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return new Tag[] { new Tag("scope", this.scope) };
     }
 
-    private MpMetadata internalGetMetadata(String name, MetricType type) {
+    private MpMetadata internalGetMetadata(String name) {
 
-        MpMetadata result = metadataMap.computeIfAbsent(name, k -> new MpMetadata(name, type));
-
-        if (result.type != type) {
-            throw new IllegalStateException(
-                    String.format("Metric %s already defined using a different type (%s)", name, result.getType()));
-        }
+        MpMetadata result = metadataMap.computeIfAbsent(name, k -> new MpMetadata(name));
 
         /*
          * Check that metadata of metric being registered/retrieved matches existing
          * existing metadata (if it exists)
          */
-        if (!result.equals(MpMetadata.sanitize(new MpMetadata(name, type), type))) {
+        if (!result.equals(MpMetadata.sanitize(new MpMetadata(name)))) {
             throw new IllegalArgumentException(
                     String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
-                            result.toString(), new MpMetadata(name, type).toString()));
+                            result.toString(), new MpMetadata(name).toString()));
         }
 
         return result;
     }
 
-    private MpMetadata internalGetMetadata(Metadata metadata, MetricType type) {
-        MpMetadata result = metadataMap.computeIfAbsent(metadata.getName(), k -> MpMetadata.sanitize(metadata, type));
-
-        /*
-         * Check that metric being registered/retrieved matches existing type of
-         * existing metadata (if it exists)
-         */
-        if (!result.mergeSameType(metadata)) {
-            throw new IllegalArgumentException(String.format("Metric %s already defined using a different type (%s)",
-                    metadata.getName(), result.getType()));
-        }
+    private MpMetadata internalGetMetadata(Metadata metadata) {
+        MpMetadata result = metadataMap.computeIfAbsent(metadata.getName(), k -> MpMetadata.sanitize(metadata));
 
         /*
          * Check that metadata of metric being registered/retrieved matches existing
          * existing metadata (if it exists)
          */
-        if (!result.equals(MpMetadata.sanitize(metadata, type))) {
+        if (!result.equals(MpMetadata.sanitize(metadata))) {
             throw new IllegalArgumentException(
                     String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
                             result.toString(), metadata.toString()));
@@ -897,7 +868,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
             return type.cast(o);
         } catch (ClassCastException cce) {
             throw new IllegalStateException(String.format("Metric %s already defined using a different type (%s)",
-                    metadata.name, o.getType().name()), cce);
+                    metadata.name, o.getMeter().getId().getType()), cce);
         }
     }
 

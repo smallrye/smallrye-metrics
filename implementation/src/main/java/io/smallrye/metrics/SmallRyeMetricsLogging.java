@@ -1,10 +1,9 @@
 package io.smallrye.metrics;
 
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedField;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
 
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
@@ -40,8 +39,8 @@ public interface SmallRyeMetricsLogging {
     void producerMethodDiscovered(AnnotatedMethod<?> method);
 
     @LogMessage(level = Logger.Level.TRACE)
-    @Message(id = 1102, value = "Matching member %s to metric ID=%s and type=%s")
-    void matchingMemberToMetric(MemberInfo member, MetricID metricID, MetricType metricType);
+    @Message(id = 1102, value = "Matching member %s to metric ID=%s")
+    void matchingMemberToMetric(MemberInfo member, MetricID metricID);
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1103, value = "Name [%s] did not contain any placeholders or tags, no replacement will be done, check"
@@ -51,12 +50,12 @@ public interface SmallRyeMetricsLogging {
     /* 1200-1299: metric registry logs */
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 1200, value = "Register metric [metricId: %s, type: %s]")
-    void registerMetric(MetricID metricID, MetricType metricType);
+    @Message(id = 1200, value = "Register metric [metricId: %s]")
+    void registerMetric(MetricID metricID);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 1201, value = "Register metric [metricId: %s, type: %s, origin: %s]")
-    void registerMetric(MetricID metricID, MetricType metricType, Object origin);
+    @Message(id = 1201, value = "Register metric [metricId: %s, origin: %s]")
+    void registerMetric(MetricID metricID, Object origin);
 
     @LogMessage(level = Logger.Level.DEBUG)
     @Message(id = 1202, value = "Removing metrics with [name: %s]")

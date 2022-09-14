@@ -17,7 +17,7 @@
 
 package io.smallrye.metrics.test.reusability;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
