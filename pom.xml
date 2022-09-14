@@ -34,9 +34,9 @@
 
   <properties>
     <version.microprofile-config>3.0.1</version.microprofile-config>
-    <version.microprofile-metrics>5.0.0-RC1</version.microprofile-metrics>
+    <version.microprofile-metrics>5.0.0-SNAPSHOT</version.microprofile-metrics>
 
-    <version.micrometer>1.8.5</version.micrometer>
+    <version.micrometer>1.9.3</version.micrometer>
 
     <version.smallrye.config>3.0.0</version.smallrye.config>
     <version.smallrye.common>2.0.0</version.smallrye.common>

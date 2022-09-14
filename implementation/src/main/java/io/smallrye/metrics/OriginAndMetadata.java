@@ -3,7 +3,6 @@ package io.smallrye.metrics;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricType;
 
 //XXX: Do we need this?
 public class OriginAndMetadata implements Metadata {
@@ -37,16 +36,6 @@ public class OriginAndMetadata implements Metadata {
     @Override
     public Optional<String> description() {
         return metadata.description();
-    }
-
-    @Override
-    public String getType() {
-        return metadata.getType();
-    }
-
-    @Override
-    public MetricType getTypeRaw() {
-        return metadata.getTypeRaw();
     }
 
     @Override

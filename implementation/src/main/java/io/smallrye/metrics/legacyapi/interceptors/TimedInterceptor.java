@@ -15,7 +15,6 @@ import jakarta.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -66,7 +65,7 @@ public class TimedInterceptor {
                 .map(metricID -> {
                     Timer metric = registry.getTimers().get(metricID);
                     if (metric == null) {
-                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(MetricType.TIMER, metricID);
+                        throw SmallRyeMetricsMessages.msg.noMetricFoundInRegistry(metricID);
                     }
                     return metric;
                 })

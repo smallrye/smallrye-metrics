@@ -4,18 +4,17 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
 // TODO: This was taken from the Quarkus extension and maybe we could do without it?
 class MpMetadata implements Metadata {
 
     //sanitize? just removes the display name (shares it with the metric name intead)
-    public static MpMetadata sanitize(Metadata metadata, MetricType type) {
+    public static MpMetadata sanitize(Metadata metadata) {
         if (metadata instanceof MpMetadata) {
             return (MpMetadata) metadata;
         }
-        return new MpMetadata(metadata, type);
+        return new MpMetadata(metadata);
     }
 
     final String name;
@@ -23,7 +22,7 @@ class MpMetadata implements Metadata {
     String unit;
     boolean dirty = false;
 
-    MpMetadata(String name, MetricType type) {
+    MpMetadata(String name) {
         this.name = name;
     }
 
@@ -33,34 +32,28 @@ class MpMetadata implements Metadata {
         this.unit = stringOrNull(annotation.unit());
     }
 
-    MpMetadata(String name, String description, String unit, MetricType type) {
+    MpMetadata(String name, String description, String unit) {
         this.name = name;
         this.description = stringOrNull(description);
         this.unit = stringOrNull(unit);
     }
 
-    MpMetadata(Metadata other, MetricType type) {
+    MpMetadata(Metadata other) {
         this.name = other.getName();
         this.description = other.description().orElse(null);
         this.unit = other.unit().orElse(null);
     }
 
-    //if invalid or same type
     public boolean mergeSameType(Metadata metadata) {
-        // If incoming metadata is INVALID  type(even if current metadata has a type)
-        // OR if we are the same metric type.
-        if (metadata.getTypeRaw() == MetricType.INVALID || this.type == metadata.getTypeRaw()) {
-            if (description == null) {
-                dirty = true;
-                description = stringOrNull(metadata.description().orElse(null));
-            }
-            if (unit == null) {
-                dirty = true;
-                unit = stringOrNull(metadata.unit().orElse(null));
-            }
-            return true;
+        if (description == null) {
+            dirty = true;
+            description = stringOrNull(metadata.description().orElse(null));
         }
-        return false;
+        if (unit == null) {
+            dirty = true;
+            unit = stringOrNull(metadata.unit().orElse(null));
+        }
+        return true;
     }
 
     public MpMetadata merge(Metric annotation) {
@@ -108,16 +101,6 @@ class MpMetadata implements Metadata {
     }
 
     @Override
-    public String getType() {
-        return Optional.ofNullable(type).orElse(MetricType.INVALID).name();
-    }
-
-    @Override
-    public MetricType getTypeRaw() {
-        return Optional.ofNullable(type).orElse(MetricType.INVALID);
-    }
-
-    @Override
     public String getUnit() {
         return unit;
     }
@@ -143,7 +126,6 @@ class MpMetadata implements Metadata {
                 + "["
                 + (description == null ? "" : "description=" + description + " ")
                 + (unit == null ? "" : "unit=" + unit + " ")
-                + type
                 + "]";
     }
 }

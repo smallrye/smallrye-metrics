@@ -64,6 +64,16 @@ public class JaxRsMetricsServletFilter implements Filter {
 
                         @Override
                         public void onStartAsync(AsyncEvent event) {
+                            // from the Servlet specification for startAsync():
+                            // "This method clears the list of AsyncListener instances (if any)
+                            // that were registered with the AsyncContext returned by the
+                            // previous call to one of the startAsync methods, after calling
+                            // each AsyncListener at its onStartAsync method."
+                            //
+                            // if onStartAsync is call, its likely we need to register this
+                            // listener again in order for the other callbacks to be called.
+
+                            event.getAsyncContext().addListener(this);
                         }
                     });
                 }

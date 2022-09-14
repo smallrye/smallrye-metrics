@@ -6,9 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricType;
 
-import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.MemberInfo;
 
 /**
@@ -36,18 +34,11 @@ public class MemberToMetricMappings {
         return timers.get(member);
     }
 
-    public void addMetric(MemberInfo member, MetricID metricID, MetricType metricType) {
-        switch (metricType) {
-            case COUNTER:
-                counters.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
-                break;
-            case TIMER:
-                timers.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
-                break;
-            default:
-                throw SmallRyeMetricsMessages.msg.unknownMetricType();
-        }
-        //SmallRyeMetricsLogging.log.matchingMemberToMetric(member, metricID, metricType);
+    public void addTimer(MemberInfo member, MetricID metricID) {
+        timers.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
     }
 
+    public void addCounter(MemberInfo member, MetricID metricID) {
+        counters.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
+    }
 }
