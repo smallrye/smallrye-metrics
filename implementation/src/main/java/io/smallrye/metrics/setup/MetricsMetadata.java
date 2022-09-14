@@ -8,7 +8,6 @@ import java.util.List;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -37,8 +36,7 @@ public class MetricsMetadata {
 
             registry = SharedMetricRegistries.getOrCreate(t.scope());
 
-            Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description(),
-                    MetricType.COUNTER);
+            Metadata metadata = getMetadata(element, counted.metricName(), t.unit(), t.description());
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
 
@@ -62,8 +60,7 @@ public class MetricsMetadata {
                 metricIDs.add(metricID);
 
                 //Some list in MetricRegistry that maps the CDI element, metricID and metric type
-                ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addMetric(element, metricID,
-                        MetricType.COUNTER);
+                ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addCounter(element, metricID);
             }
         }
 
@@ -73,8 +70,7 @@ public class MetricsMetadata {
 
             registry = SharedMetricRegistries.getOrCreate(t.scope());
 
-            Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description(),
-                    MetricType.TIMER);
+            Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description());
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
             if (registry instanceof LegacyMetricRegistryAdapter) {
@@ -93,8 +89,7 @@ public class MetricsMetadata {
 
                 MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
                 metricIDs.add(metricID);
-                ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addMetric(element, metricID,
-                        MetricType.TIMER);
+                ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addTimer(element, metricID);
             }
         }
 
@@ -102,9 +97,8 @@ public class MetricsMetadata {
     }
 
     //XXX: this was just to create a OriginAndMetadata.. is this needed?
-    public static Metadata getMetadata(Object origin, String name, String unit, String description,
-            MetricType type) {
-        Metadata metadata = Metadata.builder().withName(name).withType(type).withUnit(unit).withDescription(description)
+    public static Metadata getMetadata(Object origin, String name, String unit, String description) {
+        Metadata metadata = Metadata.builder().withName(name).withUnit(unit).withDescription(description)
                 .build();
         return new OriginAndMetadata(origin, metadata);
     }

@@ -2,8 +2,6 @@ package io.smallrye.metrics.legacyapi;
 
 import java.util.Arrays;
 
-import org.eclipse.microprofile.metrics.MetricType;
-
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -42,8 +40,8 @@ public interface AnnotatedGaugeAdapter extends org.eclipse.microprofile.metrics.
         }
 
         public GaugeAdapterImpl(String name, String description, String targetName, String baseUnit, String[] tags) {
-            this.metadata = new MpMetadata(name, description, baseUnit, MetricType.GAUGE);
-            this.targetName = name;
+            this.metadata = new MpMetadata(name, description, baseUnit);
+            this.targetName = targetName;
             this.tags = tags;
         }
 
@@ -87,10 +85,6 @@ public interface AnnotatedGaugeAdapter extends org.eclipse.microprofile.metrics.
 
         public MpMetadata getMetadata() {
             return metadata;
-        }
-
-        public MetricType getType() {
-            return MetricType.GAUGE;
         }
 
         public String getTargetName() {

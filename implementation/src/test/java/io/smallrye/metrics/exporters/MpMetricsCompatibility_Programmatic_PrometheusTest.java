@@ -27,7 +27,6 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -77,7 +76,6 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
 
         Metadata metadata = Metadata
                 .builder()
-                .withType(MetricType.COUNTER)
                 .withName("mycounter")
                 .withDescription("awesome")
                 .build();

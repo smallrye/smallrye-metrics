@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.MetricType;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -63,11 +62,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
              */
             return f.applyAsDouble(obj);
         }
-
-        @Override
-        public MetricType getType() {
-            return MetricType.GAUGE;
-        }
     }
 
     static class FunctionGauge<S, R extends Number> implements GaugeAdapter<R> {
@@ -118,11 +112,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
              */
             return (R) f.apply(obj);
         }
-
-        @Override
-        public MetricType getType() {
-            return MetricType.GAUGE;
-        }
     }
 
     static class NumberSupplierGauge<T extends Number> implements GaugeAdapter<T> {
@@ -159,11 +148,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
         @Override
         public T getValue() {
             return supplier.get();
-        }
-
-        @Override
-        public MetricType getType() {
-            return MetricType.GAUGE;
         }
     }
 }
