@@ -16,8 +16,8 @@
  */
 package io.smallrye.metrics.micrometer;
 
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 
