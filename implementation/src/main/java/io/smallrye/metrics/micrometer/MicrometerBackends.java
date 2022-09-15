@@ -94,14 +94,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.appoptics.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.appoptics.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new AppOpticsMeterRegistry(new AppOpticsConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -118,14 +118,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.atlas.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.atlas.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new AtlasMeterRegistry(new AtlasConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -142,14 +142,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.datadog.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.datadog.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new DatadogMeterRegistry(new DatadogConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -166,14 +166,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.dynatrace.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.dynatrace.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new DynatraceMeterRegistry(new DynatraceConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -190,14 +190,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.elastic.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.elastic.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new ElasticMeterRegistry(new ElasticConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -214,14 +214,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.ganglia.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.ganglia.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new GangliaMeterRegistry(new GangliaConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -238,14 +238,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.graphite.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.graphite.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new GraphiteMeterRegistry(new GraphiteConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -262,14 +262,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.humio.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.humio.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new HumioMeterRegistry(new HumioConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -286,14 +286,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.influx.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.influx.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new InfluxMeterRegistry(new InfluxConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -310,14 +310,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean
-                    .parseBoolean(config.getOptionalValue("microprofile.metrics.jmx.enabled", String.class).orElse("false"))) {
+                    .parseBoolean(config.getOptionalValue("mp.metrics.jmx.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new JmxMeterRegistry(new JmxConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -334,14 +334,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.kairos.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.kairos.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new KairosMeterRegistry(new KairosConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -358,14 +358,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.newrelic.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.newrelic.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new NewRelicMeterRegistry(new NewRelicConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -382,14 +382,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.prometheus.enabled", String.class).orElse("true"))) {
+                    config.getOptionalValue("mp.metrics.prometheus.enabled", String.class).orElse("true"))) {
                 return null;
             }
 
             return new PrometheusMeterRegistry(new PrometheusConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             });
@@ -406,14 +406,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.stackdriver.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.stackdriver.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new StackdriverMeterRegistry(new StackdriverConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -430,14 +430,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.signalfx.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.signalfx.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new SignalFxMeterRegistry(new SignalFxConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -454,14 +454,14 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.statsd.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.statsd.enabled", String.class).orElse("false"))) {
                 return null;
             }
 
             return new StatsdMeterRegistry(new StatsdConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -478,13 +478,13 @@ public class MicrometerBackends {
         @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
-                    config.getOptionalValue("microprofile.metrics.wavefront.enabled", String.class).orElse("false"))) {
+                    config.getOptionalValue("mp.metrics.wavefront.enabled", String.class).orElse("false"))) {
                 return null;
             }
             return new WavefrontMeterRegistry(new WavefrontConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
@@ -501,7 +501,7 @@ public class MicrometerBackends {
             return new SimpleMeterRegistry(new SimpleConfig() {
                 @Override
                 public String get(final String propertyName) {
-                    return config.getOptionalValue("microprofile.metrics." + propertyName, String.class)
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
