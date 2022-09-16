@@ -2,8 +2,10 @@ name: SmallRye Build
 
 on:
   push:
-    branches-ignore:
-      - 'dependabot/**'
+    branches:
+      - main
+      - jakarta
+      - micrometer
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
@@ -23,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [8, 11, 17]
+        java: [11, 17]
     name: build with jdk ${{matrix.java}}
 
     steps:
