@@ -61,7 +61,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return registry;
     }
 
-    protected void addNameToApplicationMap(MetricID metricID) {
+    public void addNameToApplicationMap(MetricID metricID) {
         String appName = appNameResolver.getApplicationName();
         addNameToApplicationMap(metricID, appName);
     }

@@ -1,6 +1,7 @@
 package io.smallrye.metrics;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -25,21 +26,41 @@ import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricsExtension;
 import io.smallrye.metrics.legacyapi.TagsUtils;
 import io.smallrye.metrics.legacyapi.interceptors.MetricName;
+import io.smallrye.metrics.legacyapi.interceptors.SeMetricName;
 
 @ApplicationScoped
 public class MetricProducer {
 
     MetricRegistry registry;
 
-    @Inject
-    MetricName metricName;
+    MetricName metricName = new SeMetricName(Collections.emptySet());
 
     @Inject
     LegacyMetricsExtension metricExtension;
 
+    /**
+     * No-arg for CDI
+     */
+    public MetricProducer() {
+
+    }
+
+    /**
+     * Used to create a MetricProducer with a provided LegacyMetricExtension which
+     * would be typically provided by injection as seen above. This constructor is
+     * for runtimes that may need to proxy the MetricProducer.
+     * 
+     * @param metricExtension a LegacyMetricsExtension object
+     */
+    public MetricProducer(LegacyMetricsExtension metricExtension) {
+        this.metricExtension = metricExtension;
+    }
+
     @Produces
-    <T extends Number> Gauge<T> getGauge(InjectionPoint ip) {
-        // A forwarding Gauge must be returned as the Gauge creation happens when the declaring bean gets instantiated and the corresponding Gauge can be injected before which leads to producing a null value
+    public <T extends Number> Gauge<T> getGauge(InjectionPoint ip) {
+        // A forwarding Gauge must be returned as the Gauge creation happens when the
+        // declaring bean gets instantiated and the corresponding Gauge can be injected
+        // before which leads to producing a null value
         return () -> {
             // TODO: better error report when the gauge doesn't exist
 
@@ -49,9 +70,11 @@ public class MetricProducer {
             String name = metricName.of(ip);
             Tag[] tags = getTags(ip);
 
-            //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
-            //so that interceptors can find the annotated metric
-            //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
+            // FIXME: Temporary, resolve the mp.metrics.appName tag if if available to
+            // append to MembersToMetricMapping
+            // so that interceptors can find the annotated metric
+            // Possibly remove MembersToMetricMapping in future, and directly query
+            // metric/meter-registry.
 
             Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
 
@@ -70,23 +93,24 @@ public class MetricProducer {
     }
 
     @Produces
-    Counter getCounter(InjectionPoint ip) {
+    public Counter getCounter(InjectionPoint ip) {
 
         registry = SharedMetricRegistries.getOrCreate(getScope(ip));
         Metadata metadata = getMetadata(ip);
         Tag[] tags = getTags(ip);
 
         Counter counter = registry.counter(metadata, tags);
-        //        if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
-        //            MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags, (LegacyMetricRegistryAdapter) applicationRegistry));
-        //            metricExtension.addMetricId(metricID);
-        //        }
+        // if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
+        // MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags,
+        // (LegacyMetricRegistryAdapter) applicationRegistry));
+        // metricExtension.addMetricId(metricID);
+        // }
 
         return counter;
     }
 
     @Produces
-    Timer getTimer(InjectionPoint ip) {
+    public Timer getTimer(InjectionPoint ip) {
 
         registry = SharedMetricRegistries.getOrCreate(getScope(ip));
 
@@ -94,15 +118,16 @@ public class MetricProducer {
         Tag[] tags = getTags(ip);
 
         Timer timer = registry.timer(metadata, tags);
-        //        if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
-        //            MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags, (LegacyMetricRegistryAdapter) applicationRegistry));
-        //            metricExtension.addMetricId(metricID);
-        //        }
+        // if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
+        // MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags,
+        // (LegacyMetricRegistryAdapter) applicationRegistry));
+        // metricExtension.addMetricId(metricID);
+        // }
         return timer;
     }
 
     @Produces
-    Histogram getHistogram(InjectionPoint ip) {
+    public Histogram getHistogram(InjectionPoint ip) {
 
         registry = SharedMetricRegistries.getOrCreate(getScope(ip));
         Metadata metadata = getMetadata(ip);

@@ -16,11 +16,11 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 import io.smallrye.metrics.SmallRyeMetricsMessages;
 
 @Vetoed
-/* package-private */ class SeMetricName implements MetricName {
+public class SeMetricName implements MetricName {
 
     private final Set<MetricsParameter> parameters;
 
-    SeMetricName(Set<MetricsParameter> parameters) {
+    public SeMetricName(Set<MetricsParameter> parameters) {
         this.parameters = parameters;
     }
 
