@@ -349,6 +349,40 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return result.register(metadata, id, registry, scope);
     }
 
+    /**
+     * This is specifically used for runtimes which may need use of a functional counter.
+     * For example, the runtime may want to implement a vendor specific counter metric which
+     * relies on values obtained from a Mbeans or MXbeans.
+     * 
+     * @param <T> object type
+     * @param metadata metadata of metric
+     * @param obj object to apply ToDoubleFunction
+     * @param func ToDoubleFunction
+     * @param tags tags of metric
+     * @return
+     */
+    public <T> Counter counter(Metadata metadata, T obj, ToDoubleFunction<T> func, Tag... tags) {
+        /*
+         * Verify tags before internalGetMetadata().
+         * The call withAppTags() can throw an IAE.
+         * Don't want to have had created metadata
+         * and have it put into the map before that.
+         */
+        Tags unifiedTags = withAppTags(tags);
+        return internalCounter(internalGetMetadata(metadata), obj, func,
+                new MetricDescriptor(metadata.getName(), unifiedTags));
+    }
+
+    <T> FunctionCounterAdapter<T> internalCounter(MpMetadata metadata, T obj, ToDoubleFunction<T> func, MetricDescriptor id) {
+
+        validateTagNamesMatch(id);
+
+        FunctionCounterAdapter<T> result = checkCast(FunctionCounterAdapter.class, metadata,
+                constructedMeters.computeIfAbsent(id, k -> new FunctionCounterAdapter(obj, func)));
+        addNameToApplicationMap(id.toMetricID());
+        return result.register(metadata, id, registry, scope);
+    }
+
     public <T> Gauge<Double> gauge(String name, T o, ToDoubleFunction<T> f) {
         return internalGauge(internalGetMetadata(name),
                 new MetricDescriptor(name, withAppTags()), o, f);
