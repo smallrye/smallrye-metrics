@@ -1,4 +1,4 @@
-name: SmallRye Config
+name: SmallRye Metrics
 release:
-  current-version: 5.0.0-RC1
-  next-version: 5.0.1-SNAPSHOT
+  current-version: 5.0.0-RC2
+  next-version: 5.0.0-SNAPSHOT
