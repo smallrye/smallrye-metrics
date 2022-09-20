@@ -73,7 +73,7 @@ public class LegacyMetricsExtension implements Extension {
         metricsInterfaces = new ArrayList<>();
     }
 
-    void logVersion(@Observes BeforeBeanDiscovery bbd) {
+    public void logVersion(@Observes BeforeBeanDiscovery bbd) {
         SmallRyeMetricsLogging.log.logSmallRyeMetricsVersion(getImplementationVersion().orElse("unknown"));
     }
 
@@ -99,7 +99,7 @@ public class LegacyMetricsExtension implements Extension {
     /**
      * Notifies CDI container to check for annotations. This is in place of beans.xml.
      */
-    void registerAnnotatedTypes(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
+    public void registerAnnotatedTypes(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
         String extensionName = LegacyMetricsExtension.class.getName();
         for (Class clazz : new Class[] {
                 MetricProducer.class,
@@ -108,19 +108,54 @@ public class LegacyMetricsExtension implements Extension {
                 MetricsRequestHandler.class,
                 CountedInterceptor.class,
                 GaugeRegistrationInterceptor.class,
-                TimedInterceptor.class,
-                MetricsRequestHandler.class
+                TimedInterceptor.class
         }) {
             bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
         }
+        registerMicrometerBackendClases(bbd, manager, extensionName);
+    }
 
+    /**
+     * Used for proxy implementations of this extension class where the proxy
+     * is registered as an extension to the CDI runtime.
+     * <br>
+     * Depending on the class loader structure of the proxy class and this class, WELD
+     * will not register the producers appropriately. However, interceptors are registered properly.
+     * Additionally, MetricProducer injects LegacyMetricsExtension which
+     * can not be resolved if this extension class is proxied.
+     * 
+     * @param bbd
+     * @param manager
+     */
+    public void registerAnnotatedTypesProxy(BeforeBeanDiscovery bbd, BeanManager manager) {
+        String extensionName = LegacyMetricsExtension.class.getName();
+        for (Class clazz : new Class[] {
+                MetricsRequestHandler.class,
+                CountedInterceptor.class,
+                GaugeRegistrationInterceptor.class,
+                TimedInterceptor.class
+        }) {
+            bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
+        }
+        registerMicrometerBackendClases(bbd, manager, extensionName);
+    }
+
+    /**
+     * Registers the classes related to resolving micrometer backends to the CDI runtime
+     * 
+     * @param bbd
+     * @param manager
+     * @param extensionName
+     */
+    private void registerMicrometerBackendClases(BeforeBeanDiscovery bbd, BeanManager manager, String extensionName) {
         for (Class clazz : MicrometerBackends.classes()) {
             try {
                 final RequiresClass requiresClass = (RequiresClass) clazz.getAnnotation(RequiresClass.class);
                 final Class<?>[] requiredClass = requiresClass.value();
                 bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
             } catch (Exception e) {
-                // ignore and don't add
+                //TODO: logging
+                //ignore and don't add
             }
         }
     }
@@ -128,7 +163,7 @@ public class LegacyMetricsExtension implements Extension {
     /*
      * For classes annotated with metrics (@Counted, etc, add to metricsInterface list - to address cdi injection).
      */
-    private <X> void findAnnotatedInterfaces(
+    public <X> void findAnnotatedInterfaces(
             @Observes @WithAnnotations({ Counted.class, Gauge.class, Timed.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
@@ -147,7 +182,7 @@ public class LegacyMetricsExtension implements Extension {
     /*
      * For classes with @Gauge, decorate with @MetricsBinding
      */
-    private <X> void applyMetricsBinding(@Observes @WithAnnotations({ Gauge.class }) ProcessAnnotatedType<X> pat) {
+    public <X> void applyMetricsBinding(@Observes @WithAnnotations({ Gauge.class }) ProcessAnnotatedType<X> pat) {
         Class<X> clazz = pat.getAnnotatedType().getJavaClass();
         Package pack = clazz.getPackage();
         if (pack == null || !pack.getName().equals(GaugeRegistrationInterceptor.class.getPackage().getName())) {
@@ -166,7 +201,7 @@ public class LegacyMetricsExtension implements Extension {
      * Goes through each method and uses MetricResolver to see if the method is annotated itself or the class is
      * in which case a metric is created for it.
      */
-    private <X> void findAnnotatedMethods(@Observes ProcessManagedBean<X> bean) {
+    public <X> void findAnnotatedMethods(@Observes ProcessManagedBean<X> bean) {
         Package pack = bean.getBean().getBeanClass().getPackage();
         if (pack != null && pack.equals(CountedInterceptor.class.getPackage())) {
             return;
@@ -184,7 +219,7 @@ public class LegacyMetricsExtension implements Extension {
         }
     }
 
-    void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
+    public void registerMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
         // create the "base" registry, this will allow the base metrics to be added
         // should this be done here, or should it be called by servers consuming this library?
         MetricRegistry baseRegistry = SharedMetricRegistries.getOrCreate(MetricRegistry.BASE_SCOPE);
@@ -228,7 +263,6 @@ public class LegacyMetricsExtension implements Extension {
                 }
             }
         }
-
         metricsInterfaces.clear();
 
         // Let's clear the collected metrics
