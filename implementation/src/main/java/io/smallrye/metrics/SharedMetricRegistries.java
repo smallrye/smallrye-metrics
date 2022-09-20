@@ -27,13 +27,13 @@ import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
  * Meter Registries are registered under the default Micrometer global composite meter registry.
  * With this implementation any creation/retrieval is negotiated with the global composite meter registry.
  * 
- * To ensure that the different "scoped" MetricRegistry->MeterRegistry contain their own appropriate
+ * To ensure that the different "scoped" MetricRegistry to MeterRegistry contain their own appropriate
  * metrics/meters a Meter Filter is provided to each Prometheus MeterRegistry. This filter makes use of a
- * ThreadLocal<Boolean> to ensure that appropriate metrics/meters are registered/retrieved from the appropriate
+ * {@code ThreadLocal<Boolean>} to ensure that appropriate metrics/meters are registered/retrieved from the appropriate
  * registry.
  * 
- * The ThreadLocal<Boolean> will be set to false to gate registration/retrieval. And it will be set to true
- * before interacting with the global registry. A Map<String, ThreadLocal<Boolean>> holds a mapping between the
+ * The {@code ThreadLocal<Boolean>} will be set to false to gate registration/retrieval. And it will be set to true
+ * before interacting with the global registry. A {@code Map<String, ThreadLocal<Boolean>>} holds a mapping between the
  * scope and ThreadLocal. This map is interrogated when the MP MetricRegistry shim interacts with the global registry.
  * 
  */
@@ -127,7 +127,7 @@ public class SharedMetricRegistries {
      * Drops a particular registry. If a reference to the same registry type
      * is requested later, a new empty registry will be created for that purpose.
      *
-     * @param type Type of registry that should be dropped.
+     * @param scope The scope of registry that should be dropped.
      */
     public static void drop(String scope) {
         registries.remove(scope);

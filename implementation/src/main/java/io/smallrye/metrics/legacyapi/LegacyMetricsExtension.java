@@ -98,6 +98,9 @@ public class LegacyMetricsExtension implements Extension {
 
     /**
      * Notifies CDI container to check for annotations. This is in place of beans.xml.
+     * 
+     * @param bbd the {@link BeforeBeanDiscovery}
+     * @param manager the {@link BeanManager}
      */
     public void registerAnnotatedTypes(@Observes BeforeBeanDiscovery bbd, BeanManager manager) {
         String extensionName = LegacyMetricsExtension.class.getName();
@@ -124,8 +127,8 @@ public class LegacyMetricsExtension implements Extension {
      * Additionally, MetricProducer injects LegacyMetricsExtension which
      * can not be resolved if this extension class is proxied.
      * 
-     * @param bbd
-     * @param manager
+     * @param bbd the {@link BeforeBeanDiscovery}
+     * @param manager the {@link BeanManager}
      */
     public void registerAnnotatedTypesProxy(BeforeBeanDiscovery bbd, BeanManager manager) {
         String extensionName = LegacyMetricsExtension.class.getName();

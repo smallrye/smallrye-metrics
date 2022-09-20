@@ -312,7 +312,7 @@ public class MetricsRequestHandler {
          * @param headers a map of http headers
          * @throws IOException this method may be implemented to throw an IOException.
          *         In such case the
-         *         {@link MetricsRequestHandler#handleRequest(String, String, Stream, Responder)}
+         *         {@link MetricsRequestHandler#handleRequest(String, String, Stream, Map, Responder)}
          *         will propagate the exception
          */
         void respondWith(int status, String message, Map<String, String> headers) throws IOException;

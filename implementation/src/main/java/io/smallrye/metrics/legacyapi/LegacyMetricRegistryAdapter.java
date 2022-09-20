@@ -359,7 +359,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      * @param obj object to apply ToDoubleFunction
      * @param func ToDoubleFunction
      * @param tags tags of metric
-     * @return
+     * @return The functional counter
      */
     public <T> Counter counter(Metadata metadata, T obj, ToDoubleFunction<T> func, Tag... tags) {
         /*
@@ -825,9 +825,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      * We may throw an IllegalArgumentException. So we don't
      * want metadata to be registered if it was not necessary.
      * 
-     * 
-     * @param tags
-     * @return
+     * @param tags Tags to be combined with
+     * @return tags combined with mp_scope and mp_app if available
      */
     public Tags withAppTags(Tag... tags) {
 
