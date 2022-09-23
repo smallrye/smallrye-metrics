@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 import io.micrometer.core.instrument.Meter;
@@ -16,6 +18,9 @@ import io.micrometer.core.instrument.Timer;
 import io.smallrye.metrics.SharedMetricRegistries;
 
 class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolder {
+
+    private final static int PRECISION;
+
     /*
      * Due to multiple Prometheus meter registries being registered to the global
      * composite meter registry with deny filters used, this can lead to a problem
@@ -37,6 +42,16 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
      * See SharedMetricRegistries.java for more information.
      * 
      */
+
+    /*
+     * Increasing the percentile precision for timers will consume more memory.
+     * This setting is "3" by default, and provided to adjust the precision to
+     * your needs.
+     */
+    static {
+        final Config config = ConfigProvider.getConfig();
+        PRECISION = config.getOptionalValue("mp.metrics.smallrye.timer.precision", Integer.class).orElse(3);
+    }
 
     Timer globalCompositeTimer;
     Timer promTimer;
@@ -63,7 +78,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
                     .description(metadata.getDescription())
                     .tags(tagsSet)
                     .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
-                    .percentilePrecision(5)
+                    .percentilePrecision(PRECISION)
                     .register(Metrics.globalRegistry);
             /*
              * Due to registries that deny registration returning no-op and the chance of
