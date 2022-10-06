@@ -54,7 +54,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
     DistributionSummary globalCompositeSummary;
     DistributionSummary promSummary;
 
-    HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope) {
+    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope) {
 
         ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
 
