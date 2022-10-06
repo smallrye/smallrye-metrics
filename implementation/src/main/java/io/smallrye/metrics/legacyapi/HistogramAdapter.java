@@ -3,6 +3,8 @@ package io.smallrye.metrics.legacyapi;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
 
@@ -14,6 +16,18 @@ import io.micrometer.core.instrument.Tag;
 import io.smallrye.metrics.SharedMetricRegistries;
 
 class HistogramAdapter implements Histogram, MeterHolder {
+
+    private final static int PRECISION;
+
+    /*
+     * Increasing the percentile precision for histograms will consume more memory.
+     * This setting is "3" by default, and provided to adjust the precision to
+     * your needs.
+     */
+    static {
+        final Config config = ConfigProvider.getConfig();
+        PRECISION = config.getOptionalValue("mp.metrics.smallrye.histogram.precision", Integer.class).orElse(3);
+    }
 
     /*
      * Due to multiple Prometheus meter registries being registered to the global
@@ -58,7 +72,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
                     .baseUnit(metadata.getUnit())
                     .tags(tagsSet)
                     .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
-                    .percentilePrecision(5)
+                    .percentilePrecision(PRECISION)
                     .register(Metrics.globalRegistry);
 
             /*
