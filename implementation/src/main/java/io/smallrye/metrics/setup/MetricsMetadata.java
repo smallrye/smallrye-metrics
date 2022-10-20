@@ -40,28 +40,16 @@ public class MetricsMetadata {
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.counter(metadata, tags);
 
-            if (registry instanceof LegacyMetricRegistryAdapter) {
+            Tag[] mpTagArray = resolveAppNameTag(registry, tags);
 
-                //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
-                //so that interceptors can find the annotated metric
-                //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
-                Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
+            // add this CDI MetricID into MetricRegistry's MetricID list....
+            MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
+            metricIDs.add(metricID);
 
-                List<Tag> mpListTags = new ArrayList<Tag>();
-                mmTags.forEach(tag -> {
-                    Tag mpTag = new Tag(tag.getKey(), tag.getValue());
-                    mpListTags.add(mpTag);
-                });
+            // Some list in MetricRegistry that maps the CDI element, metricID and metric
+            // type
+            ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addCounter(element, metricID);
 
-                Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
-
-                //add this CDI MetricID into MetricRegistry's MetricID list....
-                MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
-                metricIDs.add(metricID);
-
-                //Some list in MetricRegistry that maps the CDI element, metricID and metric type
-                ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addCounter(element, metricID);
-            }
         }
 
         MetricResolver.Of<Timed> timed = resolver.timed(bean, element);
@@ -73,33 +61,39 @@ public class MetricsMetadata {
             Metadata metadata = getMetadata(element, timed.metricName(), t.unit(), t.description());
             Tag[] tags = parseTagsAsArray(t.tags());
             registry.timer(metadata, tags);
-            if (registry instanceof LegacyMetricRegistryAdapter) {
-                //FIXME: Temporary, resolve the mp.metrics.appName tag if if available to append to MembersToMetricMapping
-                //so that interceptors can find the annotated metric
-                //Possibly remove MembersToMetricMapping in future, and directly query metric/meter-registry.
-                Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
 
-                List<Tag> mpListTags = new ArrayList<Tag>();
-                mmTags.forEach(tag -> {
-                    Tag mpTag = new Tag(tag.getKey(), tag.getValue());
-                    mpListTags.add(mpTag);
-                });
+            Tag[] mpTagArray = resolveAppNameTag(registry, tags);
 
-                Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
+            MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
+            metricIDs.add(metricID);
+            ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addTimer(element, metricID);
 
-                MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
-                metricIDs.add(metricID);
-                ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addTimer(element, metricID);
-            }
         }
 
         return metricIDs;
     }
 
-    //XXX: this was just to create a OriginAndMetadata.. is this needed?
+    // XXX: this was just to create a OriginAndMetadata.. is this needed?
     public static Metadata getMetadata(Object origin, String name, String unit, String description) {
-        Metadata metadata = Metadata.builder().withName(name).withUnit(unit).withDescription(description)
-                .build();
+        Metadata metadata = Metadata.builder().withName(name).withUnit(unit).withDescription(description).build();
         return new OriginAndMetadata(origin, metadata);
+    }
+
+    /*
+     * TODO: Temporary, resolve the mp.metrics.appName tag if if available to
+     * append to MembersToMetricMapping so that interceptors can find the annotated
+     * metric Possibly remove MembersToMetricMapping in future, and directly query
+     * metric/meter-registry.
+     */
+    private static Tag[] resolveAppNameTag(MetricRegistry registry, Tag... tags) {
+        Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
+
+        List<Tag> mpListTags = new ArrayList<Tag>();
+        mmTags.forEach(tag -> {
+            Tag mpTag = new Tag(tag.getKey(), tag.getValue());
+            mpListTags.add(mpTag);
+        });
+
+        return mpListTags.toArray(new Tag[0]);
     }
 }
