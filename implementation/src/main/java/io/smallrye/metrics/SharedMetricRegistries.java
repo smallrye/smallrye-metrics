@@ -1,5 +1,8 @@
 package io.smallrye.metrics;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -12,11 +15,10 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.config.MeterFilter;
-import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.smallrye.metrics.base.LegacyBaseMetrics;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
-import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
 /**
  * SharedMetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
@@ -41,10 +43,12 @@ import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 public class SharedMetricRegistries {
 
     protected static final String GLOBAL_TAG_MALFORMED_EXCEPTION = "Malformed list of Global Tags. Tag names "
-            + "must match the following regex [a-zA-Z_][a-zA-Z0-9_]*. Global Tag values must not be empty."
-            + " Global Tag values MUST escape equal signs `=` and commas `,` with a backslash `\\` ";
+            + "must match the following regex [a-zA-Z_][a-zA-Z0-9_]*." + " Global Tag values must not be empty."
+            + " Global Tag values MUST escape equal signs `=` and commas `,`" + " with a backslash `\\` ";
 
     protected static final String GLOBAL_TAGS_VARIABLE = "mp.metrics.tags";
+
+    private static final String FQ_PROMETHEUSCONFIG_PATH = "io.micrometer.prometheus.PrometheusConfig";
 
     /**
      * This static Tag[] represents the server level global tags retrieved from MP Config for
@@ -67,8 +71,7 @@ public class SharedMetricRegistries {
         return getOrCreate(scope, null);
     }
 
-    // FIXME: cheap way of passing in the ApplicationNameResolvr from vendor code to
-    // the MetricRegistry
+    // FIXME: cheap way of passing in the ApplicationNameResolvr from vendor code to the MetricRegistry
     public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver appNameResolver) {
 
         MetricRegistry metricRegistry = registries.computeIfAbsent(scope,
@@ -90,9 +93,42 @@ public class SharedMetricRegistries {
 
     private static MeterRegistry resolveMeterRegistry(String scope) {
 
-        final MeterRegistry meterRegistry;
+        MeterRegistry meterRegistry;
 
-        meterRegistry = new MPPrometheusMeterRegistry(PrometheusConfig.DEFAULT, scope);
+        /*
+         * The below Try block is equivalent to calling. meterRegistry = new
+         * io.smallrye.metrics.setup.MPPrometheusMeterRegistry(io.micrometer.prometheus.
+         * PrometheusConfig.DEFAULT, scope); This is to address problems for runtimes that may need to load
+         * SmallRye Metric Classes with reflection and that the Promethues Target registry client library is
+         * not provided.
+         */
+        try {
+            /*
+             * Try to load PrometheusConfig and acquire the DEFAULT field, i.e the default functional interface
+             * impl
+             */
+            Class<?> prometheusConfigClass = Class.forName(FQ_PROMETHEUSCONFIG_PATH);
+            Field defaultFuncImpl = prometheusConfigClass.getField("DEFAULT");
+            Object prometheusConfigDefaultObject = defaultFuncImpl.get(null);
+
+            /*
+             * Try to load the MPPrometheusMeterRegistry and create it
+             */
+            Class<?> prometheusMetricRegistryClass = Class
+                    .forName("io.smallrye.metrics.setup.MPPrometheusMeterRegistry");
+            Constructor<?> constructor = prometheusMetricRegistryClass.getConstructor(prometheusConfigClass,
+                    String.class);
+            Object MpPrometheusMeterRegistryInstance = constructor.newInstance(prometheusConfigDefaultObject, scope);
+
+            meterRegistry = (MeterRegistry) MpPrometheusMeterRegistryInstance;
+
+        } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | IllegalArgumentException
+                | IllegalAccessException | NoSuchMethodException | InstantiationException | InvocationTargetException e) {
+
+            // e.printStackTrace();
+            // Default to simple meter registry otherwise
+            meterRegistry = new SimpleMeterRegistry();
+        }
 
         /*
          * Apply Global tags (mp.metrics.global) as common tags

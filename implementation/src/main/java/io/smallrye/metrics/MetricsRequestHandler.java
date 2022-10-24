@@ -13,6 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
+import io.micrometer.core.instrument.Metrics;
 import io.smallrye.metrics.exporters.Exporter;
 import io.smallrye.metrics.exporters.PrometheusMetricsExporter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
@@ -25,6 +26,8 @@ public class MetricsRequestHandler {
     private static final String STAR_STAR = "*/*";
     private static final String SCOPE_PARAM_KEY = "scope";
     private static final String NAME_PARAM_KEY = "name";
+
+    private static final String FQ_PROMETHEUSCONFIG_PATH = "io.micrometer.prometheus.PrometheusConfig";
 
     static {
         corsHeaders = new HashMap<>();
@@ -223,7 +226,8 @@ public class MetricsRequestHandler {
             return null;
         } else if (acceptHeaders == null) {
             // Use PrometheusMetricsExporter
-            return new PrometheusMetricsExporter();
+
+            return (isPrometheusLibraryLoaded(responder)) ? new PrometheusMetricsExporter() : null;
 
         } else {
             // Header can look like "text/plain, */*"
@@ -231,7 +235,7 @@ public class MetricsRequestHandler {
             if (mt.isPresent()) {
                 String mediaType = mt.get();
 
-                return new PrometheusMetricsExporter();
+                return (isPrometheusLibraryLoaded(responder)) ? new PrometheusMetricsExporter() : null;
 
             } else {
                 responder.respondWith(406, "Couldn't determine a suitable media type for the given Accept header.",
@@ -239,6 +243,27 @@ public class MetricsRequestHandler {
                 return null;
             }
         }
+    }
+
+    /**
+     * Check if we can load a class from the Micrometer Prometheus Library
+     * 
+     * @param responder
+     * @return true if we were able to load a class from the Micrometer Prometheus library
+     * @throws IOException
+     */
+    private boolean isPrometheusLibraryLoaded(Responder responder) throws IOException {
+
+        try {
+            Class.forName(FQ_PROMETHEUSCONFIG_PATH);
+            return true;
+        } catch (Exception e) {
+            responder.respondWith(501,
+                    "No Micrometer Prometheus Registry detected. The /metrics endpoint is not supported.",
+                    Collections.emptyMap());
+            return false;
+        }
+
     }
 
     /**
