@@ -403,17 +403,4 @@ public abstract class MicrometerBackends {
             }, io.micrometer.core.instrument.Clock.SYSTEM);
         }
     }
-
-    public static class SimpleMeterRegistryProducer extends MicrometerBackends {
-
-        public MeterRegistry produce() {
-            return new SimpleMeterRegistry(new SimpleConfig() {
-                @Override
-                public String get(final String propertyName) {
-                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
-                            .orElse(null);
-                }
-            }, io.micrometer.core.instrument.Clock.SYSTEM);
-        }
-    }
 }
