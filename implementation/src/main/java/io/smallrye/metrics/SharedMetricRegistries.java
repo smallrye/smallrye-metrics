@@ -19,6 +19,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.smallrye.metrics.base.LegacyBaseMetrics;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
+import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
 /**
  * SharedMetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
@@ -115,7 +116,8 @@ public class SharedMetricRegistries {
              * Try to load the MPPrometheusMeterRegistry and create it
              */
             Class<?> prometheusMetricRegistryClass = Class
-                    .forName("io.smallrye.metrics.setup.MPPrometheusMeterRegistry");
+                    .forName(MPPrometheusMeterRegistry.class.getName());
+
             Constructor<?> constructor = prometheusMetricRegistryClass.getConstructor(prometheusConfigClass,
                     String.class);
             Object MpPrometheusMeterRegistryInstance = constructor.newInstance(prometheusConfigDefaultObject, scope);
@@ -124,9 +126,11 @@ public class SharedMetricRegistries {
 
         } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | IllegalArgumentException
                 | IllegalAccessException | NoSuchMethodException | InstantiationException | InvocationTargetException e) {
-
-            // e.printStackTrace();
-            // Default to simple meter registry otherwise
+            //TODO: We really don't care about exception being thrown, but should log about it anyways (finest?)
+            /*
+             * Default to simple meter registry otherwise. No Need to create a "MPSimpleMeterRegisty with scope field as scope
+             * was only used for the PrometheusExporter
+             */
             meterRegistry = new SimpleMeterRegistry();
         }
 

@@ -259,7 +259,7 @@ public class MetricsRequestHandler {
             return true;
         } catch (Exception e) {
             responder.respondWith(501,
-                    "No Micrometer Prometheus Registry detected. The /metrics endpoint is not supported.",
+                    "The /metrics endpoint is not supported.",
                     Collections.emptyMap());
             return false;
         }
