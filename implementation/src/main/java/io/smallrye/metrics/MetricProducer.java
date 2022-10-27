@@ -70,21 +70,7 @@ public class MetricProducer {
             String name = metricName.of(ip);
             Tag[] tags = getTags(ip);
 
-            // FIXME: Temporary, resolve the mp.metrics.appName tag if if available to
-            // append to MembersToMetricMapping
-            // so that interceptors can find the annotated metric
-            // Possibly remove MembersToMetricMapping in future, and directly query
-            // metric/meter-registry.
-
-            Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
-
-            List<Tag> mpListTags = new ArrayList<Tag>();
-            mmTags.forEach(tag -> {
-                Tag mpTag = new Tag(tag.getKey(), tag.getValue());
-                mpListTags.add(mpTag);
-            });
-
-            Tag[] mpTagArray = mpListTags.toArray(new Tag[0]);
+            Tag[] mpTagArray = resolveAppNameTag(tags);
 
             MetricID gaugeId = new MetricID(name, mpTagArray);
 
@@ -100,11 +86,10 @@ public class MetricProducer {
         Tag[] tags = getTags(ip);
 
         Counter counter = registry.counter(metadata, tags);
-        // if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
-        // MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags,
-        // (LegacyMetricRegistryAdapter) applicationRegistry));
-        // metricExtension.addMetricId(metricID);
-        // }
+
+        Tag[] mpTagArray = resolveAppNameTag(tags);
+        MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
+        metricExtension.addMetricId(metricID);
 
         return counter;
     }
@@ -118,11 +103,11 @@ public class MetricProducer {
         Tag[] tags = getTags(ip);
 
         Timer timer = registry.timer(metadata, tags);
-        // if (applicationRegistry instanceof LegacyMetricRegistryAdapter) {
-        // MetricID metricID = new MetricID(metadata.getName(), appendScopeTags(tags,
-        // (LegacyMetricRegistryAdapter) applicationRegistry));
-        // metricExtension.addMetricId(metricID);
-        // }
+
+        Tag[] mpTagArray = resolveAppNameTag(tags);
+        MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
+        metricExtension.addMetricId(metricID);
+
         return timer;
     }
 
@@ -170,6 +155,24 @@ public class MetricProducer {
         } else {
             return new Tag[0];
         }
+    }
+
+    /*
+     * TODO: Temporary, resolve the mp.metrics.appName tag if if available to
+     * append to MembersToMetricMapping so that interceptors can find the annotated
+     * metric Possibly remove MembersToMetricMapping in future, and directly query
+     * metric/meter-registry.
+     */
+    private Tag[] resolveAppNameTag(Tag... tags) {
+        Tags mmTags = ((LegacyMetricRegistryAdapter) registry).withAppTags(tags);
+
+        List<Tag> mpListTags = new ArrayList<Tag>();
+        mmTags.forEach(tag -> {
+            Tag mpTag = new Tag(tag.getKey(), tag.getValue());
+            mpListTags.add(mpTag);
+        });
+
+        return mpListTags.toArray(new Tag[0]);
     }
 
 }
