@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
@@ -34,7 +33,6 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistryProducer;
@@ -50,9 +48,6 @@ import io.smallrye.metrics.legacyapi.interceptors.MetricNameFactory;
 import io.smallrye.metrics.legacyapi.interceptors.MetricResolver;
 import io.smallrye.metrics.legacyapi.interceptors.MetricsBinding;
 import io.smallrye.metrics.legacyapi.interceptors.TimedInterceptor;
-import io.smallrye.metrics.micrometer.Backend;
-import io.smallrye.metrics.micrometer.MicrometerBackends;
-import io.smallrye.metrics.micrometer.RequiresClass;
 import io.smallrye.metrics.setup.MetricsMetadata;
 
 /**
@@ -115,7 +110,6 @@ public class LegacyMetricsExtension implements Extension {
         }) {
             bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
         }
-        registerMicrometerBackendClases(bbd, manager, extensionName);
     }
 
     /**
@@ -139,27 +133,6 @@ public class LegacyMetricsExtension implements Extension {
                 TimedInterceptor.class
         }) {
             bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
-        }
-        registerMicrometerBackendClases(bbd, manager, extensionName);
-    }
-
-    /**
-     * Registers the classes related to resolving micrometer backends to the CDI runtime
-     * 
-     * @param bbd
-     * @param manager
-     * @param extensionName
-     */
-    private void registerMicrometerBackendClases(BeforeBeanDiscovery bbd, BeanManager manager, String extensionName) {
-        for (Class clazz : MicrometerBackends.classes()) {
-            try {
-                final RequiresClass requiresClass = (RequiresClass) clazz.getAnnotation(RequiresClass.class);
-                final Class<?>[] requiredClass = requiresClass.value();
-                bbd.addAnnotatedType(manager.createAnnotatedType(clazz), extensionName + "_" + clazz.getName());
-            } catch (Exception e) {
-                //TODO: logging
-                //ignore and don't add
-            }
         }
     }
 
@@ -226,16 +199,6 @@ public class LegacyMetricsExtension implements Extension {
         // create the "base" registry, this will allow the base metrics to be added
         // should this be done here, or should it be called by servers consuming this library?
         MetricRegistry baseRegistry = SharedMetricRegistries.getOrCreate(MetricRegistry.BASE_SCOPE);
-
-        // register configured meter registries
-
-        final Set<Bean<?>> beans = manager.getBeans(MeterRegistry.class, MicrometerBackends.class.getAnnotation(Backend.class));
-        for (Bean<?> bean : beans) {
-            final Object reference = manager.getReference(bean, MeterRegistry.class, manager.createCreationalContext(bean));
-            if (MeterRegistry.class.isInstance(reference)) {
-                Metrics.globalRegistry.add(MeterRegistry.class.cast(reference));
-            }
-        }
 
         // Produce and register custom metrics
         MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);

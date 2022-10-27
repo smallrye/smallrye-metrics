@@ -4,8 +4,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -18,6 +20,8 @@ import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.smallrye.metrics.base.LegacyBaseMetrics;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
+import io.smallrye.metrics.micrometer.MicrometerBackends;
+import io.smallrye.metrics.micrometer.RequiresClass;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
 import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
@@ -67,6 +71,58 @@ public class SharedMetricRegistries {
     private static final Map<String, MetricRegistry> registries = new ConcurrentHashMap<>();
     private static final Map<String, ThreadLocal<Boolean>> threadLocalMap = new ConcurrentHashMap<>();
     private static boolean isBaseMetricsRegistered = false;
+
+    /*
+     * Go through class path to identify what registries are available and register them to Micrometer
+     * Global Meter Registry
+     */
+    static {
+        Set<Class<?>> setOfMeterRegistryClasses = new HashSet<Class<?>>();
+
+        /*
+         * Rely on a ClassNotFound when reading the @RequiredClass' array of
+         * required classes to remove potential Micrometer Backend for processing
+         */
+        for (Class<?> clazz : MicrometerBackends.classes()) {
+            try {
+                final RequiresClass requiresClass = (RequiresClass) clazz.getAnnotation(RequiresClass.class);
+                final Class<?>[] requiredClass = requiresClass.value();
+                setOfMeterRegistryClasses.add(clazz);
+            } catch (Exception e) {
+                //Do nothing
+                //No need to log, fail silently
+            }
+        }
+
+        /*
+         * For each potential Micrometer Backend, create an instance of it through reflection.
+         * Using the abstract class to call the produce() method.
+         */
+        for (Class<?> clazz : setOfMeterRegistryClasses) {
+            if (MicrometerBackends.class.isAssignableFrom(clazz)) {
+                try {
+                    MicrometerBackends mb = (MicrometerBackends) clazz.newInstance();
+                    MeterRegistry backendMeterRegistry = mb.produce();
+
+                    /*
+                     * Even if registry is on classpath, needs to have been enabled
+                     * by config property, otherwise a null would be returned.
+                     * 
+                     */
+                    if (backendMeterRegistry != null) {
+                        Metrics.globalRegistry.add(backendMeterRegistry);
+                    }
+
+                } catch (IllegalAccessException | InstantiationException e) {
+                    //This shouldn't happen...
+                    //TODO: but we should log about it if it ever does happen..
+                }
+            } else {
+                //This shouldn't happen.
+                //TODO: but we should log about it if it ever does happen..
+            }
+        }
+    }
 
     public static MetricRegistry getOrCreate(String scope) {
         return getOrCreate(scope, null);

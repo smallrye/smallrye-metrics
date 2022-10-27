@@ -16,10 +16,8 @@
  */
 package io.smallrye.metrics.micrometer;
 
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
-
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import com.netflix.spectator.atlas.AtlasConfig;
 
@@ -60,17 +58,19 @@ import io.micrometer.statsd.StatsdMeterRegistry;
 import io.micrometer.wavefront.WavefrontConfig;
 import io.micrometer.wavefront.WavefrontMeterRegistry;
 
-@Backend
-public class MicrometerBackends {
+public abstract class MicrometerBackends {
+
+    protected Config config = ConfigProvider.getConfig();
 
     public static Class<?>[] classes() {
         return new Class<?>[] {
                 AppOpticsBackendProducer.class,
                 AtlasBackendProducer.class,
                 DatadogBackendProducer.class,
+                DynatraceBackendProducer.class,
                 ElasticBackendProducer.class,
-                GraphiteBackendProducer.class,
                 GangliaBackendProducer.class,
+                GraphiteBackendProducer.class,
                 HumioBackendProducer.class,
                 InfluxBackendProducer.class,
                 JmxBackendProducer.class,
@@ -84,14 +84,11 @@ public class MicrometerBackends {
         };
     }
 
+    public abstract MeterRegistry produce();
+
     @RequiresClass({ AppOpticsMeterRegistry.class, AppOpticsConfig.class })
-    public static class AppOpticsBackendProducer {
+    public static class AppOpticsBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.appoptics.enabled", String.class).orElse("false"))) {
@@ -109,13 +106,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ AtlasMeterRegistry.class, AtlasConfig.class })
-    public static class AtlasBackendProducer {
+    public static class AtlasBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.atlas.enabled", String.class).orElse("false"))) {
@@ -133,13 +125,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ DatadogMeterRegistry.class, DatadogConfig.class })
-    public static class DatadogBackendProducer {
+    public static class DatadogBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.datadog.enabled", String.class).orElse("false"))) {
@@ -157,13 +144,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ DynatraceMeterRegistry.class, DynatraceConfig.class })
-    public static class DynatraceBackendProducer {
+    public static class DynatraceBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.dynatrace.enabled", String.class).orElse("false"))) {
@@ -181,13 +163,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ ElasticMeterRegistry.class, ElasticConfig.class })
-    public static class ElasticBackendProducer {
+    public static class ElasticBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.elastic.enabled", String.class).orElse("false"))) {
@@ -205,13 +182,7 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ GangliaMeterRegistry.class, GangliaConfig.class })
-    public static class GangliaBackendProducer {
-
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
+    public static class GangliaBackendProducer extends MicrometerBackends {
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.ganglia.enabled", String.class).orElse("false"))) {
@@ -229,13 +200,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ GraphiteMeterRegistry.class, GraphiteConfig.class })
-    public static class GraphiteBackendProducer {
+    public static class GraphiteBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.graphite.enabled", String.class).orElse("false"))) {
@@ -253,13 +219,7 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ HumioMeterRegistry.class, HumioConfig.class })
-    public static class HumioBackendProducer {
-
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
+    public static class HumioBackendProducer extends MicrometerBackends {
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.humio.enabled", String.class).orElse("false"))) {
@@ -277,13 +237,7 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ InfluxMeterRegistry.class, InfluxConfig.class })
-    public static class InfluxBackendProducer {
-
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
+    public static class InfluxBackendProducer extends MicrometerBackends {
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.influx.enabled", String.class).orElse("false"))) {
@@ -301,13 +255,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ JmxMeterRegistry.class, JmxConfig.class })
-    public static class JmxBackendProducer {
+    public static class JmxBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean
                     .parseBoolean(config.getOptionalValue("mp.metrics.jmx.enabled", String.class).orElse("false"))) {
@@ -325,13 +274,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ KairosMeterRegistry.class, KairosConfig.class })
-    public static class KairosBackendProducer {
+    public static class KairosBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.kairos.enabled", String.class).orElse("false"))) {
@@ -349,13 +293,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ NewRelicMeterRegistry.class, NewRelicConfig.class })
-    public static class NewRelicBackendProducer {
+    public static class NewRelicBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.newrelic.enabled", String.class).orElse("false"))) {
@@ -373,13 +312,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ PrometheusMeterRegistry.class, PrometheusConfig.class })
-    public static class PrometheusBackendProducer {
+    public static class PrometheusBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.prometheus.enabled", String.class).orElse("true"))) {
@@ -397,13 +331,7 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ StackdriverMeterRegistry.class, StackdriverConfig.class })
-    public static class StackdriverBackendProducer {
-
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
+    public static class StackdriverBackendProducer extends MicrometerBackends {
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.stackdriver.enabled", String.class).orElse("false"))) {
@@ -421,13 +349,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ SignalFxMeterRegistry.class, SignalFxConfig.class })
-    public static class SignalFxBackendProducer {
+    public static class SignalFxBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.signalfx.enabled", String.class).orElse("false"))) {
@@ -445,13 +368,8 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ StatsdMeterRegistry.class, StatsdConfig.class })
-    public static class StatsdBackendProducer {
+    public static class StatsdBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.statsd.enabled", String.class).orElse("false"))) {
@@ -469,36 +387,14 @@ public class MicrometerBackends {
     }
 
     @RequiresClass({ WavefrontMeterRegistry.class, WavefrontConfig.class })
-    public static class WavefrontBackendProducer {
+    public static class WavefrontBackendProducer extends MicrometerBackends {
 
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
         public MeterRegistry produce() {
             if (!Boolean.parseBoolean(
                     config.getOptionalValue("mp.metrics.wavefront.enabled", String.class).orElse("false"))) {
                 return null;
             }
             return new WavefrontMeterRegistry(new WavefrontConfig() {
-                @Override
-                public String get(final String propertyName) {
-                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
-                            .orElse(null);
-                }
-            }, io.micrometer.core.instrument.Clock.SYSTEM);
-        }
-    }
-
-    public static class SimpleMeterRegistryProducer {
-        @Inject
-        private Config config;
-
-        @Produces
-        @Backend
-        public MeterRegistry produce() {
-            return new SimpleMeterRegistry(new SimpleConfig() {
                 @Override
                 public String get(final String propertyName) {
                     return config.getOptionalValue("mp.metrics." + propertyName, String.class)
