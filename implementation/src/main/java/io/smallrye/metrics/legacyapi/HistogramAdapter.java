@@ -30,17 +30,17 @@ class HistogramAdapter implements Histogram, MeterHolder {
     }
 
     /*
-     * Due to multiple Prometheus meter registries being registered to the global
+     * Due to multiple (Prometheus or Simple) meter registries being registered to the global
      * composite meter registry with deny filters used, this can lead to a problem
      * when the composite meter is retrieving a value of the meter. It will chose
      * the "first" meter registry associated to the composite meter. This meter
      * registry may have returned a Noop meter (due it being denied). As a result,
      * querying this composite meter for a value can return a 0.
      * 
-     * We keep acquire the Prometheus meter registry's meter and use it to retrieve
-     * values. Can't just acquire the meter during value retrieval due to situation
-     * where if this meter(holder) was removed from the MP shim, the application
-     * code could still have reference to this object and can still perform a get
+     * We keep the (Prometheus or Simple) meter registry's meter and use that instance to retrieve
+     * values. We can not simply acquire the meter during value retrieval due to situation
+     * where if this metric/meter-holder was removed from the MP shim, the application
+     * code could still have reference to this metric/meter-holder and can still perform a get
      * value calls.
      * 
      * We keep the global composite meter as this is what is "used" when we need to
@@ -50,9 +50,8 @@ class HistogramAdapter implements Histogram, MeterHolder {
      * See SharedMetricRegistries.java for more information.
      * 
      */
-
     DistributionSummary globalCompositeSummary;
-    DistributionSummary promSummary;
+    DistributionSummary scopedMeterRegistrySummary;
 
     public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope) {
 
@@ -78,13 +77,13 @@ class HistogramAdapter implements Histogram, MeterHolder {
             /*
              * Due to registries that deny registration returning no-op and the chance of
              * the composite meter obtaining the no-oped meter, we need to acquire
-             * Prometheus meter registry's copy of this meter/metric.
+             * (Prometheus or Simple) meter registry's copy of this meter/metric.
              * 
              * Save this and use it to retrieve values.
              */
-            promSummary = registry.find(metricInfo.name()).tags(tagsSet).summary();
-            if (promSummary == null) {
-                promSummary = globalCompositeSummary;
+            scopedMeterRegistrySummary = registry.find(metricInfo.name()).tags(tagsSet).summary();
+            if (scopedMeterRegistrySummary == null) {
+                scopedMeterRegistrySummary = globalCompositeSummary;
                 // TODO: logging?
             }
         }
@@ -104,17 +103,17 @@ class HistogramAdapter implements Histogram, MeterHolder {
 
     @Override
     public long getCount() {
-        return promSummary.count();
+        return scopedMeterRegistrySummary.count();
     }
 
     @Override
     public long getSum() {
-        return (long) promSummary.takeSnapshot().total();
+        return (long) scopedMeterRegistrySummary.takeSnapshot().total();
     }
 
     @Override
     public Snapshot getSnapshot() {
-        return new SnapshotAdapter(promSummary.takeSnapshot());
+        return new SnapshotAdapter(scopedMeterRegistrySummary.takeSnapshot());
     }
 
     @Override

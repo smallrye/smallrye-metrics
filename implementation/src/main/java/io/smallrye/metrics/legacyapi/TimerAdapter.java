@@ -22,17 +22,17 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
     private final static int PRECISION;
 
     /*
-     * Due to multiple Prometheus meter registries being registered to the global
+     * Due to multiple (Prometheus or Simple) meter registries being registered to the global
      * composite meter registry with deny filters used, this can lead to a problem
      * when the composite meter is retrieving a value of the meter. It will chose
      * the "first" meter registry associated to the composite meter. This meter
      * registry may have returned a Noop meter (due it being denied). As a result,
      * querying this composite meter for a value can return a 0.
      * 
-     * We keep acquire the Prometheus meter registry's meter and use it to retrieve
-     * values. Can't just acquire the meter during value retrieval due to situation
-     * where if this meter(holder) was removed from the MP shim, the application
-     * code could still have reference to this object and can still perform a get
+     * We keep the (Prometheus or Simple) meter registry's meter and use that instance to retrieve
+     * values. We can not simply acquire the meter during value retrieval due to situation
+     * where if this metric/meter-holder was removed from the MP shim, the application
+     * code could still have reference to this metric/meter-holder and can still perform a get
      * value calls.
      * 
      * We keep the global composite meter as this is what is "used" when we need to
@@ -42,6 +42,8 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
      * See SharedMetricRegistries.java for more information.
      * 
      */
+    Timer globalCompositeTimer;
+    Timer scopedMeterRegistryTimer;
 
     /*
      * Increasing the percentile precision for timers will consume more memory.
@@ -52,9 +54,6 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
         final Config config = ConfigProvider.getConfig();
         PRECISION = config.getOptionalValue("mp.metrics.smallrye.timer.precision", Integer.class).orElse(3);
     }
-
-    Timer globalCompositeTimer;
-    Timer promTimer;
 
     final MeterRegistry registry;
 
@@ -83,13 +82,13 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
             /*
              * Due to registries that deny registration returning no-op and the chance of
              * the composite meter obtaining the no-oped meter, we need to acquire
-             * Prometheus meter registry's copy of this meter/metric.
+             * (Prometheus or Simple) meter registry's copy of this meter/metric.
              * 
              * Save this and use it to retrieve values.
              */
-            promTimer = registry.find(descriptor.name()).tags(tagsSet).timer();
-            if (promTimer == null) {
-                promTimer = globalCompositeTimer;
+            scopedMeterRegistryTimer = registry.find(descriptor.name()).tags(tagsSet).timer();
+            if (scopedMeterRegistryTimer == null) {
+                scopedMeterRegistryTimer = globalCompositeTimer;
                 // TODO: logging?
             }
         }
@@ -124,17 +123,17 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
 
     @Override
     public Duration getElapsedTime() {
-        return Duration.ofNanos((long) promTimer.totalTime(TimeUnit.NANOSECONDS));
+        return Duration.ofNanos((long) scopedMeterRegistryTimer.totalTime(TimeUnit.NANOSECONDS));
     }
 
     @Override
     public long getCount() {
-        return promTimer.count();
+        return scopedMeterRegistryTimer.count();
     }
 
     @Override
     public Snapshot getSnapshot() {
-        return new SnapshotAdapter(promTimer.takeSnapshot());
+        return new SnapshotAdapter(scopedMeterRegistryTimer.takeSnapshot());
     }
 
     @Override

@@ -13,17 +13,17 @@ import io.smallrye.metrics.SharedMetricRegistries;
 class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterHolder {
 
     /*
-     * Due to multiple Prometheus meter registries being registered to the global
+     * Due to multiple (Prometheus or Simple) meter registries being registered to the global
      * composite meter registry with deny filters used, this can lead to a problem
      * when the composite meter is retrieving a value of the meter. It will chose
      * the "first" meter registry associated to the composite meter. This meter
      * registry may have returned a Noop meter (due it being denied). As a result,
      * querying this composite meter for a value can return a 0.
      * 
-     * We keep acquire the Prometheus meter registry's meter and use it to retrieve
-     * values. Can't just acquire the meter during value retrieval due to situation
-     * where if this meter(holder) was removed from the MP shim, the application
-     * code could still have reference to this object and can still perform a get
+     * We keep the (Prometheus or Simple) meter registry's meter and use that instance to retrieve
+     * values. We can not simply acquire the meter during value retrieval due to situation
+     * where if this metric/meter-holder was removed from the MP shim, the application
+     * code could still have reference to this metric/meter-holder and can still perform a get
      * value calls.
      * 
      * We keep the global composite meter as this is what is "used" when we need to
@@ -33,9 +33,8 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
      * See SharedMetricRegistries.java for more information.
      * 
      */
-
     Counter globalCompositeCounter;
-    Counter promCounter;
+    Counter scopedMeterRegistryCounter;
 
     public CounterAdapter register(MpMetadata metadata, MetricDescriptor descriptor, MeterRegistry registry,
             String scope) {
@@ -58,13 +57,13 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
             /*
              * Due to registries that deny registration returning no-op and the chance of
              * the composite meter obtaining the no-oped meter, we need to acquire
-             * Prometheus meter registry's copy of this meter/metric.
+             * the (Prometheus or Simple) meter registry's copy of this meter/metric.
              * 
              * Save this and use it to retrieve values.
              */
-            promCounter = registry.find(descriptor.name()).tags(tagsSet).counter();
-            if (promCounter == null) {
-                promCounter = globalCompositeCounter;
+            scopedMeterRegistryCounter = registry.find(descriptor.name()).tags(tagsSet).counter();
+            if (scopedMeterRegistryCounter == null) {
+                scopedMeterRegistryCounter = globalCompositeCounter;
                 // TODO: logging?
             }
         }
@@ -84,7 +83,7 @@ class CounterAdapter implements org.eclipse.microprofile.metrics.Counter, MeterH
 
     @Override
     public long getCount() {
-        return (long) promCounter.count();
+        return (long) scopedMeterRegistryCounter.count();
     }
 
     @Override
