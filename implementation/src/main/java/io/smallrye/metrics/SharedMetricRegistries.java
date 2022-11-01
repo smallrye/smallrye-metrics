@@ -1,7 +1,6 @@
 package io.smallrye.metrics;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -80,8 +79,8 @@ public class SharedMetricRegistries {
         Set<Class<?>> setOfMeterRegistryClasses = new HashSet<Class<?>>();
 
         /*
-         * Rely on a ClassNotFound when reading the @RequiredClass' array of
-         * required classes to remove potential Micrometer Backend for processing
+         * Rely on a ClassNotFound when reading the @RequiredClass' array of required classes to remove
+         * potential Micrometer Backend for processing
          */
         for (Class<?> clazz : MicrometerBackends.classes()) {
             try {
@@ -89,14 +88,14 @@ public class SharedMetricRegistries {
                 final Class<?>[] requiredClass = requiresClass.value();
                 setOfMeterRegistryClasses.add(clazz);
             } catch (Exception e) {
-                //Do nothing
-                //No need to log, fail silently
+                // Do nothing
+                // No need to log, fail silently
             }
         }
 
         /*
-         * For each potential Micrometer Backend, create an instance of it through reflection.
-         * Using the abstract class to call the produce() method.
+         * For each potential Micrometer Backend, create an instance of it through reflection. Using the
+         * abstract class to call the produce() method.
          */
         for (Class<?> clazz : setOfMeterRegistryClasses) {
             if (MicrometerBackends.class.isAssignableFrom(clazz)) {
@@ -105,8 +104,8 @@ public class SharedMetricRegistries {
                     MeterRegistry backendMeterRegistry = mb.produce();
 
                     /*
-                     * Even if registry is on classpath, needs to have been enabled
-                     * by config property, otherwise a null would be returned.
+                     * Even if registry is on classpath, needs to have been enabled by config property, otherwise a null
+                     * would be returned.
                      * 
                      */
                     if (backendMeterRegistry != null) {
@@ -114,12 +113,12 @@ public class SharedMetricRegistries {
                     }
 
                 } catch (IllegalAccessException | InstantiationException e) {
-                    //This shouldn't happen...
-                    //TODO: but we should log about it if it ever does happen..
+                    // This shouldn't happen...
+                    // TODO: but we should log about it if it ever does happen..
                 }
             } else {
-                //This shouldn't happen.
-                //TODO: but we should log about it if it ever does happen..
+                // This shouldn't happen.
+                // TODO: but we should log about it if it ever does happen..
             }
         }
     }
@@ -153,41 +152,54 @@ public class SharedMetricRegistries {
         MeterRegistry meterRegistry;
 
         /*
-         * The below Try block is equivalent to calling. meterRegistry = new
-         * io.smallrye.metrics.setup.MPPrometheusMeterRegistry(io.micrometer.prometheus.
-         * PrometheusConfig.DEFAULT, scope); This is to address problems for runtimes that may need to load
-         * SmallRye Metric Classes with reflection and that the Promethues Target registry client library is
-         * not provided.
+         * If mp.metrics.prometheus.enabled is explicitly set to false
+         * Use SimpleMeterRegistry to associate with MP Metric Registry.
+         * 
+         * Otherwise, attempt to load MPPrometheusMeterRegistry. If is not
+         * on the classpath, then use SimpleMeterRegistry
          */
-        try {
-            /*
-             * Try to load PrometheusConfig and acquire the DEFAULT field, i.e the default functional interface
-             * impl
-             */
-            Class<?> prometheusConfigClass = Class.forName(FQ_PROMETHEUSCONFIG_PATH);
-            Field defaultFuncImpl = prometheusConfigClass.getField("DEFAULT");
-            Object prometheusConfigDefaultObject = defaultFuncImpl.get(null);
-
-            /*
-             * Try to load the MPPrometheusMeterRegistry and create it
-             */
-            Class<?> prometheusMetricRegistryClass = Class
-                    .forName(MPPrometheusMeterRegistry.class.getName());
-
-            Constructor<?> constructor = prometheusMetricRegistryClass.getConstructor(prometheusConfigClass,
-                    String.class);
-            Object MpPrometheusMeterRegistryInstance = constructor.newInstance(prometheusConfigDefaultObject, scope);
-
-            meterRegistry = (MeterRegistry) MpPrometheusMeterRegistryInstance;
-
-        } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | IllegalArgumentException
-                | IllegalAccessException | NoSuchMethodException | InstantiationException | InvocationTargetException e) {
-            //TODO: We really don't care about exception being thrown, but should log about it anyways (finest?)
-            /*
-             * Default to simple meter registry otherwise. No Need to create a "MPSimpleMeterRegisty with scope field as scope
-             * was only used for the PrometheusExporter
-             */
+        if (!Boolean.parseBoolean(ConfigProvider.getConfig()
+                .getOptionalValue("mp.metrics.prometheus.enabled", String.class).orElse("true"))) {
             meterRegistry = new SimpleMeterRegistry();
+        } else {
+
+            /*
+             * The below Try block is equivalent to calling. meterRegistry = new
+             * io.smallrye.metrics.setup.MPPrometheusMeterRegistry(io.micrometer.prometheus.
+             * PrometheusConfig.DEFAULT, scope); This is to address problems for runtimes that may need to load
+             * SmallRye Metric Classes with reflection and that the Promethues Target registry client library is
+             * not provided.
+             */
+            try {
+
+                /*
+                 * Try to load PrometheusConfig to see if we have the Prometheus Meter registry library on
+                 * the class path
+                 */
+                Class<?> prometheusConfigClass = Class.forName(FQ_PROMETHEUSCONFIG_PATH);
+
+                /*
+                 * Try to load the MPPrometheusMeterRegistry and create it
+                 */
+                Class<?> prometheusMetricRegistryClass = Class.forName(MPPrometheusMeterRegistry.class.getName());
+
+                Constructor<?> constructor = prometheusMetricRegistryClass.getConstructor(String.class);
+
+                Object mpPrometheusMeterRegistryInstance = constructor.newInstance(scope);
+
+                meterRegistry = (MeterRegistry) mpPrometheusMeterRegistryInstance;
+
+            } catch (ClassNotFoundException | SecurityException | IllegalArgumentException
+                    | IllegalAccessException | NoSuchMethodException | InstantiationException
+                    | InvocationTargetException e) {
+                // TODO: We really don't care about exception being thrown, but should log about it anyways
+                // (finest?)
+                /*
+                 * Default to simple meter registry otherwise. No Need to create a "MPSimpleMeterRegisty with scope
+                 * field as scope was only used for the PrometheusExporter
+                 */
+                meterRegistry = new SimpleMeterRegistry();
+            }
         }
 
         /*
