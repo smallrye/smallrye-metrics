@@ -45,8 +45,6 @@ import io.micrometer.kairos.KairosConfig;
 import io.micrometer.kairos.KairosMeterRegistry;
 import io.micrometer.newrelic.NewRelicConfig;
 import io.micrometer.newrelic.NewRelicMeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.signalfx.SignalFxConfig;
 import io.micrometer.signalfx.SignalFxMeterRegistry;
 import io.micrometer.stackdriver.StackdriverConfig;
@@ -74,7 +72,6 @@ public abstract class MicrometerBackends {
                 JmxBackendProducer.class,
                 KairosBackendProducer.class,
                 NewRelicBackendProducer.class,
-                PrometheusBackendProducer.class,
                 SignalFxBackendProducer.class,
                 StackdriverBackendProducer.class,
                 StatsdBackendProducer.class,
@@ -306,25 +303,6 @@ public abstract class MicrometerBackends {
                             .orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
-        }
-    }
-
-    @RequiresClass({ PrometheusMeterRegistry.class, PrometheusConfig.class })
-    public static class PrometheusBackendProducer extends MicrometerBackends {
-
-        public MeterRegistry produce() {
-            if (!Boolean.parseBoolean(
-                    config.getOptionalValue("mp.metrics.prometheus.enabled", String.class).orElse("true"))) {
-                return null;
-            }
-
-            return new PrometheusMeterRegistry(new PrometheusConfig() {
-                @Override
-                public String get(final String propertyName) {
-                    return config.getOptionalValue("mp.metrics." + propertyName, String.class)
-                            .orElse(null);
-                }
-            });
         }
     }
 
