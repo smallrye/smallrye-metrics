@@ -56,6 +56,25 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     protected static io.micrometer.core.instrument.Tag[] SERVER_LEVEL_MPCONFIG_APPLICATION_NAME_TAG = null;
 
+    protected static final String GLOBAL_TAG_MALFORMED_EXCEPTION = "Malformed list of Global Tags. Tag names "
+            + "must match the following regex [a-zA-Z_][a-zA-Z0-9_]*." + " Global Tag values must not be empty."
+            + " Global Tag values MUST escape equal signs `=` and commas `,`" + " with a backslash `\\` ";
+
+    protected static final String GLOBAL_TAGS_VARIABLE = "mp.metrics.tags";
+
+    /**
+     * This static Tag[] represents the server level global tags retrieved from MP Config for
+     * mp.metrics.tags. This value will be 'null' when not initialized. If during initialization and no
+     * global tag has been resolved this will be to an array of size 0. Using an array of size 0 is to
+     * represent that an attempt on start up was made to resolve the value, but none was found. This
+     * prevents later instantiations of MetricRegistry to avoid attempting to resolve the MP Config
+     * value for the slight performance boon.
+     *
+     * This server level value will not change at all throughout the life time of the server as it is
+     * defined by env vars or sys props.
+     */
+    protected static io.micrometer.core.instrument.Tag[] SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = null;
+
     public MeterRegistry getPrometheusMeterRegistry() {
         return registry;
     }
@@ -127,6 +146,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
         applicationMap = new ConcurrentHashMap<String, ConcurrentLinkedQueue<MetricID>>();
 
+        this.resolveMPConfigGlobalTagsByServer();
+
         if (scope != BASE_SCOPE && scope != VENDOR_SCOPE) {
             memberToMetricMappings = new MemberToMetricMappings();
         }
@@ -139,6 +160,63 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      */
     private Tags combineApplicationTagsWithMPConfigAppNameTag(Tags tags) {
         return combineApplicationTagsWithMPConfigAppNameTag(false, tags);
+    }
+
+    private synchronized io.micrometer.core.instrument.Tag[] resolveMPConfigGlobalTagsByServer() {
+        if (SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS == null) {
+
+            // Using MP Config to retreive the mp.metrics.tags Config value
+            Optional<String> globalTags = ConfigProvider.getConfig().getOptionalValue(GLOBAL_TAGS_VARIABLE,
+                    String.class);
+
+            // evaluate if there exists tag values or set tag[0] to be null for no value;
+            SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = (globalTags.isPresent()) ? parseGlobalTags(globalTags.get())
+                    : new io.micrometer.core.instrument.Tag[0];
+        }
+        return (SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS.length == 0) ? null : SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS;
+    }
+
+    /**
+     * This will return server level global tag i.e defined in env var or sys props
+     *
+     * Will return null if no MP Config value is set for the mp.metrics.tags on the server level
+     *
+     * @return Tag[] The server wide global tag; can return null
+     */
+    private static io.micrometer.core.instrument.Tag[] parseGlobalTags(String globalTags) {
+        if (globalTags == null || globalTags.length() == 0) {
+            return null;
+        }
+        String[] kvPairs = globalTags.split("(?<!\\\\),");
+
+        io.micrometer.core.instrument.Tag[] arrayOfTags = new io.micrometer.core.instrument.Tag[kvPairs.length];
+        int count = 0;
+        for (String kvString : kvPairs) {
+
+            if (kvString.length() == 0) {
+                throw new IllegalArgumentException(GLOBAL_TAG_MALFORMED_EXCEPTION);
+            }
+
+            String[] keyValueSplit = kvString.split("(?<!\\\\)=");
+
+            if (keyValueSplit.length != 2 || keyValueSplit[0].length() == 0 || keyValueSplit[1].length() == 0) {
+                throw new IllegalArgumentException(GLOBAL_TAG_MALFORMED_EXCEPTION);
+            }
+
+            String key = keyValueSplit[0];
+            String value = keyValueSplit[1];
+
+            if (!key.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+                throw new IllegalArgumentException(
+                        "Invalid Tag name. Tag names must match the following regex " + "[a-zA-Z_][a-zA-Z0-9_]*");
+            }
+            value = value.replace("\\,", ",");
+            value = value.replace("\\=", "=");
+
+            arrayOfTags[count] = io.micrometer.core.instrument.Tag.of(key, value);
+            count++;
+        }
+        return arrayOfTags;
     }
 
     /**
@@ -345,7 +423,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         CounterAdapter result = checkCast(CounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new CounterAdapter()));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope);
+
+        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     /**
@@ -379,7 +458,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         FunctionCounterAdapter<T> result = checkCast(FunctionCounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new FunctionCounterAdapter(obj, func)));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope);
+        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     public <T> Gauge<Double> gauge(String name, T o, ToDoubleFunction<T> f) {
@@ -439,7 +518,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         GaugeAdapter.DoubleFunctionGauge<T> result = checkCast(GaugeAdapter.DoubleFunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.DoubleFunctionGauge<>(obj, f)));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope);
+        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     @SuppressWarnings("unchecked")
@@ -448,7 +527,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         GaugeAdapter.FunctionGauge<T, R> result = checkCast(GaugeAdapter.FunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.FunctionGauge<>(obj, f)));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope);
+        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> f) {
@@ -496,7 +575,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         GaugeAdapter<T> result = checkCast(GaugeAdapter.NumberSupplierGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<T>(f)));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope);
+        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     void bindAnnotatedGauge(AnnotatedGaugeAdapter adapter) {
@@ -568,7 +647,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter()));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope);
+        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     @Override
@@ -632,7 +711,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         TimerAdapter result = checkCast(TimerAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new TimerAdapter(registry)));
         addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, scope);
+        return result.register(metadata, id, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     @Override
@@ -825,7 +904,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      * want metadata to be registered if it was not necessary.
      * 
      * @param tags Tags to be combined with
-     * @return tags combined with mp_scope and mp_app if available
+     * @return tags combined with global tags and mp_app if available
      */
     public Tags withAppTags(Tag... tags) {
 

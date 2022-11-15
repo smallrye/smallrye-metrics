@@ -15,7 +15,8 @@ import io.micrometer.core.instrument.Tag;
 
 interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
 
-    GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope);
+    GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope,
+            Tag... globalTags);
 
     static class DoubleFunctionGauge<S> implements GaugeAdapter<Double> {
         io.micrometer.core.instrument.Gauge gauge;
@@ -29,12 +30,19 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
         }
 
         public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
-                String scope) {
+                String scope, Tag... globalTags) {
 
             Set<Tag> tagsSet = new HashSet<Tag>();
             for (Tag t : metricInfo.tags()) {
                 tagsSet.add(t);
             }
+
+            if (globalTags != null) {
+                for (Tag t : globalTags) {
+                    tagsSet.add(t);
+                }
+            }
+
             tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, f)
@@ -71,12 +79,19 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
         }
 
         public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
-                String scope) {
+                String scope, Tag... globalTags) {
 
             Set<Tag> tagsSet = new HashSet<Tag>();
             for (Tag t : metricInfo.tags()) {
                 tagsSet.add(t);
             }
+
+            if (globalTags != null) {
+                for (Tag t : globalTags) {
+                    tagsSet.add(t);
+                }
+            }
+
             tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             gauge = io.micrometer.core.instrument.Gauge
@@ -116,12 +131,25 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
 
         @Override
         public GaugeAdapter<T> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
-                String scope) {
+                String scope, Tag... globalTags) {
             if (gauge == null || metadata.cleanDirtyMetadata()) {
 
+                Set<Tag> tagsSet = new HashSet<Tag>();
+                for (Tag t : metricInfo.tags()) {
+                    tagsSet.add(t);
+                }
+
+                if (globalTags != null) {
+                    for (Tag t : globalTags) {
+                        tagsSet.add(t);
+                    }
+                }
+
+                tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
+
                 gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), (Supplier<Number>) supplier)
-                        .description(metadata.getDescription()).tags(metricInfo.tags())
-                        .tags(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope)
+                        .description(metadata.getDescription())
+                        .tags(tagsSet)
                         .baseUnit(metadata.getUnit()).strongReference(true).register(Metrics.globalRegistry);
             }
 

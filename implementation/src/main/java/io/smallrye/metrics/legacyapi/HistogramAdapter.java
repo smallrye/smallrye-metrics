@@ -30,7 +30,8 @@ class HistogramAdapter implements Histogram, MeterHolder {
 
     DistributionSummary globalCompositeSummary;
 
-    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope) {
+    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope,
+            Tag... globalTags) {
 
         if (globalCompositeSummary == null || metadata.cleanDirtyMetadata()) {
 
@@ -38,6 +39,13 @@ class HistogramAdapter implements Histogram, MeterHolder {
             for (Tag t : metricInfo.tags()) {
                 tagsSet.add(t);
             }
+
+            if (globalTags != null) {
+                for (Tag t : globalTags) {
+                    tagsSet.add(t);
+                }
+            }
+
             tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             globalCompositeSummary = DistributionSummary.builder(metricInfo.name())

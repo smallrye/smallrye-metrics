@@ -2,10 +2,8 @@ package io.smallrye.metrics;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,7 +12,6 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.smallrye.metrics.base.LegacyBaseMetrics;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
@@ -52,19 +49,6 @@ public class SharedMetricRegistries {
 
     private static final String FQ_PROMETHEUS_CONFIG_PATH = "io.micrometer.prometheus.PrometheusConfig";
     private static final String FQ_PROMETHEUS_METRIC_REGISTRY_PATH = "io.micrometer.prometheus.PrometheusMeterRegistry";
-
-    /**
-     * This static Tag[] represents the server level global tags retrieved from MP Config for
-     * mp.metrics.tags. This value will be 'null' when not initialized. If during initialization and no
-     * global tag has been resolved this will be to an array of size 0. Using an array of size 0 is to
-     * represent that an attempt on start up was made to resolve the value, but none was found. This
-     * prevents later instantiations of MetricRegistry to avoid attempting to resolve the MP Config
-     * value for the slight performance boon.
-     *
-     * This server level value will not change at all throughout the life time of the server as it is
-     * defined by env vars or sys props.
-     */
-    protected static Tag[] SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = null;
 
     private static final Map<String, MetricRegistry> registries = new ConcurrentHashMap<>();
     private static boolean isBaseMetricsRegistered = false;
@@ -198,15 +182,6 @@ public class SharedMetricRegistries {
             }
         }
 
-        /*
-         * Apply Global tags (mp.metrics.global) as common tags
-         */
-
-        Tag[] globalTags = resolveMPConfigGlobalTagsByServer();
-        if (globalTags.length != 0) {
-            meterRegistry.config().commonTags(Arrays.asList(globalTags));
-        }
-
         Metrics.addRegistry(meterRegistry);
 
         return meterRegistry;
@@ -230,20 +205,6 @@ public class SharedMetricRegistries {
         registries.clear();
     }
 
-    private synchronized static Tag[] resolveMPConfigGlobalTagsByServer() {
-        if (SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS == null) {
-
-            // Using MP Config to retreive the mp.metrics.tags Config value
-            Optional<String> globalTags = ConfigProvider.getConfig().getOptionalValue(GLOBAL_TAGS_VARIABLE,
-                    String.class);
-
-            // evaluate if there exists tag values or set tag[0] to be null for no value;
-            SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = (globalTags.isPresent()) ? parseGlobalTags(globalTags.get())
-                    : new Tag[0];
-        }
-        return (SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS == null) ? null : SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS;
-    }
-
     /**
      * Returns true/false if registry with this scope exists
      * 
@@ -252,48 +213,5 @@ public class SharedMetricRegistries {
      */
     public static boolean doesScopeExist(String scope) {
         return registries.containsKey(scope);
-    }
-
-    /**
-     * This will return server level global tag i.e defined in env var or sys props
-     *
-     * Will return null if no MP Config value is set for the mp.metrics.tags on the server level
-     *
-     * @return Tag[] The server wide global tag; can return null
-     */
-    private static Tag[] parseGlobalTags(String globalTags) {
-        if (globalTags == null || globalTags.length() == 0) {
-            return null;
-        }
-        String[] kvPairs = globalTags.split("(?<!\\\\),");
-
-        Tag[] arrayOfTags = new Tag[kvPairs.length];
-        int count = 0;
-        for (String kvString : kvPairs) {
-
-            if (kvString.length() == 0) {
-                throw new IllegalArgumentException(GLOBAL_TAG_MALFORMED_EXCEPTION);
-            }
-
-            String[] keyValueSplit = kvString.split("(?<!\\\\)=");
-
-            if (keyValueSplit.length != 2 || keyValueSplit[0].length() == 0 || keyValueSplit[1].length() == 0) {
-                throw new IllegalArgumentException(GLOBAL_TAG_MALFORMED_EXCEPTION);
-            }
-
-            String key = keyValueSplit[0];
-            String value = keyValueSplit[1];
-
-            if (!key.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
-                throw new IllegalArgumentException(
-                        "Invalid Tag name. Tag names must match the following regex " + "[a-zA-Z_][a-zA-Z0-9_]*");
-            }
-            value = value.replace("\\,", ",");
-            value = value.replace("\\=", "=");
-
-            arrayOfTags[count] = Tag.of(key, value);
-            count++;
-        }
-        return arrayOfTags;
     }
 }
