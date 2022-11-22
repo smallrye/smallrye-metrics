@@ -12,7 +12,6 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
-import io.smallrye.metrics.SharedMetricRegistries;
 
 interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
 
@@ -32,9 +31,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
         public GaugeAdapter<Double> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
                 String scope) {
 
-            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
-            threadLocal.set(true);
-
             Set<Tag> tagsSet = new HashSet<Tag>();
             for (Tag t : metricInfo.tags()) {
                 tagsSet.add(t);
@@ -44,7 +40,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
             gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), obj, f)
                     .description(metadata.getDescription()).tags(tagsSet).baseUnit(metadata.getUnit())
                     .strongReference(true).register(Metrics.globalRegistry);
-            threadLocal.set(false);
             return this;
         }
 
@@ -77,8 +72,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
 
         public GaugeAdapter<R> register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry,
                 String scope) {
-            ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
-            threadLocal.set(true);
 
             Set<Tag> tagsSet = new HashSet<Tag>();
             for (Tag t : metricInfo.tags()) {
@@ -90,7 +83,6 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
                     .builder(metricInfo.name(), obj, obj -> f.apply(obj).doubleValue())
                     .description(metadata.getDescription()).tags(tagsSet).baseUnit(metadata.getUnit())
                     .strongReference(true).register(Metrics.globalRegistry);
-            threadLocal.set(false);
             return this;
         }
 
@@ -127,14 +119,10 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
                 String scope) {
             if (gauge == null || metadata.cleanDirtyMetadata()) {
 
-                ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
-                threadLocal.set(true);
-
                 gauge = io.micrometer.core.instrument.Gauge.builder(metricInfo.name(), (Supplier<Number>) supplier)
                         .description(metadata.getDescription()).tags(metricInfo.tags())
                         .tags(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope)
                         .baseUnit(metadata.getUnit()).strongReference(true).register(Metrics.globalRegistry);
-                threadLocal.set(false);
             }
 
             return this;

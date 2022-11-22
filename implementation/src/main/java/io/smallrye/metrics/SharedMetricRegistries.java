@@ -15,14 +15,12 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.smallrye.metrics.base.LegacyBaseMetrics;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 import io.smallrye.metrics.micrometer.MicrometerBackends;
 import io.smallrye.metrics.micrometer.RequiresClass;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
-import io.smallrye.metrics.setup.MPPrometheusMeterRegistry;
 
 /**
  * SharedMetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
@@ -52,7 +50,8 @@ public class SharedMetricRegistries {
 
     protected static final String GLOBAL_TAGS_VARIABLE = "mp.metrics.tags";
 
-    private static final String FQ_PROMETHEUSCONFIG_PATH = "io.micrometer.prometheus.PrometheusConfig";
+    private static final String FQ_PROMETHEUS_CONFIG_PATH = "io.micrometer.prometheus.PrometheusConfig";
+    private static final String FQ_PROMETHEUS_METRIC_REGISTRY_PATH = "io.micrometer.prometheus.PrometheusMeterRegistry";
 
     /**
      * This static Tag[] represents the server level global tags retrieved from MP Config for
@@ -68,9 +67,9 @@ public class SharedMetricRegistries {
     protected static Tag[] SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = null;
 
     private static final Map<String, MetricRegistry> registries = new ConcurrentHashMap<>();
-    private static final Map<String, ThreadLocal<Boolean>> threadLocalMap = new ConcurrentHashMap<>();
     private static boolean isBaseMetricsRegistered = false;
 
+    private static MeterRegistry meterRegistry;
     /*
      * Go through class path to identify what registries are available and register them to Micrometer
      * Global Meter Registry
@@ -121,6 +120,8 @@ public class SharedMetricRegistries {
                 // TODO: but we should log about it if it ever does happen..
             }
         }
+
+        meterRegistry = resolveMeterRegistry();
     }
 
     public static MetricRegistry getOrCreate(String scope) {
@@ -131,32 +132,29 @@ public class SharedMetricRegistries {
     public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver appNameResolver) {
 
         MetricRegistry metricRegistry = registries.computeIfAbsent(scope,
-                t -> new LegacyMetricRegistryAdapter(scope, resolveMeterRegistry(scope), appNameResolver));
+                t -> new LegacyMetricRegistryAdapter(scope, meterRegistry, appNameResolver));
 
         /*
          * Bind LegacyBaseMetrics to Base MP Metric Registry
          */
         if (!isBaseMetricsRegistered && scope.equals(MetricRegistry.BASE_SCOPE)) {
-            ThreadLocal<Boolean> base_Tl = getThreadLocal(MetricRegistry.BASE_SCOPE);
-            base_Tl.set(true);
             new LegacyBaseMetrics().register(metricRegistry);
-            base_Tl.set(false);
             isBaseMetricsRegistered = true;
         }
 
         return metricRegistry;
     }
 
-    private static MeterRegistry resolveMeterRegistry(String scope) {
+    private static MeterRegistry resolveMeterRegistry() {
 
         MeterRegistry meterRegistry;
 
         /*
-         * If mp.metrics.prometheus.enabled is explicitly set to false
-         * Use SimpleMeterRegistry to associate with MP Metric Registry.
+         * If mp.metrics.prometheus.enabled is explicitly set to false Use SimpleMeterRegistry to associate
+         * with MP Metric Registry.
          * 
-         * Otherwise, attempt to load MPPrometheusMeterRegistry. If is not
-         * on the classpath, then use SimpleMeterRegistry
+         * Otherwise, attempt to load PrometheusMeterRegistry. If is not on the classpath, then use
+         * SimpleMeterRegistry
          */
         if (!Boolean.parseBoolean(ConfigProvider.getConfig()
                 .getOptionalValue("mp.metrics.prometheus.enabled", String.class).orElse("true"))) {
@@ -165,33 +163,31 @@ public class SharedMetricRegistries {
 
             /*
              * The below Try block is equivalent to calling. meterRegistry = new
-             * io.smallrye.metrics.setup.MPPrometheusMeterRegistry(io.micrometer.prometheus.
-             * PrometheusConfig.DEFAULT, scope); This is to address problems for runtimes that may need to load
-             * SmallRye Metric Classes with reflection and that the Promethues Target registry client library is
-             * not provided.
+             * PrometheusMeterRegistry(customConfig); This is to address problems for runtimes that may need to
+             * load SmallRye Metric Classes with reflection and that the Prometheus metric registry client
+             * library is not provided on the class path
              */
             try {
 
                 /*
-                 * Try to load PrometheusConfig to see if we have the Prometheus Meter registry library on
-                 * the class path
+                 * Try to load PrometheusConfig to see if we have the Prometheus Meter registry library on the class
+                 * path
                  */
-                Class<?> prometheusConfigClass = Class.forName(FQ_PROMETHEUSCONFIG_PATH);
+                Class<?> prometheusConfigClass = Class.forName(FQ_PROMETHEUS_CONFIG_PATH);
 
                 /*
-                 * Try to load the MPPrometheusMeterRegistry and create it
+                 * Try to load the PrometheusMeterRegistry and create it
                  */
-                Class<?> prometheusMetricRegistryClass = Class.forName(MPPrometheusMeterRegistry.class.getName());
+                Class<?> prometheusMetricRegistryClass = Class.forName(FQ_PROMETHEUS_METRIC_REGISTRY_PATH);
 
-                Constructor<?> constructor = prometheusMetricRegistryClass.getConstructor(String.class);
+                Constructor<?> constructor = prometheusMetricRegistryClass.getConstructor(prometheusConfigClass);
 
-                Object mpPrometheusMeterRegistryInstance = constructor.newInstance(scope);
+                Object prometheusMeterRegistryInstance = constructor.newInstance(new MPPrometheusConfig());
 
-                meterRegistry = (MeterRegistry) mpPrometheusMeterRegistryInstance;
+                meterRegistry = (MeterRegistry) prometheusMeterRegistryInstance;
 
-            } catch (ClassNotFoundException | SecurityException | IllegalArgumentException
-                    | IllegalAccessException | NoSuchMethodException | InstantiationException
-                    | InvocationTargetException e) {
+            } catch (ClassNotFoundException | SecurityException | IllegalArgumentException | IllegalAccessException
+                    | NoSuchMethodException | InstantiationException | InvocationTargetException e) {
                 // TODO: We really don't care about exception being thrown, but should log about it anyways
                 // (finest?)
                 /*
@@ -211,30 +207,9 @@ public class SharedMetricRegistries {
             meterRegistry.config().commonTags(Arrays.asList(globalTags));
         }
 
-        /*
-         * Create ThreadLocal<Boolean> for the newly created registry and add to map and apply it as a
-         * filter
-         */
-        ThreadLocal<Boolean> threadLocal = ThreadLocal.withInitial(() -> false);
-
-        threadLocalMap.put(scope, threadLocal);
-        meterRegistry.config().meterFilter(MeterFilter.accept(id -> {
-            return threadLocal.get().booleanValue() == true ? true : false;
-        }));
-
-        meterRegistry.config().meterFilter(MeterFilter.deny());
-
         Metrics.addRegistry(meterRegistry);
 
         return meterRegistry;
-    }
-
-    public static ThreadLocal<Boolean> getThreadLocal(String scope) {
-        ThreadLocal<Boolean> tl = threadLocalMap.get(scope);
-        if (tl == null) {
-            throw new IllegalArgumentException("ThreadLocal for this registry does not exist");
-        }
-        return tl;
     }
 
     /**
