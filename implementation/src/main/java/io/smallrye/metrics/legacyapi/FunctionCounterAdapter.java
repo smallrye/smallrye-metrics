@@ -24,7 +24,7 @@ class FunctionCounterAdapter<T> implements org.eclipse.microprofile.metrics.Coun
     }
 
     public FunctionCounterAdapter<T> register(MpMetadata metadata, MetricDescriptor descriptor, MeterRegistry registry,
-            String scope) {
+            String scope, Tag... globalTags) {
 
         // if we're creating a new counter... or we're "updating" an existing one with
         // new metadata (but this doesn't actually register with micrometer)
@@ -34,6 +34,13 @@ class FunctionCounterAdapter<T> implements org.eclipse.microprofile.metrics.Coun
             for (Tag t : descriptor.tags()) {
                 tagsSet.add(t);
             }
+
+            if (globalTags != null) {
+                for (Tag t : globalTags) {
+                    tagsSet.add(t);
+                }
+            }
+
             tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             globalCompositeFunctionCounter = FunctionCounter

@@ -38,7 +38,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
         this.registry = registry;
     }
 
-    public TimerAdapter register(MpMetadata metadata, MetricDescriptor descriptor, String scope) {
+    public TimerAdapter register(MpMetadata metadata, MetricDescriptor descriptor, String scope, Tag... globalTags) {
 
         if (globalCompositeTimer == null || metadata.cleanDirtyMetadata()) {
 
@@ -46,6 +46,13 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
             for (Tag t : descriptor.tags()) {
                 tagsSet.add(t);
             }
+
+            if (globalTags != null) {
+                for (Tag t : globalTags) {
+                    tagsSet.add(t);
+                }
+            }
+
             tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
             globalCompositeTimer = Timer.builder(descriptor.name())
