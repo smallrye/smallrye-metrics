@@ -83,9 +83,14 @@ public class MetadataMismatchTest {
         Histogram histogram1 = registry.histogram(metadata1);
 
         // Mismatched metadata - expect IAE
-        Histogram histogram2 = registry.histogram(METRIC_NAME);
+        // Histogram histogram2 = registry.histogram(METRIC_NAME);
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> registry.histogram(METRIC_NAME));
+
+        assertNotNull(e);
+
+        e = assertThrows(IllegalArgumentException.class,
                 () -> registry.histogram("myhistogram", new Tag("color", "blue")));
 
         assertNotNull(e);

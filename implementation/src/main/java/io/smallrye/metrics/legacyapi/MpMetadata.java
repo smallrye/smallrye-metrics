@@ -112,7 +112,22 @@ class MpMetadata implements Metadata {
         if (o == null || getClass() != o.getClass())
             return false;
         MpMetadata that = (MpMetadata) o;
-        return Objects.equals(name, that.name);
+        return Objects.equals(name, that.name) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(unit, that.unit);
+    }
+
+    /*
+     * Temporary work around due to https://github.com/eclipse/microprofile-metrics/issues/760
+     */
+    public boolean equalsTimers(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        MpMetadata that = (MpMetadata) o;
+        return Objects.equals(name, that.name) &&
+                Objects.equals(description, that.description);
     }
 
     @Override

@@ -652,7 +652,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     @Override
     public Timer timer(String name) {
-        return internalTimer(internalGetMetadata(name),
+        return internalTimer(internalGetMetadataTimers(name),
                 new MetricDescriptor(name, withAppTags()));
     }
 
@@ -665,20 +665,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalTimer(internalGetMetadata(name),
+        return internalTimer(internalGetMetadataTimers(name),
                 new MetricDescriptor(name, unifiedTags));
     }
 
     @Override
     public Timer timer(MetricID metricID) {
         String name = metricID.getName();
-        return internalTimer(internalGetMetadata(name),
+        return internalTimer(internalGetMetadataTimers(name),
                 new MetricDescriptor(name, withAppTags(metricID.getTagsAsArray())));
     }
 
     @Override
     public Timer timer(Metadata metadata) {
-        return internalTimer(internalGetMetadata(metadata),
+        return internalTimer(internalGetMetadataTimers(metadata),
                 new MetricDescriptor(metadata.getName(), withAppTags()));
     }
 
@@ -691,18 +691,18 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * and have it put into the map before that.
          */
         Tags unifiedTags = withAppTags(tags);
-        return internalTimer(internalGetMetadata(metadata),
+        return internalTimer(internalGetMetadataTimers(metadata),
                 new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
     TimerAdapter injectedTimer(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
         return internalTimer(
-                internalGetMetadata(annotation.name()).merge(annotation),
+                internalGetMetadataTimers(annotation.name()).merge(annotation),
                 new MetricDescriptor(annotation.name(), annotation.tags()));
     }
 
     TimerAdapter interceptorTimer(Metadata metadata, String... tags) {
-        return internalTimer(internalGetMetadata(metadata),
+        return internalTimer(internalGetMetadataTimers(metadata),
                 new MetricDescriptor(metadata.getName(), tags));
     }
 
@@ -958,6 +958,9 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return result;
     }
 
+    /*
+     * Temporary work around due to https://github.com/eclipse/microprofile-metrics/issues/760
+     */
     private MpMetadata internalGetMetadata(Metadata metadata) {
         MpMetadata result = metadataMap.computeIfAbsent(metadata.getName(), k -> MpMetadata.sanitize(metadata));
 
@@ -966,6 +969,42 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          * existing metadata (if it exists)
          */
         if (!result.equals(MpMetadata.sanitize(metadata))) {
+            throw new IllegalArgumentException(
+                    String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
+                            result.toString(), metadata.toString()));
+        }
+
+        return result;
+    }
+
+    /*
+     * Temporary work around due to https://github.com/eclipse/microprofile-metrics/issues/760
+     */
+    private MpMetadata internalGetMetadataTimers(String name) {
+
+        MpMetadata result = metadataMap.computeIfAbsent(name, k -> new MpMetadata(name));
+
+        /*
+         * Check that metadata of metric being registered/retrieved matches existing
+         * existing metadata (if it exists)
+         */
+        if (!result.equalsTimers(MpMetadata.sanitize(new MpMetadata(name)))) {
+            throw new IllegalArgumentException(
+                    String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
+                            result.toString(), new MpMetadata(name).toString()));
+        }
+
+        return result;
+    }
+
+    private MpMetadata internalGetMetadataTimers(Metadata metadata) {
+        MpMetadata result = metadataMap.computeIfAbsent(metadata.getName(), k -> MpMetadata.sanitize(metadata));
+
+        /*
+         * Check that metadata of metric being registered/retrieved matches existing
+         * existing metadata (if it exists)
+         */
+        if (!result.equalsTimers(MpMetadata.sanitize(metadata))) {
             throw new IllegalArgumentException(
                     String.format("Existing metadata (%s) does not match with supplied metadata (%s)",
                             result.toString(), metadata.toString()));
