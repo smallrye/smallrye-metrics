@@ -120,6 +120,10 @@ public class MetricProducer {
 
         Histogram histogram = registry.histogram(metadata, tags);
 
+        Tag[] mpTagArray = resolveAppNameTag(tags);
+        MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
+        metricExtension.addMetricId(metricID);
+
         return histogram;
     }
 
