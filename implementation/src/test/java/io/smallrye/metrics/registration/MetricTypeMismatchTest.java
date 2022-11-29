@@ -41,7 +41,7 @@ public class MetricTypeMismatchTest {
         Metadata metadata1 = Metadata.builder().withName("metric1")
                 .withDescription("description1").build();
         Metadata metadata2 = Metadata.builder().withName("metric1")
-                .withDescription("description2").build();
+                .withDescription("description1").build();
 
         registry.histogram(metadata1);
         try {
