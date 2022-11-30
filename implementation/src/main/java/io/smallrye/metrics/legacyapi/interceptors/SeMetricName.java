@@ -13,8 +13,6 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
-import io.smallrye.metrics.SmallRyeMetricsMessages;
-
 @Vetoed
 public class SeMetricName implements MetricName {
 
@@ -32,7 +30,7 @@ public class SeMetricName implements MetricName {
         } else if (annotated instanceof AnnotatedParameter) {
             return of((AnnotatedParameter<?>) annotated);
         } else {
-            throw SmallRyeMetricsMessages.msg.unableToRetrieveMetricNameForInjectionPoint(ip);
+            throw new UnsupportedOperationException("Unable to retrieve metric name for injection point " + ip);
         }
     }
 
@@ -81,10 +79,10 @@ public class SeMetricName implements MetricName {
             if ((Boolean) Parameter.getMethod("isNamePresent").invoke(param)) {
                 return (String) Parameter.getMethod("getName").invoke(param);
             } else {
-                throw SmallRyeMetricsMessages.msg.unableToRetrieveParameterName(parameter);
+                throw new UnsupportedOperationException("Unable to retrieve metric name for injection point " + parameter);
             }
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException cause) {
-            throw SmallRyeMetricsMessages.msg.unableToRetrieveParameterName(parameter);
+            throw new UnsupportedOperationException("Unable to retrieve metric name for injection point " + parameter);
         }
     }
 }

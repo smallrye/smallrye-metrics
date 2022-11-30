@@ -2,8 +2,9 @@ package io.smallrye.metrics.legacyapi;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -16,6 +17,9 @@ import io.micrometer.core.instrument.Tag;
 
 class HistogramAdapter implements Histogram, MeterHolder {
 
+    private static final String CLASS_NAME = HistogramAdapter.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
     private final static int PRECISION;
 
     /*
@@ -24,8 +28,10 @@ class HistogramAdapter implements Histogram, MeterHolder {
      * your needs.
      */
     static {
-        final Config config = ConfigProvider.getConfig();
-        PRECISION = config.getOptionalValue("mp.metrics.smallrye.histogram.precision", Integer.class).orElse(3);
+        PRECISION = ConfigProvider.getConfig().getOptionalValue("mp.metrics.smallrye.histogram.precision", Integer.class)
+                .orElse(3);
+        LOGGER.logp(Level.FINE, CLASS_NAME, null,
+                "Resolved MicroProfile Config value for mp.metrics.smallrye.histogram.precision as \"{0}\"", PRECISION);
     }
 
     DistributionSummary globalCompositeSummary;

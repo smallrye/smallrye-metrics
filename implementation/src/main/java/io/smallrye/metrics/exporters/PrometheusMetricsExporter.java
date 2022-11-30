@@ -3,6 +3,8 @@ package io.smallrye.metrics.exporters;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.micrometer.core.instrument.Meter;
@@ -14,6 +16,9 @@ import io.prometheus.client.exporter.common.TextFormat;
 
 public class PrometheusMetricsExporter implements Exporter {
 
+    private static final String CLASS_NAME = PrometheusMetricsExporter.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
     private static final String NEW_LINE = "\n";
     private static final String PROM_HELP = "# HELP";
     private static final String PROM_TYPE = "# TYPE";
@@ -24,19 +29,22 @@ public class PrometheusMetricsExporter implements Exporter {
 
     public PrometheusMetricsExporter() {
 
+        final String METHOD_NAME = "PrometheusMetricsExporter";
+
         prometheusRegistryList = Metrics.globalRegistry.getRegistries().stream()
                 .filter(registry -> registry instanceof PrometheusMeterRegistry).collect(Collectors.toList());
 
         if (prometheusRegistryList == null || prometheusRegistryList.size() == 0) {
             throw new IllegalStateException("Prometheus registry was not found in the global registry");
-            // TODO: logging
         } else if (prometheusRegistryList.size() > 1) {
             /*
              * This shouldn't happen at all. The only Prometheus Meter Registry that can be created is by us.
              * Unless vendor allows access to the Micrometer API and the customer creates a Prometheus Meter
              * Registry.
              */
-            //TODO : logging/ warning?
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME,
+                    "Found {0} instances of Prometheus MeterRegistry in the global registry, the first instance found will be used",
+                    prometheusRegistryList.size());
         }
 
         prometheusMeterRegistry = (PrometheusMeterRegistry) prometheusRegistryList.get(0);
@@ -168,6 +176,8 @@ public class PrometheusMetricsExporter implements Exporter {
     }
 
     private void resolveMeterSuffixes(Set<String> set, Type inputType) {
+
+        final String METHOD_NAME = "resolveMeterSuffixes";
         switch (inputType) {
             case COUNTER:
                 set.add("_total");
@@ -180,12 +190,13 @@ public class PrometheusMetricsExporter implements Exporter {
                 set.add("_max");
                 break;
             default:
-                // TODO: error/warnning/exception statement
+                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Unsupported Meter type: {0} ", inputType.name());
                 break;
         }
     }
 
     private Set<String> calculateMeterNamesToScrape(String name, Set<String> meterSuffixSet, Set<String> unitTypeSet) {
+        final String METHOD_NAME = "calculateMeterNamesToScrape";
         String promName = resolvePrometheusName(name);
         Set<String> retSet = new HashSet<String>();
         for (String unit : unitTypeSet) {
@@ -193,6 +204,7 @@ public class PrometheusMetricsExporter implements Exporter {
                 retSet.add(promName + unit + suffix);
             }
         }
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "The meter names to scrape: " + retSet);
         return retSet;
     }
 

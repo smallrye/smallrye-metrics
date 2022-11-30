@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Counter;
@@ -33,6 +35,9 @@ import io.micrometer.core.instrument.Tags;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
 
 public class LegacyMetricRegistryAdapter implements MetricRegistry {
+
+    private static final String CLASS_NAME = LegacyMetricRegistryAdapter.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
     private final String scope;
     private final MeterRegistry registry;
@@ -93,6 +98,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      * @param appName applicationName
      */
     public void addNameToApplicationMap(MetricID metricID, String appName) {
+        final String METHOD_NAME = "addNameToApplicationMap";
         // If it is a base metric, the name will be null
         if (appName == null)
             return;
@@ -104,6 +110,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 list = newList;
         }
         list.add(metricID);
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME,
+                String.format("Mapped MetricID [id= %s] to application \"%s\"", metricID, appName));
     }
 
     public void unRegisterApplicationMetrics() {
@@ -163,11 +171,18 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     private synchronized io.micrometer.core.instrument.Tag[] resolveMPConfigGlobalTagsByServer() {
+
+        final String METHOD_NAME = "resolveMPConfigGlobalTagsByServer";
         if (SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS == null) {
 
             // Using MP Config to retreive the mp.metrics.tags Config value
             Optional<String> globalTags = ConfigProvider.getConfig().getOptionalValue(GLOBAL_TAGS_VARIABLE,
                     String.class);
+
+            if (globalTags.isPresent()) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format(
+                        "MicroProfile Config value for \"%s\" resolved to be: %s", GLOBAL_TAGS_VARIABLE, globalTags.get()));
+            }
 
             // evaluate if there exists tag values or set tag[0] to be null for no value;
             SERVER_LEVEL_MPCONFIG_GLOBAL_TAGS = (globalTags.isPresent()) ? parseGlobalTags(globalTags.get())
@@ -782,18 +797,28 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     boolean internalRemove(MetricDescriptor match) {
+        final String METHOD_NAME = "internalRemove";
+
         MeterHolder holder = constructedMeters.remove(match);
 
         if (holder != null) {
-            //ThreadLocal<Boolean> threadLocal = SharedMetricRegistries.getThreadLocal(scope);
+            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
+                    String.format("Removed metric with [id: %s]", match.toMetricID().toString()));
 
-            // threadLocal.set(true);
             io.micrometer.core.instrument.Meter meter = Metrics.globalRegistry.remove(holder.getMeter());
-            // threadLocal.set(false);
+            if (meter != null) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String
+                        .format("Removed from the Micrometer global registry a meter with MeterId [id= %s]", meter.getId()));
+            } else {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format(
+                        "Attempted to remove a meter with the corresponding MetricID [id= %s] from the Micrometer global registry, but does not exist.",
+                        match.toMetricID()));
+            }
 
             // Remove associated metadata if this is the last MP Metric left with that name
             if (constructedMeters.keySet().stream().noneMatch(id -> id.name.equals(match.name))) {
                 metadataMap.remove(match.name);
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format("Removed metadata for [name: %s]", match.name));
             }
         }
         return holder != null;
@@ -1017,7 +1042,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         try {
             return type.cast(o);
         } catch (ClassCastException cce) {
-            throw new IllegalStateException(String.format("Metric %s already defined using a different type (%s)",
+            throw new IllegalStateException(String.format("Metric (%s) already defined using a different type (%s)",
                     metadata.name, o.getMeter().getId().getType()), cce);
         }
     }

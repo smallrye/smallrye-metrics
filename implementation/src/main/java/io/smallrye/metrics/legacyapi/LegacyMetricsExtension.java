@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
@@ -38,7 +40,6 @@ import io.smallrye.metrics.MetricProducer;
 import io.smallrye.metrics.MetricRegistryProducer;
 import io.smallrye.metrics.MetricsRequestHandler;
 import io.smallrye.metrics.SharedMetricRegistries;
-import io.smallrye.metrics.SmallRyeMetricsLogging;
 import io.smallrye.metrics.elementdesc.adapter.BeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIBeanInfoAdapter;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
@@ -55,6 +56,9 @@ import io.smallrye.metrics.setup.MetricsMetadata;
  */
 public class LegacyMetricsExtension implements Extension {
 
+    private static final String CLASS_NAME = LegacyMetricsExtension.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
     private final Map<Bean<?>, List<AnnotatedMember<?>>> metricsFromAnnotatedMethods = new HashMap<>();
 
     //CDI list of metricIDs - Is this really necessary, shutting down CDI means shutting down server.
@@ -69,10 +73,13 @@ public class LegacyMetricsExtension implements Extension {
     }
 
     public void logVersion(@Observes BeforeBeanDiscovery bbd) {
-        SmallRyeMetricsLogging.log.logSmallRyeMetricsVersion(getImplementationVersion().orElse("unknown"));
+        final String METHOD_NAME = "logVersion";
+        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD_NAME, "MicroProfile: Metrics activated (SmallRye Metrics version: {0})",
+                getImplementationVersion().orElse("unknown"));
     }
 
     private Optional<String> getImplementationVersion() {
+        final String METHOD_NAME = "getImplementationVersion";
         return AccessController.doPrivileged(new PrivilegedAction<Optional<String>>() {
             @Override
             public Optional<String> run() {
@@ -84,7 +91,8 @@ public class LegacyMetricsExtension implements Extension {
                         return Optional.ofNullable(properties.getProperty("smallrye.metrics.version"));
                     }
                 } catch (IOException e) {
-                    //SmallRyeMetricsLogging.log.unableToDetectVersion();
+                    //Unable to detect version of SmallRye Metrics
+                    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "Unable to detect version of SmallRye Metrics");
                 }
                 return Optional.empty();
             }
@@ -236,12 +244,10 @@ public class LegacyMetricsExtension implements Extension {
     }
 
     public void addMetricIds(List<MetricID> metricIDList) {
-        //check for dups?
         metricIDs.addAll(metricIDList);
     }
 
     public void addMetricId(MetricID metricID) {
-        //check for dups?
         metricIDs.add(metricID);
     }
 

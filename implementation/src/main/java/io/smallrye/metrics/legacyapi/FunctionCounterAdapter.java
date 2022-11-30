@@ -54,12 +54,12 @@ class FunctionCounterAdapter<T> implements org.eclipse.microprofile.metrics.Coun
 
     @Override
     public void inc() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Method must not be called");
     }
 
     @Override
     public void inc(long l) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Method must not be called");
     }
 
     @Override

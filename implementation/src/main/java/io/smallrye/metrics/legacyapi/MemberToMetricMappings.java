@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.microprofile.metrics.MetricID;
 
@@ -17,6 +19,9 @@ import io.smallrye.metrics.elementdesc.MemberInfo;
  * query the Metric Registry's registry and retrieve the metric
  */
 public class MemberToMetricMappings {
+
+    private static final String CLASS_NAME = MemberToMetricMappings.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
     public MemberToMetricMappings() {
         counters = new HashMap<>();
@@ -36,9 +41,13 @@ public class MemberToMetricMappings {
 
     public void addTimer(MemberInfo member, MetricID metricID) {
         timers.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
+        LOGGER.logp(Level.FINER, CLASS_NAME, "addTimer", "Matching member {0} to metric ID={1} and type={2}",
+                new Object[] { member, metricID, "Timer" });
     }
 
     public void addCounter(MemberInfo member, MetricID metricID) {
         counters.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
+        LOGGER.logp(Level.FINER, CLASS_NAME, "addCounter", "Matching member {0} to metric ID={1} and type={2}",
+                new Object[] { member, metricID, "Counter" });
     }
 }

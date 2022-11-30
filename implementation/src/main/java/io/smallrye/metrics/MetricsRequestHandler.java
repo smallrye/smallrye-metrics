@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,6 +22,9 @@ import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 
 @ApplicationScoped
 public class MetricsRequestHandler {
+
+    private static final String CLASS_NAME = MetricsRequestHandler.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
     private static final Map<String, String> corsHeaders;
     private static final String TEXT_PLAIN = "text/plain";
@@ -73,12 +78,18 @@ public class MetricsRequestHandler {
     public void handleRequest(String requestPath, String contextRoot, String method, Stream<String> acceptHeaders,
             Map<String, String[]> parameterMap, Responder responder) throws IOException {
 
+        final String METHOD_NAME = "handleRequest";
+
         Exporter exporter = obtainExporter(method, acceptHeaders, responder);
         if (exporter == null) {
             return;
         }
 
         if (!requestPath.startsWith(contextRoot)) {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME,
+                    "The expected context root of metrics is \"{0}\", but a request with a different " +
+                            "path was routed to MetricsRequestHandler",
+                    contextRoot);
             responder.respondWith(500,
                     "The expected context root of metrics is " + contextRoot
                             + ", but a request with a different path was routed to MetricsRequestHandler",
@@ -92,6 +103,8 @@ public class MetricsRequestHandler {
          * path is more than just /metrics or /metrics/ Bad request!
          */
         if (pathAfterContextRoot.length() != 0 && !pathAfterContextRoot.equals("/")) {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME,
+                    "The expected requests are /metrics, /metric?scope=<scope>, /metric?name=<name> or /metrics?scope=<scope>&name=<name>.");
             responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
                     + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
             return;
@@ -106,14 +119,17 @@ public class MetricsRequestHandler {
         if (scopeParameters != null && scopeParameters.length != 0) {
             scope = scopeParameters[0];
 
-            if (scopeParameters.length > 0) {
-                // TODO: logging warning about using only the first value?
+            if (scopeParameters.length > 1) {
+
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME,
+                        "More than one scope was detected. The first scope value \"{0}\" will be used", scope);
             }
 
             /*
              * 404 if scope does not exist.
              */
             if (!SharedMetricRegistries.doesScopeExist(scope)) {
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "Scope \"{0}\" not found", scope);
                 responder.respondWith(404, "Scope " + scope + " not found", Collections.emptyMap());
                 return;
             }
@@ -126,8 +142,9 @@ public class MetricsRequestHandler {
         String[] NameParameters = parameterMap.get(NAME_PARAM_KEY);
         if (NameParameters != null && NameParameters.length != 0) {
             metricName = NameParameters[0];
-            if (NameParameters.length > 0) {
-                // TODO: logging warning about using only the first value?
+            if (NameParameters.length > 1) {
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME,
+                        "More than one metric name was detected. The first metric name \"{0}\" will be used", metricName);
             }
         }
 
@@ -136,6 +153,7 @@ public class MetricsRequestHandler {
          * All Metrics
          */
         if (scope == null && metricName == null) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting all metrics");
             output = exporter.exportAllScopes();
         }
 
@@ -149,8 +167,10 @@ public class MetricsRequestHandler {
             // Cast to LegacyMetricRegistryAdapter and check that registry contains meters
             if (reg instanceof LegacyMetricRegistryAdapter
                     && ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
+                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting scope \"{0}\"", scope);
                 output = exporter.exportOneScope(scope);
             } else {
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "No data in scope \"{0}\"", scope);
                 responder.respondWith(204, "No data in scope " + scope, Collections.emptyMap());
                 return;
             }
@@ -163,11 +183,15 @@ public class MetricsRequestHandler {
 
             MetricRegistry registry = SharedMetricRegistries.getOrCreate(scope);
 
-            // XXX: Better error handling? exceptions?
             if (registry instanceof LegacyMetricRegistryAdapter && ((LegacyMetricRegistryAdapter) registry)
                     .getPrometheusMeterRegistry().find(metricName).meters().size() != 0) {
+                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting metric \"{0}\" from scope \"{1}\"",
+                        new String[] { metricName, scope });
+
                 output = exporter.exportMetricsByName(scope, metricName);
             } else {
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "Metric \"{0}\" not found in scope \"{1}\"",
+                        new String[] { metricName, scope });
                 responder.respondWith(404, "Metric " + metricName + " not found in scope " + scope,
                         Collections.emptyMap());
                 return;
@@ -178,9 +202,11 @@ public class MetricsRequestHandler {
          * Specific metric ACROSS scopes
          */
         else if (scope == null && metricName != null) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting metric \"{0}\"", metricName);
             output = exporter.exportOneMetricAcrossScopes(metricName);
 
             if (output == null || output.isEmpty() || output.length() == 0) {
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "Metric \"{0}\" not found in any scope", metricName);
                 responder.respondWith(404, "Metric " + metricName + " not found in any scope  ",
                         Collections.emptyMap());
                 return;
@@ -190,6 +216,8 @@ public class MetricsRequestHandler {
          * Something went wrong :(
          */
         else {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME,
+                    "The expected requests are /metrics, /metric?scope=<scope>, /metric?name=<name> or /metrics?scope=<scope>&name=<name>");
             responder.respondWith(404, "The expected requests are /metrics, /metric?scope=<scope>"
                     + ", /metric?name=<name> or /metrics?scope=<scope>&name=<name>", Collections.emptyMap());
             return;
@@ -216,6 +244,8 @@ public class MetricsRequestHandler {
     private Exporter obtainExporter(String method, Stream<String> acceptHeaders, Responder responder)
             throws IOException {
 
+        final String METHOD_NAME = "obtainExporter";
+
         /*
          * Only support GET ... and we will only return Prometheus Exporter OpenMetrics
          * Exporting to be supported in the future.
@@ -226,7 +256,6 @@ public class MetricsRequestHandler {
             return null;
         } else if (acceptHeaders == null) {
             // Use PrometheusMetricsExporter
-
             return (isPrometheusLibraryLoaded(responder)) ? new PrometheusMetricsExporter() : null;
 
         } else {
@@ -238,6 +267,8 @@ public class MetricsRequestHandler {
                 return (isPrometheusLibraryLoaded(responder)) ? new PrometheusMetricsExporter() : null;
 
             } else {
+                LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME,
+                        "Couldn't determine a suitable media type for the given Accept header.");
                 responder.respondWith(406, "Couldn't determine a suitable media type for the given Accept header.",
                         Collections.emptyMap());
                 return null;
@@ -253,11 +284,12 @@ public class MetricsRequestHandler {
      * @throws IOException
      */
     private boolean isPrometheusLibraryLoaded(Responder responder) throws IOException {
-
+        final String METHOD_NAME = "isPrometheusLibraryLoaded";
         try {
             Class.forName(FQ_PROMETHEUSCONFIG_PATH);
             return true;
         } catch (Exception e) {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "The /metrics endpoint is not supported.");
             responder.respondWith(501,
                     "The /metrics endpoint is not supported.",
                     Collections.emptyMap());

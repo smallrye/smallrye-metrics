@@ -17,7 +17,6 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import io.smallrye.metrics.SharedMetricRegistries;
-import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 
@@ -56,14 +55,14 @@ public class CountedInterceptor {
         Set<MetricID> ids = ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings()
                 .getCounters(new CDIMemberInfoAdapter<>().convert(element));
         if (ids == null || ids.isEmpty()) {
-            throw SmallRyeMetricsMessages.msg.noMetricMappedForMember(element);
+            throw new IllegalStateException("No metric mapped for " + element);
         }
         ids.stream()
                 .map(metricID -> {
                     Counter metric = registry.getCounters().get(metricID);
                     if (metric == null) {
                         throw new IllegalStateException(
-                                "No metric with ID " + metricID + " found in registry");
+                                "No Counter metric with ID " + metricID + " found in registry");
 
                     }
                     return metric;

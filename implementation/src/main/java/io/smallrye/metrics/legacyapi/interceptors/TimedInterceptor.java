@@ -19,7 +19,6 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import io.smallrye.metrics.SharedMetricRegistries;
-import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.adapter.cdi.CDIMemberInfoAdapter;
 import io.smallrye.metrics.legacyapi.LegacyMetricRegistryAdapter;
 
@@ -59,14 +58,14 @@ public class TimedInterceptor {
                 .getTimers(new CDIMemberInfoAdapter<>().convert(element));
 
         if (ids == null || ids.isEmpty()) {
-            throw SmallRyeMetricsMessages.msg.noMetricMappedForMember(element);
+            throw new IllegalStateException("No metric mapped for " + element);
         }
         List<Timer.Context> contexts = ids.stream()
                 .map(metricID -> {
                     Timer metric = registry.getTimers().get(metricID);
                     if (metric == null) {
                         throw new IllegalStateException(
-                                "No metric with ID " + metricID + " found in registry");
+                                "No Timer metric with ID " + metricID + " found in registry");
                     }
                     return metric;
                 })
