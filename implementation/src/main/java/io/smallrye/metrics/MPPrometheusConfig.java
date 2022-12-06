@@ -7,7 +7,8 @@ import io.micrometer.prometheus.PrometheusConfig;
 /**
  * 
  * MPPrometheusConfig is an implementation of the {@link PrometheusConfig} which will accept Prometheus
- * related configuration values prepended with "mp.metrics.". This Config is used for the {@link PrometheusMeterRegistry}
+ * related configuration values prepended with "mp.metrics.". This Config is used for the
+ * {@link io.micrometer.prometheus.PrometheusMeterRegistry}
  * that is created for the MicroProfile Metric Registries in {@link SharedMetricRegistries}. This Config is not created within
  * the
  * {@link SharedMetricRegistries} due to some vendors having to load the SmallRye classes with reflection and the possibility of
