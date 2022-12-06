@@ -110,8 +110,10 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 list = newList;
         }
         list.add(metricID);
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME,
-                String.format("Mapped MetricID [id= %s] to application \"%s\"", metricID, appName));
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME,
+                    String.format("Mapped MetricID [id= %s] to application \"%s\"", metricID, appName));
+        }
     }
 
     public void unRegisterApplicationMetrics() {
@@ -180,8 +182,10 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                     String.class);
 
             if (globalTags.isPresent()) {
-                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format(
-                        "MicroProfile Config value for \"%s\" resolved to be: %s", GLOBAL_TAGS_VARIABLE, globalTags.get()));
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format(
+                            "MicroProfile Config value for \"%s\" resolved to be: %s", GLOBAL_TAGS_VARIABLE, globalTags.get()));
+                }
             }
 
             // evaluate if there exists tag values or set tag[0] to be null for no value;
@@ -802,23 +806,33 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         MeterHolder holder = constructedMeters.remove(match);
 
         if (holder != null) {
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
-                    String.format("Removed metric with [id: %s]", match.toMetricID().toString()));
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
+                        String.format("Removed metric with [id: %s]", match.toMetricID().toString()));
+            }
 
             io.micrometer.core.instrument.Meter meter = Metrics.globalRegistry.remove(holder.getMeter());
             if (meter != null) {
-                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String
-                        .format("Removed from the Micrometer global registry a meter with MeterId [id= %s]", meter.getId()));
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String
+                            .format("Removed from the Micrometer global registry a meter with MeterId [id= %s]",
+                                    meter.getId()));
+                }
             } else {
-                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format(
-                        "Attempted to remove a meter with the corresponding MetricID [id= %s] from the Micrometer global registry, but does not exist.",
-                        match.toMetricID()));
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format(
+                            "Attempted to remove a meter with the corresponding MetricID [id= %s] from the Micrometer global registry, but does not exist.",
+                            match.toMetricID()));
+                }
             }
 
             // Remove associated metadata if this is the last MP Metric left with that name
             if (constructedMeters.keySet().stream().noneMatch(id -> id.name.equals(match.name))) {
                 metadataMap.remove(match.name);
-                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, String.format("Removed metadata for [name: %s]", match.name));
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
+                            String.format("Removed metadata for [name: %s]", match.name));
+                }
             }
         }
         return holder != null;

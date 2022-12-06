@@ -70,9 +70,10 @@ public class SharedMetricRegistries {
                 setOfMeterRegistryClasses.add(clazz);
             } catch (Exception e) {
                 // Did not use WARNING as it will flood console on startup
-                LOGGER.logp(Level.FINE, CLASS_NAME, null, "Required classes for \"{0}\" not found on classpath",
-                        clazz.getName());
-
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, null, "Required classes for \"{0}\" not found on classpath",
+                            clazz.getName());
+                }
             }
         }
 
@@ -93,13 +94,18 @@ public class SharedMetricRegistries {
                      */
                     if (backendMeterRegistry != null) {
                         Metrics.globalRegistry.add(backendMeterRegistry);
-                        LOGGER.logp(Level.FINE, CLASS_NAME, null,
-                                "MeterRegistry from {0} created and registered to the Micrometer global registry",
-                                clazz.getName());
+                        if (LOGGER.isLoggable(Level.FINE)) {
+                            LOGGER.logp(Level.FINE, CLASS_NAME, null,
+                                    "MeterRegistry from {0} created and registered to the Micrometer global registry",
+                                    clazz.getName());
+                        }
+
                     } else {
-                        LOGGER.logp(Level.FINE, CLASS_NAME, null,
-                                "MeterRegistry from {0} is available on classpath, but was not configured to be enabled",
-                                clazz.getName());
+                        if (LOGGER.isLoggable(Level.FINE)) {
+                            LOGGER.logp(Level.FINE, CLASS_NAME, null,
+                                    "MeterRegistry from {0} is available on classpath, but was not configured to be enabled",
+                                    clazz.getName());
+                        }
                     }
 
                 } catch (IllegalAccessException | InstantiationException e) {
@@ -125,7 +131,9 @@ public class SharedMetricRegistries {
     // FIXME: cheap way of passing in the ApplicationNameResolvr from vendor code to the MetricRegistry
     public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver appNameResolver) {
         final String METHOD_NAME = "getOrCreate";
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Requested MetricRegistry of scope {0}", scope);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Requested MetricRegistry of scope {0}", scope);
+        }
         MetricRegistry metricRegistry = registries.computeIfAbsent(scope,
                 t -> new LegacyMetricRegistryAdapter(scope, meterRegistry, appNameResolver));
 
@@ -135,10 +143,13 @@ public class SharedMetricRegistries {
         if (!isBaseMetricsRegistered && scope.equals(MetricRegistry.BASE_SCOPE)) {
             new LegacyBaseMetrics().register(metricRegistry);
             isBaseMetricsRegistered = true;
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, "Base metrics registered");
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, "Base metrics registered");
+            }
         }
-
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Returning MetricRegistry of scope \"{0}\"", scope);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Returning MetricRegistry of scope \"{0}\"", scope);
+        }
         return metricRegistry;
     }
 
@@ -156,13 +167,21 @@ public class SharedMetricRegistries {
          */
         if (!Boolean.parseBoolean(ConfigProvider.getConfig()
                 .getOptionalValue("mp.metrics.prometheus.enabled", String.class).orElse("true"))) {
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
-                    "The MP Config value for mp.metrics.prometheus.enabled is false");
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
+                        "The MP Config value for mp.metrics.prometheus.enabled is false");
+            }
             meterRegistry = new SimpleMeterRegistry();
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, "Simple MeterRegistry created");
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, "Simple MeterRegistry created");
+            }
+
         } else {
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
-                    "The MP Config value for mp.metrics.prometheus.enabled is true");
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
+                        "The MP Config value for mp.metrics.prometheus.enabled is true");
+            }
+
             /*
              * The below Try block is equivalent to calling. meterRegistry = new
              * PrometheusMeterRegistry(customConfig); This is to address problems for runtimes that may need to
@@ -187,7 +206,9 @@ public class SharedMetricRegistries {
                 Object prometheusMeterRegistryInstance = constructor.newInstance(new MPPrometheusConfig());
 
                 meterRegistry = (MeterRegistry) prometheusMeterRegistryInstance;
-                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, "Prometheus MeterRegistry created");
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME, "Prometheus MeterRegistry created");
+                }
             } catch (ClassNotFoundException | SecurityException | IllegalArgumentException | IllegalAccessException
                     | NoSuchMethodException | InstantiationException | InvocationTargetException e) {
                 LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD_NAME,
@@ -196,8 +217,11 @@ public class SharedMetricRegistries {
                  * Default to simple meter registry otherwise. No Need to create a "MPSimpleMeterRegisty with scope
                  * field as scope was only used for the PrometheusExporter
                  */
-                LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
-                        "Encountered exception while loading Prometheus MeterRegistry, defaulting to Simple MeterRegistry");
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD_NAME,
+                            "Encountered exception while loading Prometheus MeterRegistry, defaulting to Simple MeterRegistry");
+                }
+
                 meterRegistry = new SimpleMeterRegistry();
             }
         }

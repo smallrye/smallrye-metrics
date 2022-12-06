@@ -153,7 +153,9 @@ public class MetricsRequestHandler {
          * All Metrics
          */
         if (scope == null && metricName == null) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting all metrics");
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting all metrics");
+            }
             output = exporter.exportAllScopes();
         }
 
@@ -167,7 +169,9 @@ public class MetricsRequestHandler {
             // Cast to LegacyMetricRegistryAdapter and check that registry contains meters
             if (reg instanceof LegacyMetricRegistryAdapter
                     && ((LegacyMetricRegistryAdapter) reg).getPrometheusMeterRegistry().getMeters().size() != 0) {
-                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting scope \"{0}\"", scope);
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting scope \"{0}\"", scope);
+                }
                 output = exporter.exportOneScope(scope);
             } else {
                 LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "No data in scope \"{0}\"", scope);
@@ -185,9 +189,10 @@ public class MetricsRequestHandler {
 
             if (registry instanceof LegacyMetricRegistryAdapter && ((LegacyMetricRegistryAdapter) registry)
                     .getPrometheusMeterRegistry().find(metricName).meters().size() != 0) {
-                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting metric \"{0}\" from scope \"{1}\"",
-                        new String[] { metricName, scope });
-
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting metric \"{0}\" from scope \"{1}\"",
+                            new String[] { metricName, scope });
+                }
                 output = exporter.exportMetricsByName(scope, metricName);
             } else {
                 LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD_NAME, "Metric \"{0}\" not found in scope \"{1}\"",
@@ -202,7 +207,9 @@ public class MetricsRequestHandler {
          * Specific metric ACROSS scopes
          */
         else if (scope == null && metricName != null) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting metric \"{0}\"", metricName);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Exporting metric \"{0}\"", metricName);
+            }
             output = exporter.exportOneMetricAcrossScopes(metricName);
 
             if (output == null || output.isEmpty() || output.length() == 0) {

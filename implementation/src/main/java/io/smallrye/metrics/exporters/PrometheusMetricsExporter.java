@@ -42,9 +42,11 @@ public class PrometheusMetricsExporter implements Exporter {
              * Unless vendor allows access to the Micrometer API and the customer creates a Prometheus Meter
              * Registry.
              */
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME,
-                    "Found {0} instances of Prometheus MeterRegistry in the global registry, the first instance found will be used",
-                    prometheusRegistryList.size());
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME,
+                        "Found {0} instances of Prometheus MeterRegistry in the global registry, the first instance found will be used",
+                        prometheusRegistryList.size());
+            }
         }
 
         prometheusMeterRegistry = (PrometheusMeterRegistry) prometheusRegistryList.get(0);
@@ -190,7 +192,9 @@ public class PrometheusMetricsExporter implements Exporter {
                 set.add("_max");
                 break;
             default:
-                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Unsupported Meter type: {0} ", inputType.name());
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Unsupported Meter type: {0} ", inputType.name());
+                }
                 break;
         }
     }
@@ -204,7 +208,10 @@ public class PrometheusMetricsExporter implements Exporter {
                 retSet.add(promName + unit + suffix);
             }
         }
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "The meter names to scrape: " + retSet);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "The meter names to scrape: " + retSet);
+        }
+
         return retSet;
     }
 

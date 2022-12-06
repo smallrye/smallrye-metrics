@@ -33,8 +33,10 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
      */
     static {
         PRECISION = ConfigProvider.getConfig().getOptionalValue("mp.metrics.smallrye.timer.precision", Integer.class).orElse(3);
-        LOGGER.logp(Level.FINE, CLASS_NAME, null,
-                "Resolved MicroProfile Config value for mp.metrics.smallrye.timer.precision as \"{0}\"", PRECISION);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, CLASS_NAME, null,
+                    "Resolved MicroProfile Config value for mp.metrics.smallrye.timer.precision as \"{0}\"", PRECISION);
+        }
     }
 
     final MeterRegistry registry;

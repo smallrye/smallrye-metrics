@@ -41,13 +41,19 @@ public class MemberToMetricMappings {
 
     public void addTimer(MemberInfo member, MetricID metricID) {
         timers.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
-        LOGGER.logp(Level.FINER, CLASS_NAME, "addTimer", "Matching member {0} to metric ID={1} and type={2}",
-                new Object[] { member, metricID, "Timer" });
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, "addTimer", "Matching member {0} to metric ID={1} and type={2}",
+                    new Object[] { member, metricID, "Timer" });
+        }
+
     }
 
     public void addCounter(MemberInfo member, MetricID metricID) {
         counters.computeIfAbsent(member, id -> new HashSet<>()).add(metricID);
-        LOGGER.logp(Level.FINER, CLASS_NAME, "addCounter", "Matching member {0} to metric ID={1} and type={2}",
-                new Object[] { member, metricID, "Counter" });
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, "addCounter", "Matching member {0} to metric ID={1} and type={2}",
+                    new Object[] { member, metricID, "Counter" });
+        }
+
     }
 }

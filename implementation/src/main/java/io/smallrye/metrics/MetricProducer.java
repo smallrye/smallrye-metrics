@@ -88,7 +88,9 @@ public class MetricProducer {
                         metricID);
                 return null;
             } else {
-                LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Produced Gauge with MetricID [id: {0}]", metricID);
+                if (LOGGER.isLoggable(Level.FINER)) {
+                    LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Produced Gauge with MetricID [id: {0}]", metricID);
+                }
                 return gauge.getValue();
             }
 
@@ -110,8 +112,9 @@ public class MetricProducer {
         MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
         metricExtension.addMetricId(metricID);
 
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Produced Counter with MetricID [id: {0}]", metricID);
-
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Produced Counter with MetricID [id: {0}]", metricID);
+        }
         return counter;
     }
 
@@ -131,8 +134,9 @@ public class MetricProducer {
         MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
         metricExtension.addMetricId(metricID);
 
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Produced Timer with MetricID [id: {0}]", metricID);
-
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Produced Timer with MetricID [id: {0}]", metricID);
+        }
         return timer;
     }
 
@@ -151,8 +155,9 @@ public class MetricProducer {
         MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
         metricExtension.addMetricId(metricID);
 
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Produced histogram with MetricID [id: {0}]", "");
-
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, "Produced histogram with MetricID [id: {0}]", "");
+        }
         return histogram;
     }
 
