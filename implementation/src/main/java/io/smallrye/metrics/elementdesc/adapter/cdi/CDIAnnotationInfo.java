@@ -6,7 +6,6 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 
 public class CDIAnnotationInfo implements AnnotationInfo {
@@ -39,7 +38,7 @@ public class CDIAnnotationInfo implements AnnotationInfo {
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).absolute();
         } else {
-            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
+            throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
     }
 
@@ -52,7 +51,7 @@ public class CDIAnnotationInfo implements AnnotationInfo {
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).tags();
         } else {
-            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
+            throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
     }
 
@@ -65,7 +64,7 @@ public class CDIAnnotationInfo implements AnnotationInfo {
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).unit();
         } else {
-            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
+            throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
     }
 
@@ -78,7 +77,7 @@ public class CDIAnnotationInfo implements AnnotationInfo {
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).description();
         } else {
-            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
+            throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
     }
 
@@ -101,7 +100,7 @@ public class CDIAnnotationInfo implements AnnotationInfo {
         } else if (annotation instanceof Timed) {
             return ((Timed) annotation).scope();
         } else {
-            throw SmallRyeMetricsMessages.msg.unknownMetricAnnotationType(annotation.annotationType());
+            throw new IllegalArgumentException("Unknown metric annotation type " + annotation.annotationType());
         }
     }
 }

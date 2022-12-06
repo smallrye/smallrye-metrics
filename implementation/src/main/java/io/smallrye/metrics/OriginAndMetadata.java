@@ -4,7 +4,10 @@ import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.Metadata;
 
-//XXX: Do we need this?
+/*
+ * Metadata object for metrics created through annotations or injection which
+ * contains the "origin" (i.e. member or injection point)
+ */
 public class OriginAndMetadata implements Metadata {
 
     private final Object origin;

@@ -6,8 +6,6 @@ import java.util.TreeMap;
 
 import org.eclipse.microprofile.metrics.Tag;
 
-import io.smallrye.metrics.SmallRyeMetricsMessages;
-
 public class TagsUtils {
 
     private TagsUtils() {
@@ -16,11 +14,11 @@ public class TagsUtils {
 
     public static Tag parseTag(String kvString) {
         if (kvString == null || kvString.isEmpty() || !kvString.contains("=")) {
-            throw SmallRyeMetricsMessages.msg.notAKeyValuePair(kvString);
+            throw new IllegalArgumentException("Not a valid key=value pair: " + kvString);
         }
         String[] kv = kvString.split("=");
         if (kv.length != 2) {
-            throw SmallRyeMetricsMessages.msg.notAKeyValuePair(kvString);
+            throw new IllegalArgumentException("Not a valid key=value pair: " + kvString);
         }
         String key = kv[0].trim();
         String value = kv[1].trim();

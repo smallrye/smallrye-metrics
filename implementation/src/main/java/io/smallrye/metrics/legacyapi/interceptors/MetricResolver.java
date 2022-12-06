@@ -11,7 +11,6 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.smallrye.metrics.SmallRyeMetricsMessages;
 import io.smallrye.metrics.elementdesc.AnnotationInfo;
 import io.smallrye.metrics.elementdesc.BeanInfo;
 import io.smallrye.metrics.elementdesc.MemberInfo;
@@ -154,17 +153,17 @@ public class MetricResolver {
 
         @Override
         public String metricName() {
-            throw SmallRyeMetricsMessages.msg.noMetricPresent();
+            throw new IllegalStateException("No metric is present");
         }
 
         @Override
         public Tag[] tags() {
-            throw SmallRyeMetricsMessages.msg.noMetricPresent();
+            throw new IllegalStateException("No metric is present");
         }
 
         @Override
         public AnnotationInfo metricAnnotation() {
-            throw SmallRyeMetricsMessages.msg.noMetricPresent();
+            throw new IllegalStateException("No metric is present");
         }
     }
 }

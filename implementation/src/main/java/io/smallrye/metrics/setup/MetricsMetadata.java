@@ -28,6 +28,7 @@ public class MetricsMetadata {
 
     public static List<MetricID> registerMetrics(MetricRegistry registry, MetricResolver resolver, BeanInfo bean,
             MemberInfo element) {
+
         MetricResolver.Of<Counted> counted = resolver.counted(bean, element);
         List<MetricID> metricIDs = new ArrayList<>();
 
@@ -42,12 +43,9 @@ public class MetricsMetadata {
 
             Tag[] mpTagArray = resolveAppNameTag(registry, tags);
 
-            // add this CDI MetricID into MetricRegistry's MetricID list....
             MetricID metricID = new MetricID(metadata.getName(), mpTagArray);
             metricIDs.add(metricID);
 
-            // Some list in MetricRegistry that maps the CDI element, metricID and metric
-            // type
             ((LegacyMetricRegistryAdapter) registry).getMemberToMetricMappings().addCounter(element, metricID);
 
         }
