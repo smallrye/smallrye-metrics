@@ -409,17 +409,6 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
-    Counter interceptorCounter(Metadata metadata, String... tags) {
-        return internalCounter(internalGetMetadata(metadata),
-                new MetricDescriptor(metadata.getName(), tags));
-    }
-
-    Counter injectedCounter(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
-        return internalCounter(
-                internalGetMetadata(annotation.name()).merge(annotation),
-                new MetricDescriptor(annotation.name(), annotation.tags()));
-    }
-
     private void validateTagNamesMatch(MetricDescriptor id) {
         /*
          * Check that if there are metrics registered with same metric name that the tag
@@ -655,12 +644,6 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 new MetricDescriptor(metadata.getName(), unifiedTags));
     }
 
-    HistogramAdapter injectedHistogram(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
-        return internalHistogram(
-                internalGetMetadata(annotation.name()).merge(annotation),
-                new MetricDescriptor(annotation.name(), annotation.tags()));
-    }
-
     HistogramAdapter internalHistogram(MpMetadata metadata, MetricDescriptor id) {
         validateTagNamesMatch(id);
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
@@ -712,17 +695,6 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         Tags unifiedTags = withAppTags(tags);
         return internalTimer(internalGetMetadataTimers(metadata),
                 new MetricDescriptor(metadata.getName(), unifiedTags));
-    }
-
-    TimerAdapter injectedTimer(org.eclipse.microprofile.metrics.annotation.Metric annotation) {
-        return internalTimer(
-                internalGetMetadataTimers(annotation.name()).merge(annotation),
-                new MetricDescriptor(annotation.name(), annotation.tags()));
-    }
-
-    TimerAdapter interceptorTimer(Metadata metadata, String... tags) {
-        return internalTimer(internalGetMetadataTimers(metadata),
-                new MetricDescriptor(metadata.getName(), tags));
     }
 
     TimerAdapter internalTimer(MpMetadata metadata, MetricDescriptor id) {
