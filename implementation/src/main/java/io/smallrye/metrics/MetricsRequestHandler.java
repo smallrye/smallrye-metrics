@@ -2,6 +2,7 @@ package io.smallrye.metrics;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -262,6 +263,7 @@ public class MetricsRequestHandler {
             responder.respondWith(405, "Only GET method is accepted.", Collections.emptyMap());
             return null;
         } else if (acceptHeaders == null) {
+
             // Use PrometheusMetricsExporter
             return (isPrometheusLibraryLoaded(responder)) ? new PrometheusMetricsExporter() : null;
 
@@ -322,7 +324,7 @@ public class MetricsRequestHandler {
         acceptHeaders.forEach(h -> {
             String[] headers = h.split(",");
             for (String header : headers) {
-                String[] parts = header.split(";");
+                String[] parts = Arrays.stream(header.split(";")).map(String::trim).toArray(String[]::new);
                 float prio = 1.0f;
                 if (parts.length > 1) {
                     for (String x : parts) {
@@ -367,6 +369,7 @@ public class MetricsRequestHandler {
     }
 
     private boolean isKnownMediaType(WTTuple tuple) {
+
         return tuple.type.equals(TEXT_PLAIN) || tuple.type.equals(STAR_STAR);
     }
 
