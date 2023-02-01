@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-jakarta-parent</artifactId>
-    <version>34</version>
+    <version>38</version>
   </parent>
 
   <artifactId>smallrye-metrics-parent</artifactId>
