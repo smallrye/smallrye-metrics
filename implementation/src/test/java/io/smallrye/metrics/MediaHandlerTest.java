@@ -150,4 +150,12 @@ public class MediaHandlerTest {
         assertThat(res.get()).isEqualTo("text/plain");
     }
 
+    @Test
+    public void testMediaTypeWhenAcceptValuesHasSpacest() {
+        Optional<String> res = requestHandler.getBestMatchingMediaType(
+                Stream.of("   text/html", "    image/gif", "  image/jpeg", " *; q=.2", "    */*; q=.2"));
+        assertThat(res.isPresent()).isTrue();
+        assertThat(res.get()).isEqualTo("text/plain");
+    }
+
 }
