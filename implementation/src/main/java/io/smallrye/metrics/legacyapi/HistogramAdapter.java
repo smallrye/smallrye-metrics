@@ -22,6 +22,12 @@ class HistogramAdapter implements Histogram, MeterHolder {
 
     private final static int PRECISION;
 
+    final MeterRegistry registry;
+
+    HistogramAdapter(MeterRegistry registry) {
+        this.registry = registry;
+    }
+
     /*
      * Increasing the percentile precision for histograms will consume more memory.
      * This setting is "3" by default, and provided to adjust the precision to
@@ -38,7 +44,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
 
     DistributionSummary globalCompositeSummary;
 
-    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope,
+    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, String scope,
             Tag... globalTags) {
 
         if (globalCompositeSummary == null || metadata.cleanDirtyMetadata()) {

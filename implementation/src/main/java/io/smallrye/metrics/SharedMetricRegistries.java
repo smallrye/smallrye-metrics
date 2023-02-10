@@ -212,7 +212,7 @@ public class SharedMetricRegistries {
             } catch (ClassNotFoundException | SecurityException | IllegalArgumentException | IllegalAccessException
                     | NoSuchMethodException | InstantiationException | InvocationTargetException e) {
                 LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD_NAME,
-                        "Encountered exception while reflectively loading Micrometer Prometheus classes: {0}", e);
+                        "Encountered exception while reflectively loading Micrometer Prometheus classes: ", e);
                 /*
                  * Default to simple meter registry otherwise. No Need to create a "MPSimpleMeterRegisty with scope
                  * field as scope was only used for the PrometheusExporter
