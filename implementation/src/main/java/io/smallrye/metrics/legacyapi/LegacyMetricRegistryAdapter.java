@@ -87,8 +87,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     /**
-     * Calls to this method should check {@link #isAppNameResolverPresent}
-     * to avoid overhead of having to convert {@link MetricDescriptor} to {@link MetricID}
+     * This method should not be called when {@link #isAppNameResolverPresent}
+     * is false as this method does nothing in that case.
      */
     public void addNameToApplicationMap(MetricID metricID) {
         String appName = appNameResolver.getApplicationName();
@@ -153,7 +153,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     public LegacyMetricRegistryAdapter(String scope, MeterRegistry registry, ApplicationNameResolver appNameResolver) {
         this.appNameResolver = (appNameResolver == null) ? ApplicationNameResolver.DEFAULT : appNameResolver;
-        isAppnameResolverPresent = (this.appNameResolver == null) ? false : true;
+        isAppnameResolverPresent = (this.appNameResolver.equals(ApplicationNameResolver.DEFAULT)) ? false : true;
         this.scope = scope;
         this.registry = registry;
 
@@ -649,7 +649,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     HistogramAdapter internalHistogram(MpMetadata metadata, MetricDescriptor id) {
         validateTagNamesMatch(id);
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
-                constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter(registry)));
+                constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter()));
         if (isAppnameResolverPresent)
             addNameToApplicationMap(id.toMetricID());
         return result.register(metadata, id, scope, resolveMPConfigGlobalTagsByServer());
