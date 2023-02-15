@@ -87,12 +87,11 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     /**
-     * This method should not be called when {@link #isAppNameResolverPresent}
-     * is false as this method does nothing in that case.
+     * Associates a metric's MetricID to a specific application if an application name can be resolved.
      */
-    public void addNameToApplicationMap(MetricID metricID) {
-        String appName = appNameResolver.getApplicationName();
-        addNameToApplicationMap(metricID, appName);
+    public void addNameToApplicationMap(MetricDescriptor metricDescriptor) {
+        if (isAppnameResolverPresent)
+            addNameToApplicationMap(metricDescriptor.toMetricID(), appNameResolver.getApplicationName());
     }
 
     /**
@@ -427,8 +426,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
         CounterAdapter result = checkCast(CounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new CounterAdapter()));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
 
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
@@ -463,8 +461,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
         FunctionCounterAdapter<T> result = checkCast(FunctionCounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new FunctionCounterAdapter(obj, func)));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -524,8 +521,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         GaugeAdapter.DoubleFunctionGauge<T> result = checkCast(GaugeAdapter.DoubleFunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.DoubleFunctionGauge<>(obj, f)));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -534,8 +530,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         GaugeAdapter.FunctionGauge<T, R> result = checkCast(GaugeAdapter.FunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.FunctionGauge<>(obj, f)));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -583,8 +578,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         GaugeAdapter<T> result = checkCast(GaugeAdapter.NumberSupplierGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<T>(f)));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -650,8 +644,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter()));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -704,8 +697,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         TimerAdapter result = checkCast(TimerAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new TimerAdapter(registry)));
-        if (isAppnameResolverPresent)
-            addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, scope, resolveMPConfigGlobalTagsByServer());
     }
 
