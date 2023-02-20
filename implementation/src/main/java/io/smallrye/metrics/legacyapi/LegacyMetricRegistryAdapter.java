@@ -95,6 +95,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     /**
+     * Associates a metric's MetricID to a specific application if an application name can be resolved.
+     */
+    public void addNameToApplicationMap(MetricID MetricID) {
+        if (isAppnameResolverPresent)
+            addNameToApplicationMap(MetricID, appNameResolver.getApplicationName());
+    }
+
+    /**
      * Adds the MetricID to an application map given the application name.
      * This map is not a complete list of metrics owned by an application,
      * produced metrics are managed in the MetricsExtension
@@ -151,8 +159,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public LegacyMetricRegistryAdapter(String scope, MeterRegistry registry, ApplicationNameResolver appNameResolver) {
-        this.appNameResolver = (appNameResolver == null) ? ApplicationNameResolver.DEFAULT : appNameResolver;
-        isAppnameResolverPresent = (this.appNameResolver.equals(ApplicationNameResolver.DEFAULT)) ? false : true;
+
+        /*
+         * Note: if ApplicationNameResolver is passed through as Java Reflection Proxy object,
+         * can only be checked if its is "null".
+         * Trying any other operations would lead to an Exception (i.e. equals())
+         */
+        if (appNameResolver == null) {
+            this.appNameResolver = ApplicationNameResolver.DEFAULT;
+            isAppnameResolverPresent = false;
+        } else {
+            this.appNameResolver = appNameResolver;
+            isAppnameResolverPresent = true;
+        }
+
         this.scope = scope;
         this.registry = registry;
 
