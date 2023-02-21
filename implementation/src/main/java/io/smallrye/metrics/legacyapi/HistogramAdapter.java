@@ -11,7 +11,6 @@ import org.eclipse.microprofile.metrics.Snapshot;
 
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 
@@ -38,7 +37,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
 
     DistributionSummary globalCompositeSummary;
 
-    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, MeterRegistry registry, String scope,
+    public HistogramAdapter register(MpMetadata metadata, MetricDescriptor metricInfo, String scope,
             Tag... globalTags) {
 
         if (globalCompositeSummary == null || metadata.cleanDirtyMetadata()) {

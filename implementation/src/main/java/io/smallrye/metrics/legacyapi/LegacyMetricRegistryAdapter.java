@@ -57,6 +57,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     protected final ApplicationNameResolver appNameResolver;
 
+    protected final boolean isAppnameResolverPresent;
+
     private MemberToMetricMappings memberToMetricMappings;
 
     protected static io.micrometer.core.instrument.Tag[] SERVER_LEVEL_MPCONFIG_APPLICATION_NAME_TAG = null;
@@ -84,9 +86,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         return registry;
     }
 
-    public void addNameToApplicationMap(MetricID metricID) {
-        String appName = appNameResolver.getApplicationName();
-        addNameToApplicationMap(metricID, appName);
+    /**
+     * Associates a metric's MetricID to a specific application if an application name can be resolved.
+     */
+    public void addNameToApplicationMap(MetricDescriptor metricDescriptor) {
+        if (isAppnameResolverPresent)
+            addNameToApplicationMap(metricDescriptor.toMetricID(), appNameResolver.getApplicationName());
+    }
+
+    /**
+     * Associates a metric's MetricID to a specific application if an application name can be resolved.
+     */
+    public void addNameToApplicationMap(MetricID MetricID) {
+        if (isAppnameResolverPresent)
+            addNameToApplicationMap(MetricID, appNameResolver.getApplicationName());
     }
 
     /**
@@ -99,7 +112,12 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      */
     public void addNameToApplicationMap(MetricID metricID, String appName) {
         final String METHOD_NAME = "addNameToApplicationMap";
-        // If it is a base metric, the name will be null
+
+        /*
+         * - Base metrics (or vendor metrics)
+         * - Vendor does not support multi-application deployment and/or
+         * no AppnameResolver was provided.
+         */
         if (appName == null)
             return;
         ConcurrentLinkedQueue<MetricID> list = applicationMap.get(appName);
@@ -123,18 +141,11 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     public void unRegisterApplicationMetrics(String appName) {
 
         /*
-         * This would be the case if the ApplicationListener30's ApplicatinInfo does not contain
-         * the application's deployment name (corrupt application?) or if this MetricRegistry is
-         * not running under the application TCCL ( as it relies on the ComponentMetadata to
-         * retrieve the application name).
+         * - Base metrics (or vendor metrics)
+         * - Vendor does not support multi-application deployment and/or
+         * no AppnameResolver was provided.
          */
         if (appName == null) {
-
-            //TODO: SR logging instead
-            //Tr.event(tc, "Application name is null. Cannot unregister metrics for null application.");
-
-            //XXX: dev debug
-            System.out.println("Application name is null. Cannot unregister metrics for null application.");
             return;
         }
 
@@ -148,7 +159,20 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     public LegacyMetricRegistryAdapter(String scope, MeterRegistry registry, ApplicationNameResolver appNameResolver) {
-        this.appNameResolver = (appNameResolver == null) ? ApplicationNameResolver.DEFAULT : appNameResolver;
+
+        /*
+         * Note: if ApplicationNameResolver is passed through as Java Reflection Proxy object,
+         * can only be checked if its is "null".
+         * Trying any other operations would lead to an Exception (i.e. equals())
+         */
+        if (appNameResolver == null) {
+            this.appNameResolver = ApplicationNameResolver.DEFAULT;
+            isAppnameResolverPresent = false;
+        } else {
+            this.appNameResolver = appNameResolver;
+            isAppnameResolverPresent = true;
+        }
+
         this.scope = scope;
         this.registry = registry;
 
@@ -161,15 +185,6 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         if (scope != BASE_SCOPE && scope != VENDOR_SCOPE) {
             memberToMetricMappings = new MemberToMetricMappings();
         }
-    }
-
-    /**
-     *
-     * @param tags the application tags to be merged with the MP Config mp.metrics.appName tag
-     * @return combined Tag array of the MP Config mp.metrics.appName tag with application tags; can return null
-     */
-    private Tags combineApplicationTagsWithMPConfigAppNameTag(Tags tags) {
-        return combineApplicationTagsWithMPConfigAppNameTag(false, tags);
     }
 
     private synchronized io.micrometer.core.instrument.Tag[] resolveMPConfigGlobalTagsByServer() {
@@ -239,15 +254,16 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
     }
 
     /**
-     *
-     * @param isSorted boolean to choose if the Tag array returned is sorted by key or not
+     * Combines metric tags with tag defined for MP config mp.metrics.appname property.
+     * 
      * @param tags the application tags to be merged with the MP Config mp.metrics.appName tag
      * @return combined Tag array of the MP Config mp.metrics.appName tag with application tags; can return null
      */
-    private Tags combineApplicationTagsWithMPConfigAppNameTag(boolean isSorted, Tags tags) {
+    private Tags combineApplicationTagsWithMPConfigAppNameTag(Tags tags) {
         io.micrometer.core.instrument.Tag mpConfigAppTag = resolveMPConfigAppNameTag();
-        Map<String, String> tagMap = (isSorted) ? new TreeMap<String, String>() : new HashMap<String, String>();
+
         if (mpConfigAppTag != null) {
+            Map<String, String> tagMap = new HashMap<String, String>();
             tagMap.put(mpConfigAppTag.getKey(), mpConfigAppTag.getValue());
 
             /*
@@ -430,7 +446,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
         CounterAdapter result = checkCast(CounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new CounterAdapter()));
-        addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
 
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
@@ -465,7 +481,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
         FunctionCounterAdapter<T> result = checkCast(FunctionCounterAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new FunctionCounterAdapter(obj, func)));
-        addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -525,7 +541,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         GaugeAdapter.DoubleFunctionGauge<T> result = checkCast(GaugeAdapter.DoubleFunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.DoubleFunctionGauge<>(obj, f)));
-        addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -534,7 +550,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         GaugeAdapter.FunctionGauge<T, R> result = checkCast(GaugeAdapter.FunctionGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.FunctionGauge<>(obj, f)));
-        addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -582,7 +598,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         GaugeAdapter<T> result = checkCast(GaugeAdapter.NumberSupplierGauge.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new GaugeAdapter.NumberSupplierGauge<T>(f)));
-        addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
     }
 
@@ -648,8 +664,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         HistogramAdapter result = checkCast(HistogramAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new HistogramAdapter()));
-        addNameToApplicationMap(id.toMetricID());
-        return result.register(metadata, id, registry, scope, resolveMPConfigGlobalTagsByServer());
+        addNameToApplicationMap(id);
+        return result.register(metadata, id, scope, resolveMPConfigGlobalTagsByServer());
     }
 
     @Override
@@ -701,7 +717,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         validateTagNamesMatch(id);
         TimerAdapter result = checkCast(TimerAdapter.class, metadata,
                 constructedMeters.computeIfAbsent(id, k -> new TimerAdapter(registry)));
-        addNameToApplicationMap(id.toMetricID());
+        addNameToApplicationMap(id);
         return result.register(metadata, id, scope, resolveMPConfigGlobalTagsByServer());
     }
 
