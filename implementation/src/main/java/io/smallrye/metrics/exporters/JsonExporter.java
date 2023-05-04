@@ -299,7 +299,7 @@ public class JsonExporter implements Exporter {
         map.put("p99" + tags, JsonProviderHolder.get().createValue(snapshot.get99thPercentile()));
         map.put("p999" + tags, JsonProviderHolder.get().createValue(snapshot.get999thPercentile()));
         map.put("min" + tags, JsonProviderHolder.get().createValue(snapshot.getMin()));
-        map.put("mean" + tags, JsonProviderHolder.get().createValue(snapshot.getMean()));
+        map.put("mean" + tags, JsonProviderHolder.get().createValue(mapNaNToZero(snapshot.getMean())));
         map.put("max" + tags, JsonProviderHolder.get().createValue(snapshot.getMax()));
         map.put("stddev" + tags, JsonProviderHolder.get().createValue(snapshot.getStdDev()));
         return map;
@@ -314,10 +314,14 @@ public class JsonExporter implements Exporter {
         map.put("p99" + tags, JsonProviderHolder.get().createValue(toBase(snapshot.get99thPercentile(), unit)));
         map.put("p999" + tags, JsonProviderHolder.get().createValue(toBase(snapshot.get999thPercentile(), unit)));
         map.put("min" + tags, JsonProviderHolder.get().createValue(toBase(snapshot.getMin(), unit)));
-        map.put("mean" + tags, JsonProviderHolder.get().createValue(toBase(snapshot.getMean(), unit)));
+        map.put("mean" + tags, JsonProviderHolder.get().createValue(mapNaNToZero(toBase(snapshot.getMean(), unit))));
         map.put("max" + tags, JsonProviderHolder.get().createValue(toBase(snapshot.getMax(), unit)));
         map.put("stddev" + tags, JsonProviderHolder.get().createValue(toBase(snapshot.getStdDev(), unit)));
         return map;
+    }
+
+    private double mapNaNToZero(double in) {
+        return Double.isNaN(in) ? 0 : in;
     }
 
     private Double toBase(Number count, String unit) {
