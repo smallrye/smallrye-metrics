@@ -51,6 +51,9 @@ public class SharedMetricRegistries {
     private static boolean isBaseMetricsRegistered = false;
 
     private static MeterRegistry meterRegistry;
+
+    private static ApplicationNameResolver appNameResolver;
+
     /*
      * Go through class path to identify what registries are available and register them to Micrometer
      * Global Meter Registry
@@ -124,18 +127,34 @@ public class SharedMetricRegistries {
         meterRegistry = resolveMeterRegistry();
     }
 
-    public static MetricRegistry getOrCreate(String scope) {
-        return getOrCreate(scope, null);
+    /*
+     * For vendors to provide an AppNameResolver
+     */
+    public static void setAppNameResolver(ApplicationNameResolver anr) {
+        appNameResolver = anr;
     }
 
-    // FIXME: cheap way of passing in the ApplicationNameResolvr from vendor code to the MetricRegistry
-    public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver appNameResolver) {
+    public static Set<String> getRegistryScopeNames() {
+        //return copy of 'registries' key-set containing scope names
+        return new HashSet<String>(registries.keySet());
+    }
+
+    public static MetricRegistry getOrCreate(String scope) {
+        /*
+         * Check if there is a provided AppNameResolver
+         */
+        ApplicationNameResolver anr = (appNameResolver != null) ? appNameResolver : null;
+        return getOrCreate(scope, anr);
+    }
+
+    public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver anr) {
         final String METHOD_NAME = "getOrCreate";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Requested MetricRegistry of scope {0}", scope);
         }
+
         MetricRegistry metricRegistry = registries.computeIfAbsent(scope,
-                t -> new LegacyMetricRegistryAdapter(scope, meterRegistry, appNameResolver));
+                t -> new LegacyMetricRegistryAdapter(scope, meterRegistry, anr));
 
         /*
          * Bind LegacyBaseMetrics to Base MP Metric Registry
