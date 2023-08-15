@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -16,6 +17,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.Timer.Builder;
+import io.smallrye.metrics.setup.config.DefaulBucketConfiguration;
+import io.smallrye.metrics.setup.config.MetricPercentileConfiguration;
+import io.smallrye.metrics.setup.config.MetricsConfigurationManager;
+import io.smallrye.metrics.setup.config.TimerBucketConfiguration;
+import io.smallrye.metrics.setup.config.TimerBucketMaxConfiguration;
+import io.smallrye.metrics.setup.config.TimerBucketMinConfiguration;
 
 class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolder {
 
@@ -27,12 +35,12 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
     Timer globalCompositeTimer;
 
     /*
-     * Increasing the percentile precision for timers will consume more memory.
-     * This setting is "3" by default, and provided to adjust the precision to
-     * your needs.
+     * Increasing the percentile precision for timers will consume more memory. This setting is "3" by
+     * default, and provided to adjust the precision to your needs.
      */
     static {
-        PRECISION = ConfigProvider.getConfig().getOptionalValue("mp.metrics.smallrye.timer.precision", Integer.class).orElse(3);
+        PRECISION = ConfigProvider.getConfig().getOptionalValue("mp.metrics.smallrye.timer.precision", Integer.class)
+                .orElse(3);
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.logp(Level.FINE, CLASS_NAME, null,
                     "Resolved MicroProfile Config value for mp.metrics.smallrye.timer.precision as \"{0}\"", PRECISION);
@@ -49,6 +57,15 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
 
         if (globalCompositeTimer == null || metadata.cleanDirtyMetadata()) {
 
+            MetricPercentileConfiguration percentilesConfig = MetricsConfigurationManager.getInstance()
+                    .getPercentilesConfiguration(metadata.getName());
+
+            TimerBucketConfiguration bucketsConfig = MetricsConfigurationManager.getInstance()
+                    .getTimerBucketConfiguration(metadata.getName());
+
+            DefaulBucketConfiguration defaultBucketConfig = MetricsConfigurationManager.getInstance()
+                    .getDefaultBucketConfiguration(metadata.getName());
+
             Set<Tag> tagsSet = new HashSet<Tag>();
             for (Tag t : descriptor.tags()) {
                 tagsSet.add(t);
@@ -62,12 +79,45 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
 
             tagsSet.add(Tag.of(LegacyMetricRegistryAdapter.MP_SCOPE_TAG, scope));
 
-            globalCompositeTimer = Timer.builder(descriptor.name())
-                    .description(metadata.getDescription())
-                    .tags(tagsSet)
-                    .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
-                    .percentilePrecision(PRECISION)
-                    .register(Metrics.globalRegistry);
+            Builder builder = Timer.builder(descriptor.name()).description(metadata.getDescription()).tags(tagsSet)
+                    .percentilePrecision(PRECISION);
+
+            if (percentilesConfig != null && percentilesConfig.getValues() != null
+                    && percentilesConfig.getValues().length > 0) {
+                double[] vals = Stream.of(percentilesConfig.getValues()).mapToDouble(Double::doubleValue).toArray();
+                builder = builder.publishPercentiles(vals);
+            } else if (percentilesConfig != null && percentilesConfig.getValues() == null
+                    && percentilesConfig.isDisabled() == true) {
+                // do nothing - percentiles were disabled
+            } else {
+                builder = builder.publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
+            }
+
+            if (bucketsConfig != null && bucketsConfig.getValues().length > 0) {
+                builder = builder.serviceLevelObjectives(bucketsConfig.getValues());
+            }
+
+            if (defaultBucketConfig != null && defaultBucketConfig.getIsEnabled() == true) {
+                builder = builder.publishPercentileHistogram(defaultBucketConfig.getIsEnabled());
+
+                // max and min
+                TimerBucketMaxConfiguration defaultBucketMaxConfig = MetricsConfigurationManager.getInstance()
+                        .getDefaultTimerMaxBucketConfiguration(metadata.getName());
+
+                if (defaultBucketMaxConfig != null && defaultBucketMaxConfig.getValue() != null) {
+                    builder = builder.maximumExpectedValue(defaultBucketMaxConfig.getValue());
+                }
+
+                TimerBucketMinConfiguration defaultBucketMinConfig = MetricsConfigurationManager.getInstance()
+                        .getDefaultTimerMinBucketConfiguration(metadata.getName());
+
+                if (defaultBucketMinConfig != null && defaultBucketMinConfig.getValue() != null) {
+                    builder = builder.minimumExpectedValue(defaultBucketMinConfig.getValue());
+                }
+            }
+
+            globalCompositeTimer = builder.register(Metrics.globalRegistry);
+
         }
 
         return this;
