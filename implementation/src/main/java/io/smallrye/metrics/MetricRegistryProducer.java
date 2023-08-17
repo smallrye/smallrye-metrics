@@ -14,19 +14,11 @@ public class MetricRegistryProducer {
 
     @Produces
     @Default
+    @RegistryScope
     public MetricRegistry getMetricRegistry(InjectionPoint ip) {
-
         RegistryScope registryScopeAnnotation = ip.getAnnotated().getAnnotation(RegistryScope.class);
-
-        /*
-         * Defaults to "application" scope if no scope parameter value is detected
-         */
-        if (registryScopeAnnotation == null) {
-            return SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
-        } else {
-            String annoScope = registryScopeAnnotation.scope();
-            return SharedMetricRegistries.getOrCreate(annoScope);
-        }
+        return SharedMetricRegistries.getOrCreate(
+                registryScopeAnnotation == null ? MetricRegistry.APPLICATION_SCOPE : registryScopeAnnotation.scope());
     }
 
     @Produces
