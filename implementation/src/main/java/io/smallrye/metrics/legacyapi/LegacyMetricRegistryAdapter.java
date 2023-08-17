@@ -48,6 +48,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     protected static final String MP_APPLICATION_NAME_VAR = "mp.metrics.appName";
 
+    protected static final String MP_DEFAULT_APPLICATION_NAME_VAR = "mp.metrics.defaultAppName";
+    protected volatile static io.micrometer.core.instrument.Tag DEFAULT_APP_NAME_TAG = null;
+
+    /*
+     * Set by user on the server-level with MP Config property mp.metrics.defaultAppName
+     */
+    private final String defaultAppNameValue;
+
     private final Map<MetricDescriptor, MeterHolder> constructedMeters = new ConcurrentHashMap<>();
     private final Map<String, MpMetadata> metadataMap = new ConcurrentHashMap<>();
 
@@ -176,11 +184,13 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         this.scope = scope;
         this.registry = registry;
 
-        this.applicationMPConfigAppNameTagCache = new ConcurrentHashMap<String, io.micrometer.core.instrument.Tag>();
+        applicationMPConfigAppNameTagCache = new ConcurrentHashMap<String, io.micrometer.core.instrument.Tag>();
 
         applicationMap = new ConcurrentHashMap<String, ConcurrentLinkedQueue<MetricID>>();
 
-        this.resolveMPConfigGlobalTagsByServer();
+        defaultAppNameValue = resolveMPConfigDefaultAppNameTag();
+
+        resolveMPConfigGlobalTagsByServer();
 
         if (scope != BASE_SCOPE && scope != VENDOR_SCOPE) {
             memberToMetricMappings = new MemberToMetricMappings();
@@ -288,6 +298,14 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     }
 
+    private String resolveMPConfigDefaultAppNameTag() {
+
+        Optional<String> configVal = ConfigProvider.getConfig().getOptionalValue(MP_DEFAULT_APPLICATION_NAME_VAR,
+                String.class);
+
+        return (configVal.isPresent()) ? configVal.get().trim() : null;
+    }
+
     /**
      * This method will retrieve cached tag values for the mp.metrics.appName or resolve it and cache it
      *
@@ -309,7 +327,11 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
          */
         io.micrometer.core.instrument.Tag tag = (appName == null) ? resolveMPConfigAppNameTagByServer()
                 : resolveMPConfigAppNameTagByApplication(appName);
-        return tag;
+
+        return (tag != null) ? tag
+                : (defaultAppNameValue != null)
+                        ? io.micrometer.core.instrument.Tag.of(MP_APPLICATION_NAME_TAG, defaultAppNameValue)
+                        : null;
     }
 
     /**
@@ -325,7 +347,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
         if (SERVER_LEVEL_MPCONFIG_APPLICATION_NAME_TAG == null) {
             SERVER_LEVEL_MPCONFIG_APPLICATION_NAME_TAG = new io.micrometer.core.instrument.Tag[1];
 
-            //Using MP Config to retreive the mp.metrics.appName Config value
+            //Using MP Config to retrieve the mp.metrics.appName Config value
             Optional<String> applicationName = ConfigProvider.getConfig().getOptionalValue(MP_APPLICATION_NAME_VAR,
                     String.class);
 
