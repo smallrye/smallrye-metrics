@@ -39,7 +39,7 @@ public class MetricsConfigurationManager {
 
     private volatile Map<String, Collection<TimerBucketConfiguration>> timerBucketsConfigMap = new HashMap<String, Collection<TimerBucketConfiguration>>();
 
-    private volatile Map<String, Collection<DefaulBucketConfiguration>> defaultBucketConfigMap = new HashMap<String, Collection<DefaulBucketConfiguration>>();
+    private volatile Map<String, Collection<DefaultBucketConfiguration>> defaultBucketConfigMap = new HashMap<String, Collection<DefaultBucketConfiguration>>();
 
     private volatile Map<String, Collection<HistogramBucketMaxConfiguration>> defaultHistogramBucketMaxConfig = new HashMap<String, Collection<HistogramBucketMaxConfiguration>>();
     private volatile Map<String, Collection<HistogramBucketMinConfiguration>> defaultHistogramBucketMinConfig = new HashMap<String, Collection<HistogramBucketMinConfiguration>>();
@@ -55,10 +55,10 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link MetricPercentileConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link MetricPercentileConfiguration} object if it exists, null otherwise
      */
     public synchronized MetricPercentileConfiguration getPercentilesConfiguration(String metricName) {
 
@@ -85,12 +85,12 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link HistogramBucketConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link HistogramBucketConfiguration} object if it exists, null otherwise
      */
-    public synchronized HistogramBucketConfiguration getHistogrmBucketConfiguration(String metricName) {
+    public synchronized HistogramBucketConfiguration getHistogramBucketConfiguration(String metricName) {
 
         String appName = getApplicationName();
 
@@ -107,7 +107,7 @@ public class MetricsConfigurationManager {
             HistogramBucketConfiguration retVal = HistogramBucketConfiguration.matches(computedValues, metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {1} ",
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
                         new Object[] { MP_HISTOGRAM_BUCKET_PROP, metricName, retVal });
             }
             return retVal;
@@ -117,10 +117,10 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link TimerBucketConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link TimerBucketConfiguration} object if it exists, null otherwise
      */
     public synchronized TimerBucketConfiguration getTimerBucketConfiguration(String metricName) {
 
@@ -137,7 +137,7 @@ public class MetricsConfigurationManager {
             TimerBucketConfiguration retVal = TimerBucketConfiguration.matches(computedValues, metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{0}\" with values: {1} ",
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
                         new Object[] { MP_TIMER_BUCKET_PROP, metricName, retVal });
             }
             return retVal;
@@ -147,27 +147,27 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link DefaultBucketConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link DefaultBucketConfiguration} object if it exists, null otherwise
      */
-    public synchronized DefaulBucketConfiguration getDefaultBucketConfiguration(String metricName) {
+    public synchronized DefaultBucketConfiguration getDefaultBucketConfiguration(String metricName) {
 
         String appName = getApplicationName();
 
-        Collection<DefaulBucketConfiguration> computedValues = defaultBucketConfigMap.computeIfAbsent(appName, f -> {
+        Collection<DefaultBucketConfiguration> computedValues = defaultBucketConfigMap.computeIfAbsent(appName, f -> {
             Optional<String> input = ConfigProvider.getConfig().getOptionalValue(MP_DEFAULT_BUCKET_PROP, String.class);
 
-            return (input.isPresent()) ? DefaulBucketConfiguration.parse(input.get()) : null;
+            return (input.isPresent()) ? DefaultBucketConfiguration.parse(input.get()) : null;
 
         });
 
         if (computedValues != null && computedValues.size() != 0) {
-            DefaulBucketConfiguration retVal = DefaulBucketConfiguration.matches(computedValues, metricName);
+            DefaultBucketConfiguration retVal = DefaultBucketConfiguration.matches(computedValues, metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{0}\" with values: {1} ",
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
                         new Object[] { MP_DEFAULT_BUCKET_PROP, metricName, retVal });
             }
             return retVal;
@@ -178,10 +178,10 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link HistogramBucketMaxConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link HistogramBucketMaxConfiguration} object if it exists, null otherwise
      */
     public synchronized HistogramBucketMaxConfiguration getDefaultHistogramMaxBucketConfiguration(String metricName) {
 
@@ -201,7 +201,7 @@ public class MetricsConfigurationManager {
                     metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{0}\" with values: {1} ",
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
                         new Object[] { MP_HISTOGRAM_MAX_CONFIG, metricName, retVal });
             }
             return retVal;
@@ -211,10 +211,10 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link HistogramBucketMinConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link HistogramBucketMinConfiguration} object if it exists, null otherwise
      */
     public synchronized HistogramBucketMinConfiguration getDefaultHistogramMinBucketConfiguration(String metricName) {
 
@@ -234,7 +234,7 @@ public class MetricsConfigurationManager {
                     metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{0}\" with values: {1} ",
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
                         new Object[] { MP_HISTOGRAM_MIN_CONFIG, metricName, retVal });
             }
             return retVal;
@@ -244,10 +244,10 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link TimerBucketMaxConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link TimerBucketMaxConfiguration} object if it exists, null otherwise
      */
     public synchronized TimerBucketMaxConfiguration getDefaultTimerMaxBucketConfiguration(String metricName) {
 
@@ -265,7 +265,7 @@ public class MetricsConfigurationManager {
             TimerBucketMaxConfiguration retVal = TimerBucketMaxConfiguration.matches(computedValues, metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{0}\" with values: {1} ",
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
                         new Object[] { MP_TIMER_MAX_CONFIG, metricName, retVal });
             }
             return retVal;
@@ -275,10 +275,10 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * Returns the matching configuration object if it exists, null otherwise
+     * Returns the matching {@link TimerBucketMinConfiguration} object if it exists, null otherwise
      * 
      * @param metricName the metric name to check configuration against
-     * @return the matching configuration object if it exists, null otherwise
+     * @return the matching {@link TimerBucketMinConfiguration} object if it exists, null otherwise
      */
     public synchronized TimerBucketMinConfiguration getDefaultTimerMinBucketConfiguration(String metricName) {
 
@@ -296,8 +296,8 @@ public class MetricsConfigurationManager {
             TimerBucketMinConfiguration retVal = TimerBucketMinConfiguration.matches(computedValues, metricName);
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.logp(Level.FINEST, CLASS_NAME, null,
-                        "Returning \"{0}\" configuration for metric:\"{0}\" with values: {1} ",
-                        new Object[] { MP_TIMER_MAX_CONFIG, metricName, retVal });
+                        "Returning \"{0}\" configuration for metric:\"{1}\" with values: {2} ",
+                        new Object[] { MP_TIMER_MIN_CONFIG, metricName, retVal });
             }
             return retVal;
         }

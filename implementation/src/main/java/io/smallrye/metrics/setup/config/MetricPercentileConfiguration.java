@@ -37,7 +37,7 @@ public class MetricPercentileConfiguration extends PropertyArrayConfiguration<Do
      */
     public static Collection<MetricPercentileConfiguration> parseMetricPercentiles(String input) {
 
-        ArrayDeque<MetricPercentileConfiguration> metricPercentileConfiCollection = new ArrayDeque<MetricPercentileConfiguration>();
+        ArrayDeque<MetricPercentileConfiguration> metricPercentileConfigCollection = new ArrayDeque<MetricPercentileConfiguration>();
 
         if (input == null || input.length() == 0) {
             return null;
@@ -81,9 +81,9 @@ public class MetricPercentileConfiguration extends PropertyArrayConfiguration<Do
             }
 
             // LIFO - right most configuration takes precedence
-            metricPercentileConfiCollection.addFirst(metricPercentileConfiguration);
+            metricPercentileConfigCollection.addFirst(metricPercentileConfiguration);
         }
-        return metricPercentileConfiCollection;
+        return metricPercentileConfigCollection;
 
     }
 

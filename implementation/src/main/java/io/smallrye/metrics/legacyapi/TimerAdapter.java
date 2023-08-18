@@ -18,7 +18,7 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Builder;
-import io.smallrye.metrics.setup.config.DefaulBucketConfiguration;
+import io.smallrye.metrics.setup.config.DefaultBucketConfiguration;
 import io.smallrye.metrics.setup.config.MetricPercentileConfiguration;
 import io.smallrye.metrics.setup.config.MetricsConfigurationManager;
 import io.smallrye.metrics.setup.config.TimerBucketConfiguration;
@@ -63,7 +63,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
             TimerBucketConfiguration bucketsConfig = MetricsConfigurationManager.getInstance()
                     .getTimerBucketConfiguration(metadata.getName());
 
-            DefaulBucketConfiguration defaultBucketConfig = MetricsConfigurationManager.getInstance()
+            DefaultBucketConfiguration defaultBucketConfig = MetricsConfigurationManager.getInstance()
                     .getDefaultBucketConfiguration(metadata.getName());
 
             Set<Tag> tagsSet = new HashSet<Tag>();
@@ -87,7 +87,7 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
                 double[] vals = Stream.of(percentilesConfig.getValues()).mapToDouble(Double::doubleValue).toArray();
                 builder = builder.publishPercentiles(vals);
             } else if (percentilesConfig != null && percentilesConfig.getValues() == null
-                    && percentilesConfig.isDisabled() == true) {
+                    && percentilesConfig.isDisabled()) {
                 // do nothing - percentiles were disabled
             } else {
                 builder = builder.publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
@@ -97,8 +97,8 @@ class TimerAdapter implements org.eclipse.microprofile.metrics.Timer, MeterHolde
                 builder = builder.serviceLevelObjectives(bucketsConfig.getValues());
             }
 
-            if (defaultBucketConfig != null && defaultBucketConfig.getIsEnabled() == true) {
-                builder = builder.publishPercentileHistogram(defaultBucketConfig.getIsEnabled());
+            if (defaultBucketConfig != null && defaultBucketConfig.isEnabled()) {
+                builder = builder.publishPercentileHistogram(defaultBucketConfig.isEnabled());
 
                 // max and min
                 TimerBucketMaxConfiguration defaultBucketMaxConfig = MetricsConfigurationManager.getInstance()

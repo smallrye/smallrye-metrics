@@ -50,8 +50,6 @@ public class HistogramBucketConfiguration extends PropertyArrayConfiguration<Dou
             } else {
                 // Parse values of buckets
                 Double[] bucketValues = Arrays.asList(keyValueSplit[1].split(",")).stream()
-                        // .filter(s -> s.matches("[0-9]+[.]*[0-9]*"))
-                        // .map(Double::parseDouble)
                         .map(s -> {
                             if (s.matches("[0-9]+[.]*[0-9]*")) {
                                 return Double.parseDouble(s);

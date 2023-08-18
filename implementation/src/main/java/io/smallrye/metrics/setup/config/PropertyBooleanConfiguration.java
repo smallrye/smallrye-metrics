@@ -9,7 +9,7 @@ public abstract class PropertyBooleanConfiguration extends PropertyConfiguration
                 isEnabled);
     }
 
-    public boolean getIsEnabled() {
+    public boolean isEnabled() {
         return isEnabled;
     }
 }

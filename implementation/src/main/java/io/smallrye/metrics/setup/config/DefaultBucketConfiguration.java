@@ -4,19 +4,19 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.logging.Logger;
 
-public class DefaulBucketConfiguration extends PropertyBooleanConfiguration {
+public class DefaultBucketConfiguration extends PropertyBooleanConfiguration {
 
-    private static final String CLASS_NAME = DefaulBucketConfiguration.class.getName();
+    private static final String CLASS_NAME = DefaultBucketConfiguration.class.getName();
     private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-    public DefaulBucketConfiguration(String metricName, boolean value) {
+    public DefaultBucketConfiguration(String metricName, boolean value) {
         this.metricName = metricName;
         this.isEnabled = value;
     }
 
-    public static Collection<DefaulBucketConfiguration> parse(String input) {
+    public static Collection<DefaultBucketConfiguration> parse(String input) {
 
-        ArrayDeque<DefaulBucketConfiguration> metricBucketConfiCollection = new ArrayDeque<DefaulBucketConfiguration>();
+        ArrayDeque<DefaultBucketConfiguration> metricBucketConfiCollection = new ArrayDeque<DefaultBucketConfiguration>();
 
         if (input == null || input.length() == 0) {
             return null;
@@ -32,7 +32,7 @@ public class DefaulBucketConfiguration extends PropertyBooleanConfiguration {
 
             String metricName = keyValueSplit[0];
 
-            DefaulBucketConfiguration metricDefaultedBucketConfiguration = null;
+            DefaultBucketConfiguration metricDefaultedBucketConfiguration = null;
 
             //metricGroup=<blank> => default to false
             if (keyValueSplit.length == 1) {
@@ -40,7 +40,7 @@ public class DefaulBucketConfiguration extends PropertyBooleanConfiguration {
             } else {
                 boolean isEnabledParam = Boolean.parseBoolean(keyValueSplit[1].trim());
 
-                metricDefaultedBucketConfiguration = new DefaulBucketConfiguration(metricName, isEnabledParam);
+                metricDefaultedBucketConfiguration = new DefaultBucketConfiguration(metricName, isEnabledParam);
             }
 
             // LIFO - right most configuration takes precedence

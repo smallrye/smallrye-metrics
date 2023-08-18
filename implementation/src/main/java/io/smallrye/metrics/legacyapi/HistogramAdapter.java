@@ -15,7 +15,7 @@ import io.micrometer.core.instrument.DistributionSummary.Builder;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
-import io.smallrye.metrics.setup.config.DefaulBucketConfiguration;
+import io.smallrye.metrics.setup.config.DefaultBucketConfiguration;
 import io.smallrye.metrics.setup.config.HistogramBucketConfiguration;
 import io.smallrye.metrics.setup.config.HistogramBucketMaxConfiguration;
 import io.smallrye.metrics.setup.config.HistogramBucketMinConfiguration;
@@ -53,9 +53,9 @@ class HistogramAdapter implements Histogram, MeterHolder {
                     .getPercentilesConfiguration(metadata.getName());
 
             HistogramBucketConfiguration bucketsConfig = MetricsConfigurationManager.getInstance()
-                    .getHistogrmBucketConfiguration(metadata.getName());
+                    .getHistogramBucketConfiguration(metadata.getName());
 
-            DefaulBucketConfiguration defaultBucketConfig = MetricsConfigurationManager.getInstance()
+            DefaultBucketConfiguration defaultBucketConfig = MetricsConfigurationManager.getInstance()
                     .getDefaultBucketConfiguration(metadata.getName());
 
             Set<Tag> tagsSet = new HashSet<Tag>();
@@ -79,7 +79,7 @@ class HistogramAdapter implements Histogram, MeterHolder {
                 double[] vals = Stream.of(percentilesConfig.getValues()).mapToDouble(Double::doubleValue).toArray();
                 builder = builder.publishPercentiles(vals);
             } else if (percentilesConfig != null && percentilesConfig.getValues() == null
-                    && percentilesConfig.isDisabled() == true) {
+                    && percentilesConfig.isDisabled()) {
                 //do nothing - percentiles were disabled
             } else {
                 builder = builder.publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
@@ -90,9 +90,9 @@ class HistogramAdapter implements Histogram, MeterHolder {
                 builder = builder.serviceLevelObjectives(vals);
             }
 
-            if (defaultBucketConfig != null && defaultBucketConfig.getIsEnabled() == true) {
+            if (defaultBucketConfig != null && defaultBucketConfig.isEnabled()) {
 
-                builder = builder.publishPercentileHistogram(defaultBucketConfig.getIsEnabled());
+                builder = builder.publishPercentileHistogram(defaultBucketConfig.isEnabled());
 
                 HistogramBucketMaxConfiguration defaultBucketMaxConfig = MetricsConfigurationManager.getInstance()
                         .getDefaultHistogramMaxBucketConfiguration(metadata.getName());

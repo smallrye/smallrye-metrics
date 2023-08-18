@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 public class HistogramBucketMinConfiguration extends PropertySingleValueConfiguration<Double> {
 
-    private static final String CLASS_NAME = HistogramBucketConfiguration.class.getName();
+    private static final String CLASS_NAME = HistogramBucketMinConfiguration.class.getName();
     private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
     public HistogramBucketMinConfiguration(String metricName, Double value) {
