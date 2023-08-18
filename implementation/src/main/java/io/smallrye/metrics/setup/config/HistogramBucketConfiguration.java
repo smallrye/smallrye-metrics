@@ -16,11 +16,6 @@ public class HistogramBucketConfiguration extends PropertyArrayConfiguration<Dou
 
     }
 
-    /**
-     * 
-     * @param input
-     * @return
-     */
     public static Collection<HistogramBucketConfiguration> parse(String input) {
 
         ArrayDeque<HistogramBucketConfiguration> metricBucketConfiCollection = new ArrayDeque<HistogramBucketConfiguration>();
