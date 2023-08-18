@@ -28,13 +28,14 @@ public class MetricPercentileConfiguration extends PropertyArrayConfiguration<Do
     /**
      * 
      * Parse the `mp.metrics.distribution.percentile` property.
-     * syntax of <metric_name>=<value-1>,<value-2>,...,<value-n>
+     * syntax of {@code <metric_name>=<value-1>,<value-2>,...,<value-n>}
      * No values supplied to a metric name disables percentile output.
      * Can use wild card `*` at the end of metric name (e.g. demo.app.*)
      * 
      * @param input MP Config value
-     * @return Collection<MetricPercentileConfiguration> Collection of MetricPercentileConfiguration objects
+     * @return Collection of {@link MetricPercentileConfiguration} objects
      */
+
     public static Collection<MetricPercentileConfiguration> parseMetricPercentiles(String input) {
 
         ArrayDeque<MetricPercentileConfiguration> metricPercentileConfigCollection = new ArrayDeque<MetricPercentileConfiguration>();

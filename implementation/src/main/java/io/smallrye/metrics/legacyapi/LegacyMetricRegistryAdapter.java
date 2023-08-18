@@ -96,6 +96,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     /**
      * Associates a metric's MetricID to a specific application if an application name can be resolved.
+     * 
+     * @param metricDescriptor MetricDescriptor of metric
      */
     public void addNameToApplicationMap(MetricDescriptor metricDescriptor) {
         if (isAppnameResolverPresent)
@@ -104,6 +106,8 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     /**
      * Associates a metric's MetricID to a specific application if an application name can be resolved.
+     * 
+     * @param MetricID MetricID of metric
      */
     public void addNameToApplicationMap(MetricID MetricID) {
         if (isAppnameResolverPresent)
