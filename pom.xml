@@ -34,7 +34,7 @@
 
   <properties>
     <version.microprofile-config>3.0.1</version.microprofile-config>
-    <version.microprofile-metrics>5.0.1</version.microprofile-metrics>
+    <version.microprofile-metrics>5.1.0-RC1</version.microprofile-metrics>
 
     <version.micrometer>1.9.3</version.micrometer>
 

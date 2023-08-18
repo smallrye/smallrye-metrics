@@ -134,6 +134,10 @@ public class SharedMetricRegistries {
         appNameResolver = anr;
     }
 
+    public static ApplicationNameResolver getAppNameResolver() {
+        return appNameResolver;
+    }
+
     public static Set<String> getRegistryScopeNames() {
         //return copy of 'registries' key-set containing scope names
         return new HashSet<String>(registries.keySet());

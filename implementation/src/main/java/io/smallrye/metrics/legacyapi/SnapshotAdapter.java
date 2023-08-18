@@ -4,7 +4,9 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Snapshot.PercentileValue;
 
+import io.micrometer.core.instrument.distribution.CountAtBucket;
 import io.micrometer.core.instrument.distribution.HistogramSnapshot;
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 
@@ -37,7 +39,8 @@ public class SnapshotAdapter extends Snapshot {
         PercentileValue[] percentileValues = new PercentileValue[valueAtPercentiles.length];
 
         for (int i = 0; i < valueAtPercentiles.length; i++) {
-            percentileValues[i] = new PercentileValue(valueAtPercentiles[i].percentile(), valueAtPercentiles[i].value());
+            percentileValues[i] = new PercentileValue(valueAtPercentiles[i].percentile(),
+                    valueAtPercentiles[i].value());
         }
 
         return percentileValues;
@@ -47,6 +50,18 @@ public class SnapshotAdapter extends Snapshot {
     public void dump(OutputStream output) {
         histogramSnapshot.outputSummary(new PrintStream(output), 1);
 
+    }
+
+    @Override
+    public HistogramBucket[] bucketValues() {
+        CountAtBucket[] countAtBucket = histogramSnapshot.histogramCounts();
+        HistogramBucket[] histogramBuckets = new HistogramBucket[countAtBucket.length];
+
+        for (int i = 0; i < countAtBucket.length; i++) {
+            histogramBuckets[i] = new HistogramBucket(countAtBucket[i].bucket(), (long) countAtBucket[i].count());
+        }
+
+        return histogramBuckets;
     }
 
 }
