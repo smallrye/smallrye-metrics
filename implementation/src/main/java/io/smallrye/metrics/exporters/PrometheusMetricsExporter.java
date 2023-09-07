@@ -190,6 +190,7 @@ public class PrometheusMetricsExporter implements Exporter {
                 set.add("_count");
                 set.add("_sum");
                 set.add("_max");
+                set.add("_bucket");
                 break;
             default:
                 if (LOGGER.isLoggable(Level.FINEST)) {
