@@ -69,10 +69,13 @@ public class TimerBucketMaxConfiguration extends PropertySingleValueConfiguratio
                 continue;
             }
 
-            sloMinConfiguration = new TimerBucketMaxConfiguration(metricName, dur);
+            if (dur != null) {
+                sloMinConfiguration = new TimerBucketMaxConfiguration(metricName, dur);
 
-            // LIFO - right most configuration takes precedence
-            sloMinConfigCollection.addFirst(sloMinConfiguration);
+                // LIFO - right most configuration takes precedence
+                sloMinConfigCollection.addFirst(sloMinConfiguration);
+            }
+
         }
         return sloMinConfigCollection;
 
