@@ -34,7 +34,7 @@ public class TimerBucketMinConfiguration extends PropertySingleValueConfiguratio
             String metricName = keyValueSplit[0];
 
             TimerBucketMinConfiguration sloMinConfiguration = null;
-            Duration dur;
+            Duration dur = null;
             // metricGroup=<blank> == invalid
             if (keyValueSplit.length == 2) {
 
