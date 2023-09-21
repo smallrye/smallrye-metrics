@@ -34,7 +34,7 @@ public class TimerBucketMinConfiguration extends PropertySingleValueConfiguratio
             String metricName = keyValueSplit[0];
 
             TimerBucketMinConfiguration sloMinConfiguration = null;
-            Duration dur;
+            Duration dur = null;
             // metricGroup=<blank> == invalid
             if (keyValueSplit.length == 2) {
 
@@ -69,10 +69,13 @@ public class TimerBucketMinConfiguration extends PropertySingleValueConfiguratio
                 continue;
             }
 
-            sloMinConfiguration = new TimerBucketMinConfiguration(metricName, dur);
+            if (dur != null) {
+                sloMinConfiguration = new TimerBucketMinConfiguration(metricName, dur);
 
-            // LIFO - right most configuration takes precedence
-            sloMinConfigCollection.addFirst(sloMinConfiguration);
+                // LIFO - right most configuration takes precedence
+                sloMinConfigCollection.addFirst(sloMinConfiguration);
+            }
+
         }
         return sloMinConfigCollection;
 

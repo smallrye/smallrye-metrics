@@ -53,7 +53,10 @@ public class HistogramBucketMaxConfiguration extends PropertySingleValueConfigur
             }
 
             // LIFO - right most configuration takes precedence
-            metricBucketMinMax.addFirst(metricBucketConfiguration);
+            if (metricBucketConfiguration != null) {
+                metricBucketMinMax.addFirst(metricBucketConfiguration);
+            }
+
         }
         return metricBucketMinMax;
 
