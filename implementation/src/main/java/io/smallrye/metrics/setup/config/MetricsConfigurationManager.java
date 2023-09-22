@@ -317,4 +317,31 @@ public class MetricsConfigurationManager {
         return appName;
     }
 
+    /**
+     * Remove corresponding configurations for an application when that application is unloaded.
+     * 
+     * @param appName the application name
+     */
+    public synchronized void removeConfiguration(String appName) {
+
+        if (appName == null || appName.isEmpty())
+            return;
+
+        removeApplicationFromMap(appName, percentilesConfigMap);
+        removeApplicationFromMap(appName, histogramBucketsConfigMap);
+        removeApplicationFromMap(appName, timerBucketsConfigMap);
+        removeApplicationFromMap(appName, defaultBucketConfigMap);
+        removeApplicationFromMap(appName, defaultHistogramBucketMaxConfig);
+        removeApplicationFromMap(appName, defaultHistogramBucketMinConfig);
+        removeApplicationFromMap(appName, defaultTimerBucketMaxConfig);
+        removeApplicationFromMap(appName, defaultTimerBucketMinConfig);
+
+    }
+
+    private <T extends PropertyConfiguration> void removeApplicationFromMap(String appName, Map<String, Collection<T>> map) {
+        if (map != null && !map.isEmpty()) {
+            map.remove(appName);
+        }
+    }
+
 }
