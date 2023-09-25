@@ -33,6 +33,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tags;
 import io.smallrye.metrics.setup.ApplicationNameResolver;
+import io.smallrye.metrics.setup.config.MetricsConfigurationManager;
 
 public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
@@ -168,6 +169,9 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 remove(metricID);
             }
         }
+
+        MetricsConfigurationManager.getInstance().removeConfiguration(appName);
+
     }
 
     public LegacyMetricRegistryAdapter(String scope, MeterRegistry registry, ApplicationNameResolver appNameResolver) {
