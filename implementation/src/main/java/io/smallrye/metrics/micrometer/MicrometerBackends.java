@@ -45,6 +45,8 @@ import io.micrometer.kairos.KairosConfig;
 import io.micrometer.kairos.KairosMeterRegistry;
 import io.micrometer.newrelic.NewRelicConfig;
 import io.micrometer.newrelic.NewRelicMeterRegistry;
+import io.micrometer.registry.otlp.OtlpConfig;
+import io.micrometer.registry.otlp.OtlpMeterRegistry;
 import io.micrometer.signalfx.SignalFxConfig;
 import io.micrometer.signalfx.SignalFxMeterRegistry;
 import io.micrometer.stackdriver.StackdriverConfig;
@@ -375,6 +377,24 @@ public abstract class MicrometerBackends {
                 public String get(final String propertyName) {
                     return config.getOptionalValue("mp.metrics." + propertyName, String.class)
                             .orElse(null);
+                }
+            }, io.micrometer.core.instrument.Clock.SYSTEM);
+        }
+
+    }
+
+    @RequiresClass({ OtlpMeterRegistry.class, OtlpConfig.class })
+    public static class OtlpBackendProducer extends MicrometerBackends {
+
+        public MeterRegistry produce() {
+            if (!Boolean
+                    .parseBoolean(config.getOptionalValue("mp.metrics.otlp.enabled", String.class).orElse("false"))) {
+                return null;
+            }
+            return new OtlpMeterRegistry(new OtlpConfig() {
+                @Override
+                public String get(final String propertyName) {
+                    return config.getOptionalValue("mp.metrics." + propertyName, String.class).orElse(null);
                 }
             }, io.micrometer.core.instrument.Clock.SYSTEM);
         }
