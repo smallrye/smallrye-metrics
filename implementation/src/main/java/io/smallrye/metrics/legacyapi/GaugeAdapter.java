@@ -112,7 +112,7 @@ interface GaugeAdapter<T extends Number> extends Gauge<T>, MeterHolder {
              * We need to cheat. Micrometer returns a double. The generic parameter R is a
              * Number Or possibly any other boxed Number value. Can't cast to R... Since we
              * already have the object and function... just call it...
-             * 
+             *
              * Also if Gauge is removed from registries and we still have a ref to this (MP)
              * Gauge, we should still be able to retrieve the value instead of querying the
              * meter registry for non-existing gauge.

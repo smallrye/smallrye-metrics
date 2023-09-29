@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019, 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,12 @@
  */
 package io.smallrye.metrics.registration;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
-
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import io.smallrye.metrics.SharedMetricRegistries;
 
@@ -31,7 +29,7 @@ public class MetricTypeMismatchTest {
 
     private MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
-    @After
+    @AfterEach
     public void cleanupApplicationMetrics() {
         registry.removeMatching(MetricFilter.ALL);
     }
@@ -44,12 +42,9 @@ public class MetricTypeMismatchTest {
                 .withDescription("description1").build();
 
         registry.histogram(metadata1);
-        try {
-            registry.timer(metadata2);
-            fail("Must not be able to register if a metric with different type is registered under the same name");
-        } catch (Exception e) {
-            assertThat(e, instanceOf(IllegalStateException.class));
-            assertEquals(1, registry.getMetrics().size());
-        }
+
+        Assertions.assertThrows(IllegalStateException.class, () -> registry.timer(metadata2));
+        Assertions.assertEquals(1, registry.getMetrics().size());
+
     }
 }

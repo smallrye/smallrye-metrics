@@ -53,7 +53,7 @@ public class TimerBucketMaxConfiguration extends PropertySingleValueConfiguratio
                     String val = s.substring(0, s.length() - 1);
                     dur = Duration.ofHours(Long.parseLong(val));
                 } else if (s.matches("[0-9]+")) {
-                    dur = Duration.ofSeconds(Long.parseLong(s));
+                    dur = Duration.ofMillis(Long.parseLong(s));
                 } else {
                     if (LOGGER.isLoggable(Level.FINER)) {
                         LOGGER.logp(Level.FINER, CLASS_NAME, null,
@@ -61,7 +61,6 @@ public class TimerBucketMaxConfiguration extends PropertySingleValueConfiguratio
                                         + "optional time unit (e.g. ms,s,m,h) are accepted.",
                                 new Object[] { s, MetricsConfigurationManager.MP_TIMER_BUCKET_PROP });
                     }
-                    return null;
                 }
 
             } else {

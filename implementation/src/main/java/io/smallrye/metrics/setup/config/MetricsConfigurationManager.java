@@ -56,7 +56,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link MetricPercentileConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link MetricPercentileConfiguration} object if it exists, null otherwise
      */
@@ -86,7 +86,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link HistogramBucketConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link HistogramBucketConfiguration} object if it exists, null otherwise
      */
@@ -118,7 +118,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link TimerBucketConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link TimerBucketConfiguration} object if it exists, null otherwise
      */
@@ -148,7 +148,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link DefaultBucketConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link DefaultBucketConfiguration} object if it exists, null otherwise
      */
@@ -179,7 +179,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link HistogramBucketMaxConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link HistogramBucketMaxConfiguration} object if it exists, null otherwise
      */
@@ -212,7 +212,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link HistogramBucketMinConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link HistogramBucketMinConfiguration} object if it exists, null otherwise
      */
@@ -245,7 +245,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link TimerBucketMaxConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link TimerBucketMaxConfiguration} object if it exists, null otherwise
      */
@@ -276,7 +276,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Returns the matching {@link TimerBucketMinConfiguration} object if it exists, null otherwise
-     * 
+     *
      * @param metricName the metric name to check configuration against
      * @return the matching {@link TimerBucketMinConfiguration} object if it exists, null otherwise
      */
@@ -306,7 +306,7 @@ public class MetricsConfigurationManager {
     }
 
     /**
-     * 
+     *
      * @return the application name if it can be resolved, null otherwise
      */
     private String getApplicationName() {
@@ -319,7 +319,7 @@ public class MetricsConfigurationManager {
 
     /**
      * Remove corresponding configurations for an application when that application is unloaded.
-     * 
+     *
      * @param appName the application name
      */
     public synchronized void removeConfiguration(String appName) {

@@ -97,7 +97,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     /**
      * Associates a metric's MetricID to a specific application if an application name can be resolved.
-     * 
+     *
      * @param metricDescriptor MetricDescriptor of metric
      */
     public void addNameToApplicationMap(MetricDescriptor metricDescriptor) {
@@ -107,7 +107,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     /**
      * Associates a metric's MetricID to a specific application if an application name can be resolved.
-     * 
+     *
      * @param MetricID MetricID of metric
      */
     public void addNameToApplicationMap(MetricID MetricID) {
@@ -273,7 +273,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
 
     /**
      * Combines metric tags with tag defined for MP config mp.metrics.appname property.
-     * 
+     *
      * @param tags the application tags to be merged with the MP Config mp.metrics.appName tag
      * @return combined Tag array of the MP Config mp.metrics.appName tag with application tags; can return null
      */
@@ -485,7 +485,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      * This is specifically used for runtimes which may need use of a functional counter.
      * For example, the runtime may want to implement a vendor specific counter metric which
      * relies on values obtained from a Mbeans or MXbeans.
-     * 
+     *
      * @param <T> object type
      * @param metadata metadata of metric
      * @param obj object to apply ToDoubleFunction
@@ -959,7 +959,7 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
      * Must be called before any internalGetMetadata calls
      * We may throw an IllegalArgumentException. So we don't
      * want metadata to be registered if it was not necessary.
-     * 
+     *
      * @param tags Tags to be combined with
      * @return tags combined with global tags and mp_app if available
      */
@@ -972,10 +972,10 @@ public class LegacyMetricRegistryAdapter implements MetricRegistry {
                 /*
                  * Need to check if tags being passed in are
                  * 'mp_scope' or 'mp_app'; throw IAE as per spec
-                 * 
+                 *
                  * mp_scope is provided to micrometer registry
                  * during metric/meter registration in the adapters
-                 * 
+                 *
                  * mp_app is resolved with the resolveMPConfigAppNameTag()
                  * logic
                  */

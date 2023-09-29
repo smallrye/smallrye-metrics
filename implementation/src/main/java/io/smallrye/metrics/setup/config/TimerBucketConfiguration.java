@@ -67,6 +67,9 @@ public class TimerBucketConfiguration extends PropertyArrayConfiguration<Duratio
                         return null;
                     }
                 }).filter(s -> s != null).toArray(Duration[]::new);
+
+                Arrays.sort(arrDuration);
+
                 metricBucketConfiguration = new TimerBucketConfiguration(metricName, arrDuration);
             }
 

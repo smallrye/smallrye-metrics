@@ -24,14 +24,14 @@ import io.smallrye.metrics.setup.ApplicationNameResolver;
 /**
  * SharedMetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
  * of a provided scope.
- * 
+ *
  * For each "scope" there exists an individual MicroProfile Metric MetricRegistry which is
  * associated to an single "underlying" Micrometer MeterRegistry that is registered to the Micrometer
  * global registry. This is either a Prometheus MeterRegistry or a "simple" MeterRegistry. By
  * default, it is the Prometheus MeterRegistry unless the MP Config "mp.metrics.prometheus.enabled"
  * is set to false. In which case the simple MeterRegistry is used. Alternatively, if the Prometheus
  * MeterRegistry is not detected on the classpath the simple Meter Registry will be used.
- * 
+ *
  */
 public class SharedMetricRegistries {
 
@@ -93,7 +93,7 @@ public class SharedMetricRegistries {
                     /*
                      * Even if registry is on classpath, needs to have been enabled by config property, otherwise a null
                      * would be returned.
-                     * 
+                     *
                      */
                     if (backendMeterRegistry != null) {
                         Metrics.globalRegistry.add(backendMeterRegistry);
@@ -184,7 +184,7 @@ public class SharedMetricRegistries {
         /*
          * If mp.metrics.prometheus.enabled is explicitly set to false Use SimpleMeterRegistry to associate
          * with MP Metric Registry.
-         * 
+         *
          * Otherwise, attempt to load PrometheusMeterRegistry. If is not on the classpath, then use
          * SimpleMeterRegistry
          */
@@ -274,7 +274,7 @@ public class SharedMetricRegistries {
 
     /**
      * Returns true/false if registry with this scope exists
-     * 
+     *
      * @param scope name of scope
      * @return true/false if registry with this scope exists
      */
