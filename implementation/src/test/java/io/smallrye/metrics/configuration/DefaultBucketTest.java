@@ -87,8 +87,6 @@ public class DefaultBucketTest {
 
     /*
      * Test Histogram min and max.
-     *
-     *
      */
     @Test
     public void testHistogramBucketMaxMinGoodConfig() {
@@ -212,7 +210,6 @@ public class DefaultBucketTest {
 
     /*
      * Test Timer min and max.
-     *
      */
     @Test
     public void testTimerBucketMaxMinGoodConfig() {
