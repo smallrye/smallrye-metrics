@@ -5,7 +5,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import io.micrometer.prometheus.PrometheusConfig;
 
 /**
- * 
+ *
  * MPPrometheusConfig is an implementation of the {@link PrometheusConfig} which will accept Prometheus
  * related configuration values prepended with "mp.metrics.". This Config is used for the
  * {@link io.micrometer.prometheus.PrometheusMeterRegistry}

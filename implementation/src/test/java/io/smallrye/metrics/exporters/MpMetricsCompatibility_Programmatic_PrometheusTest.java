@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019, 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,11 +18,7 @@
 package io.smallrye.metrics.exporters;
 
 import static java.util.regex.Pattern.quote;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
@@ -37,10 +33,10 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.smallrye.metrics.SharedMetricRegistries;
@@ -61,12 +57,12 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
 
     private static PrometheusMeterRegistry prometheusRegistry;
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() {
         SharedMetricRegistries.dropAll();
     }
 
-    @After
+    @AfterEach
     public void cleanupApplicationMetrics() {
         SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE).removeMatching(MetricFilter.ALL);
     }
@@ -81,7 +77,7 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
         double actualUptimeInSeconds = actualUptime / 1000.0;
 
         String out = exporter.exportMetricsByName(MetricRegistry.BASE_SCOPE, "jvm.uptime");
-        assertNotNull(out);
+        Assertions.assertNotNull(out);
 
         double valueFromOpenMetrics = -1;
 
@@ -93,8 +89,9 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
             }
         }
 
-        assertTrue("Value should not be -1", valueFromOpenMetrics != -1);
-        assertTrue(valueFromOpenMetrics >= actualUptimeInSeconds);
+        Assertions.assertTrue(valueFromOpenMetrics != -1, "Value should not be -1");
+        Assertions.assertTrue(valueFromOpenMetrics >= actualUptimeInSeconds);
+
     }
 
     @Test
@@ -107,7 +104,8 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
         Tag tag = new Tag("tag1", "a\"b\"");
         registry.counter("counter1", tag);
         String export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter1").toString();
-        assertThat(export, containsString("tag1=\"a\\\"b\\\"\""));
+
+        assertThat(export).contains("tag1=\"a\\\"b\\\"\"");
 
         // Comment from previous SR impl: newline character: a\nb should stay as a\nb
         // Note: Using Prom common lib, the value becomes a\\nb given the tag value
@@ -115,19 +113,19 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
         tag = new Tag("tag1", "a\\nb");
         registry.counter("counter2", tag);
         export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter2").toString();
-        assertThat(export, containsString("tag1=\"a\\\\nb\""));
+        assertThat(export).contains("tag1=\"a\\\\nb\"");
 
         // backslash: b\c should become b\\c
         tag = new Tag("tag1", "b\\c");
         registry.counter("counter3", tag);
         export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter3").toString();
-        assertThat(export, containsString("tag1=\"b\\\\c\""));
+        assertThat(export).contains("tag1=\"b\\\\c\"");
 
         // backslash at the end: b\ should become b\\
         tag = new Tag("tag1", "b\\");
         registry.counter("counter4", tag);
         export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter4").toString();
-        assertThat(export, containsString("tag1=\"b\\\\\""));
+        assertThat(export).contains("tag1=\"b\\\\\"");
     }
 
     @Test
@@ -145,7 +143,7 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
         // Comment from previous SR impl: hhh\ggg\nfff\ should become hhh\\ggg\nfff\\
         // Note: Using Prom common lib, the value becomes hhh\\ggg\\nfff\\ given the
         // description value hhh\\ggg\\nfff\\ i.e. "hhh\\\\ggg\\\\nfff\\\\"
-        assertThat(export, containsString("# HELP counter_with_complicated_description_total hhh\\\\ggg\\\\nfff\\\\"));
+        assertThat(export).contains("# HELP counter_with_complicated_description_total hhh\\\\ggg\\\\nfff\\\\");
 
         metadata = Metadata.builder().withName("counter_with_complicated_description_2")
                 .withDescription("description with \"quotes\"").build();
@@ -155,8 +153,7 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
                 .toString();
 
         // double quotes should stay unchanged
-        assertThat(export,
-                containsString("# HELP counter_with_complicated_description_2_total description with \"quotes\""));
+        assertThat(export).contains("# HELP counter_with_complicated_description_2_total description with \"quotes\"");
     }
 
     /**
@@ -171,7 +168,7 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
         registry.counter(metadata);
         String export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter_with_empty_description")
                 .toString();
-        assertThat(export, containsString("HELP"));
+        assertThat(export).contains("HELP");
     }
 
     /**
@@ -190,13 +187,12 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
         // in this case _total should be appended registry.counter("counter1", tag);
         registry.counter("counter1", tag);
         String export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter1").toString();
-        assertThat(export, containsString("counter1_total{a=\"b\",mp_scope=\"application\",}"));
+        assertThat(export).contains("counter1_total{a=\"b\",mp_scope=\"application\",}");
 
         // in this case _total should NOT be appended
         registry.counter("counter2_total", tag);
         export = exporter.exportMetricsByName(MetricRegistry.APPLICATION_SCOPE, "counter2_total").toString();
-        assertThat(export, containsString("counter2_total{a=\"b\",mp_scope=\"application\",}"));
-
+        assertThat(export).contains("counter2_total{a=\"b\",mp_scope=\"application\",}");
     }
 
     @Test
@@ -367,43 +363,47 @@ public class MpMetricsCompatibility_Programmatic_PrometheusTest {
 
         String result = exporter.exportOneScope(MetricRegistry.APPLICATION_SCOPE).toString();
 
-        assertTrue(result.contains("{a=\"b\\nc\""));
+        Assertions.assertTrue(result.contains("{a=\"b\\nc\""));
     }
 
     private void assertHasValueLineExactlyOnce(String output, String key, String value, Tag... tags) {
         List<String> foundLines = getLines(output, key, value, tags);
-        if (foundLines.isEmpty())
-            Assert.fail("Couldn't find a line with key=" + key + ", value=" + value + ", tags=" + Arrays.toString(tags)
+        if (foundLines.isEmpty()) {
+            Assertions.fail("Couldn't find a line with key=" + key + ", value=" + value + ", tags=" + Arrays.toString(tags)
                     + " in the OpenMetrics output: \n" + output);
-        if (foundLines.size() > 1)
-            Assert.fail("Found key=" + key + ", value=" + value + ", tags=" + Arrays.toString(tags)
+        }
+
+        if (foundLines.size() > 1) {
+            Assertions.fail("Found key=" + key + ", value=" + value + ", tags=" + Arrays.toString(tags)
                     + " in the OpenMetrics output more than once! Output: \n" + output);
+        }
+
     }
 
     private void assertHasTypeLineExactlyOnce(String output, String key, String type) {
         List<String> foundLines = getLinesByRegex(output, "# TYPE " + quote(key) + " " + quote(type));
         if (foundLines.isEmpty())
-            Assert.fail("Couldn't find a TYPE line with key=" + key + " and type=" + type
+            Assertions.fail("Couldn't find a TYPE line with key=" + key + " and type=" + type
                     + " in the OpenMetrics output: \n" + output);
         if (foundLines.size() > 1)
-            Assert.fail("Found TYPE line with key=" + key + " and type=" + type
+            Assertions.fail("Found TYPE line with key=" + key + " and type=" + type
                     + " in the OpenMetrics output more than once! Output: \n" + output);
     }
 
     private void assertHasHelpLineExactlyOnce(String output, String key, String help) {
         List<String> foundLines = getLinesByRegex(output, "# HELP " + quote(key) + " " + quote(help));
         if (foundLines.isEmpty())
-            Assert.fail("Couldn't find a HELP line with key=" + key + " and help=" + help
+            Assertions.fail("Couldn't find a HELP line with key=" + key + " and help=" + help
                     + " in the OpenMetrics output: \n" + output);
         if (foundLines.size() > 1)
-            Assert.fail("Found HELP line with key=" + key + " and help=" + help
+            Assertions.fail("Found HELP line with key=" + key + " and help=" + help
                     + " in the OpenMetrics output more than once! Output: \n" + output);
     }
 
     /**
      * get a line from an Prometheus output which contains a metric with the
      * specified name, approximate value and tags (order of the tags doesn't matter)
-     * 
+     *
      * With the value, will match with tolerance to 5% of the expected value
      */
     private List<String> getLines(String output, String metricName, String value, Tag... tags) {

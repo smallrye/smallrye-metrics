@@ -101,7 +101,7 @@ public class LegacyMetricsExtension implements Extension {
 
     /**
      * Notifies CDI container to check for annotations. This is in place of beans.xml.
-     * 
+     *
      * @param bbd the {@link BeforeBeanDiscovery}
      * @param manager the {@link BeanManager}
      */
@@ -128,7 +128,7 @@ public class LegacyMetricsExtension implements Extension {
      * will not register the producers appropriately. However, interceptors are registered properly.
      * Additionally, MetricProducer injects LegacyMetricsExtension which
      * can not be resolved if this extension class is proxied.
-     * 
+     *
      * @param bbd the {@link BeforeBeanDiscovery}
      * @param manager the {@link BeanManager}
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018, 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author hrupp
@@ -31,7 +31,7 @@ public class MediaHandlerTest {
 
     MetricsRequestHandler requestHandler;
 
-    @Before
+    @BeforeEach
     public void setUp() {
 
         requestHandler = new MetricsRequestHandler();
@@ -43,6 +43,7 @@ public class MediaHandlerTest {
                 .getBestMatchingMediaType(Stream.of("application/json;q=0.1", "text/plain;q=0.9"));
         assertThat(res.isPresent()).isTrue();
         assertThat(res.get()).isEqualTo("text/plain");
+
     }
 
     @Test
