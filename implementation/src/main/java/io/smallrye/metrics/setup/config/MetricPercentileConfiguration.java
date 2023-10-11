@@ -67,11 +67,9 @@ public class MetricPercentileConfiguration extends PropertyArrayConfiguration<Do
                     if (s.matches("[0][.][0-9]+")) {
                         return Double.parseDouble(s);
                     } else {
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.logp(Level.FINER, CLASS_NAME, null,
-                                    "The value \"{0}\" is invalid for the \"{1}\" property. Only values 0.0-1.0 inclusively are accepted.",
-                                    new Object[] { s, MetricsConfigurationManager.MP_PERCENTILES_PROP });
-                        }
+                        LOGGER.logp(Level.WARNING, CLASS_NAME, null,
+                                "The value \"{0}\" is invalid for the \"{1}\" property. Only values 0.0-1.0 inclusively are accepted.",
+                                new Object[] { s, MetricsConfigurationManager.MP_PERCENTILES_PROP });
                         return null;
                     }
 
