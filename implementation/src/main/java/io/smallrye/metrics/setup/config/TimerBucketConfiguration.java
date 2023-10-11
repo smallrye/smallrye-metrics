@@ -58,12 +58,10 @@ public class TimerBucketConfiguration extends PropertyArrayConfiguration<Duratio
                     } else if (s.matches("[0-9]+")) {
                         return Duration.ofMillis(Long.parseLong(s));
                     } else {
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.logp(Level.FINER, CLASS_NAME, null,
-                                    "The value \"{0}\" is invalid for the \"{1}\" property. Only integer values with an "
-                                            + "optional time unit (e.g. ms,s,m,h) are accepted.",
-                                    new Object[] { s, MetricsConfigurationManager.MP_TIMER_BUCKET_PROP });
-                        }
+                        LOGGER.logp(Level.WARNING, CLASS_NAME, null,
+                                "The value \"{0}\" is invalid for the \"{1}\" property. Only integer values with an "
+                                        + "optional time unit (e.g. ms,s,m,h) are accepted.",
+                                new Object[] { s, MetricsConfigurationManager.MP_TIMER_BUCKET_PROP });
                         return null;
                     }
                 }).filter(s -> s != null).toArray(Duration[]::new);
