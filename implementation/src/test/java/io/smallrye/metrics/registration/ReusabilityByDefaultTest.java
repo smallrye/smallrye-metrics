@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019, 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,17 +17,16 @@
 
 package io.smallrye.metrics.registration;
 
-import static org.junit.Assert.assertEquals;
-
 import java.time.Duration;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -41,20 +40,20 @@ public class ReusabilityByDefaultTest {
 
     private final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
-    @After
+    @AfterEach
     public void removeMetrics() {
         registry.removeMatching(MetricFilter.ALL);
     }
 
     static MeterRegistry rootRegistry;
 
-    @BeforeClass
+    @BeforeAll
     public static void addRegistries() {
         rootRegistry = new SimpleMeterRegistry();
         Metrics.addRegistry(rootRegistry);
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() {
         Metrics.removeRegistry(rootRegistry);
     }
@@ -63,14 +62,14 @@ public class ReusabilityByDefaultTest {
     public void testCounter() {
         registry.counter("mycounter").inc(1);
         registry.counter("mycounter").inc(1);
-        assertEquals(2, registry.counter("mycounter").getCount());
+        Assertions.assertEquals(2, registry.counter("mycounter").getCount());
     }
 
     @Test
     public void testHistogram() {
         registry.histogram("myhistogram").update(5);
         registry.histogram("myhistogram").update(3);
-        assertEquals(2, registry.histogram("myhistogram").getCount());
+        Assertions.assertEquals(2, registry.histogram("myhistogram").getCount());
     }
 
     @Test
@@ -78,7 +77,7 @@ public class ReusabilityByDefaultTest {
         Metadata metadata = Metadata.builder().withName("mytimer").build();
         registry.timer(metadata).update(Duration.ofNanos(5));
         registry.timer(metadata).update(Duration.ofNanos(7));
-        assertEquals(2, registry.timer("mytimer").getCount());
+        Assertions.assertEquals(2, registry.timer("mytimer").getCount());
     }
 
 }

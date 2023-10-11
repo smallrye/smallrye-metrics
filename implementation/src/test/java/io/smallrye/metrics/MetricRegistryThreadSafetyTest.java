@@ -17,8 +17,7 @@
 
 package io.smallrye.metrics;
 
-import static org.junit.Assert.assertEquals;
-
+// import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -33,16 +32,16 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class MetricRegistryThreadSafetyTest {
 
     private final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricRegistry.APPLICATION_SCOPE);
 
-    @After
+    @AfterEach
     public void cleanup() {
         registry.removeMatching(MetricFilter.ALL);
     }
@@ -78,8 +77,8 @@ public class MetricRegistryThreadSafetyTest {
             executor.shutdown();
             executor.awaitTermination(10, TimeUnit.SECONDS);
 
-            assertEquals("All threads should finish without exceptions",
-                    0, Arrays.stream(futures).filter(CompletableFuture::isCompletedExceptionally).count());
+            Assertions.assertEquals(0, Arrays.stream(futures).filter(CompletableFuture::isCompletedExceptionally).count(),
+                    "All threads should finish without exceptions");
         }
     }
 
@@ -88,7 +87,7 @@ public class MetricRegistryThreadSafetyTest {
      * at the same time.
      */
     @Test
-    @Ignore // FIXME, fails
+    @Disabled // FIXME, fails
     public void registerAndGetMetadata() throws InterruptedException, ExecutionException, TimeoutException {
         final AtomicReference<Throwable> throwableEncounteredDuringTest = new AtomicReference<>();
         ExecutorService executor = Executors.newFixedThreadPool(50);
@@ -118,9 +117,10 @@ public class MetricRegistryThreadSafetyTest {
             CompletableFuture.allOf(futures).get(30, TimeUnit.SECONDS);
 
             // assert that no task received an error and that the registry contains all required data
-            Assert.assertNull(throwableEncounteredDuringTest.get());
-            Assert.assertEquals(1000, registry.getMetadata().size());
-            Assert.assertEquals(1000, registry.getCounters().size());
+            Assertions.assertNull(throwableEncounteredDuringTest.get());
+            Assertions.assertEquals(1000, registry.getMetadata().size());
+            Assertions.assertEquals(1000, 1000, registry.getCounters().size());
+
         } finally {
             executor.shutdown();
             executor.awaitTermination(10, TimeUnit.SECONDS);

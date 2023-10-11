@@ -76,7 +76,7 @@ class MetricDescriptor {
     /**
      * Checks if this MetricDescriptor's {@link Tags} contain the same tag
      * keys/names as the {@link Tags} provided
-     * 
+     *
      * @param otherTags The other {@link Tags}
      * @return true if the tags key/names match
      */
@@ -89,7 +89,7 @@ class MetricDescriptor {
 
         /*
          * Exactly the same!
-         * 
+         *
          * Don't check if they don't "equal", that will check for values as well, which
          * we don't care about.
          */

@@ -287,7 +287,7 @@ public class MetricsRequestHandler {
 
     /**
      * Check if we can load a class from the Micrometer Prometheus Library
-     * 
+     *
      * @param responder
      * @return true if we were able to load a class from the Micrometer Prometheus library
      * @throws IOException

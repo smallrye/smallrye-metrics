@@ -54,7 +54,7 @@ public class MetricProducer {
      * Used to create a MetricProducer with a provided LegacyMetricExtension which
      * would be typically provided by injection as seen above. This constructor is
      * for runtimes that may need to proxy the MetricProducer.
-     * 
+     *
      * @param metricExtension a LegacyMetricsExtension object
      */
     public MetricProducer(LegacyMetricsExtension metricExtension) {

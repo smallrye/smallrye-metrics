@@ -24,14 +24,14 @@ import io.smallrye.metrics.setup.ApplicationNameResolver;
 /**
  * SharedMetricRegistries is used to create/retrieve a MicroProfile Metric's MetricRegistry instance
  * of a provided scope.
- * 
+ *
  * For each "scope" there exists an individual MicroProfile Metric MetricRegistry which is
  * associated to an single "underlying" Micrometer MeterRegistry that is registered to the Micrometer
  * global registry. This is either a Prometheus MeterRegistry or a "simple" MeterRegistry. By
  * default, it is the Prometheus MeterRegistry unless the MP Config "mp.metrics.prometheus.enabled"
  * is set to false. In which case the simple MeterRegistry is used. Alternatively, if the Prometheus
  * MeterRegistry is not detected on the classpath the simple Meter Registry will be used.
- * 
+ *
  */
 public class SharedMetricRegistries {
 
@@ -51,6 +51,9 @@ public class SharedMetricRegistries {
     private static boolean isBaseMetricsRegistered = false;
 
     private static MeterRegistry meterRegistry;
+
+    private static ApplicationNameResolver appNameResolver;
+
     /*
      * Go through class path to identify what registries are available and register them to Micrometer
      * Global Meter Registry
@@ -90,7 +93,7 @@ public class SharedMetricRegistries {
                     /*
                      * Even if registry is on classpath, needs to have been enabled by config property, otherwise a null
                      * would be returned.
-                     * 
+                     *
                      */
                     if (backendMeterRegistry != null) {
                         Metrics.globalRegistry.add(backendMeterRegistry);
@@ -124,18 +127,38 @@ public class SharedMetricRegistries {
         meterRegistry = resolveMeterRegistry();
     }
 
-    public static MetricRegistry getOrCreate(String scope) {
-        return getOrCreate(scope, null);
+    /*
+     * For vendors to provide an AppNameResolver
+     */
+    public static void setAppNameResolver(ApplicationNameResolver anr) {
+        appNameResolver = anr;
     }
 
-    // FIXME: cheap way of passing in the ApplicationNameResolvr from vendor code to the MetricRegistry
-    public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver appNameResolver) {
+    public static ApplicationNameResolver getAppNameResolver() {
+        return appNameResolver;
+    }
+
+    public static Set<String> getRegistryScopeNames() {
+        //return copy of 'registries' key-set containing scope names
+        return new HashSet<String>(registries.keySet());
+    }
+
+    public static MetricRegistry getOrCreate(String scope) {
+        /*
+         * Check if there is a provided AppNameResolver
+         */
+        ApplicationNameResolver anr = (appNameResolver != null) ? appNameResolver : null;
+        return getOrCreate(scope, anr);
+    }
+
+    public static MetricRegistry getOrCreate(String scope, ApplicationNameResolver anr) {
         final String METHOD_NAME = "getOrCreate";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD_NAME, "Requested MetricRegistry of scope {0}", scope);
         }
+
         MetricRegistry metricRegistry = registries.computeIfAbsent(scope,
-                t -> new LegacyMetricRegistryAdapter(scope, meterRegistry, appNameResolver));
+                t -> new LegacyMetricRegistryAdapter(scope, meterRegistry, anr));
 
         /*
          * Bind LegacyBaseMetrics to Base MP Metric Registry
@@ -161,7 +184,7 @@ public class SharedMetricRegistries {
         /*
          * If mp.metrics.prometheus.enabled is explicitly set to false Use SimpleMeterRegistry to associate
          * with MP Metric Registry.
-         * 
+         *
          * Otherwise, attempt to load PrometheusMeterRegistry. If is not on the classpath, then use
          * SimpleMeterRegistry
          */
@@ -251,7 +274,7 @@ public class SharedMetricRegistries {
 
     /**
      * Returns true/false if registry with this scope exists
-     * 
+     *
      * @param scope name of scope
      * @return true/false if registry with this scope exists
      */

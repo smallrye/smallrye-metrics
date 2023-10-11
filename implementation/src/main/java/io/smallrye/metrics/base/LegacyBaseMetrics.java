@@ -83,7 +83,8 @@ public class LegacyBaseMetrics {
                                         + "elapsed time. This attribute may display the same value even if the collection "
                                         + "count has been incremented if the collection elapsed time is very short.")
                         .withUnit(MetricUnits.SECONDS).build();
-                lmr.counter(metadata, gc, gcObj -> (gcObj.getCollectionTime() / 1e+3), new Tag[] { tag });
+
+                lmr.gauge(metadata, gc, gcObj -> (gcObj.getCollectionTime() / 1e+3), new Tag[] { tag });
 
             }
         }
