@@ -41,7 +41,7 @@
     <version.smallrye.config>3.0.0</version.smallrye.config>
     <version.smallrye.common>2.0.0</version.smallrye.common>
 
-    <version.jakarta.servlet>5.0.0</version.jakarta.servlet>
+    <version.jakarta.servlet>6.0.0</version.jakarta.servlet>
 
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
