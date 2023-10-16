@@ -1,4 +1,4 @@
 name: SmallRye Metrics
 release:
-  current-version: 5.1.0-RC4
-  next-version: 5.1.0-SNAPSHOT
+  current-version: 5.1.0
+  next-version: 5.1.1-SNAPSHOT
