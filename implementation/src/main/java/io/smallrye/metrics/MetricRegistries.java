@@ -67,7 +67,7 @@ public class MetricRegistries {
     /**
      * Drops a particular registry. If a reference to the same registry type
      * is requested later, a new empty registry will be created for that purpose.
-     * 
+     *
      * @param type Type of registry that should be dropped.
      */
     public static void drop(MetricRegistry.Type type) {

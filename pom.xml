@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-jakarta-parent</artifactId>
-    <version>34</version>
+    <version>38</version>
   </parent>
 
   <artifactId>smallrye-metrics-parent</artifactId>
@@ -42,6 +42,7 @@
     <version.jakarta.servlet>5.0.0</version.jakarta.servlet>
 
     <!-- For testing -->
+    <version.smallrye.testing>2.2.0</version.smallrye.testing>
     <version.wildfly>26.0.0.Final</version.wildfly>
 
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -91,6 +92,21 @@
       </dependency>
 
       <dependency>
+        <groupId>io.smallrye.testing</groupId>
+        <artifactId>smallrye-testing-bom</artifactId>
+        <version>${version.smallrye.testing}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.testing</groupId>
+        <artifactId>smallrye-testing-bom-tck</artifactId>
+        <version>${version.smallrye.testing}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+
+      <dependency>
         <!-- This is the "real" dependency -->
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config</artifactId>
@@ -107,13 +123,6 @@
       </dependency>
 
       <dependency>
-        <groupId>org.jboss.weld.servlet</groupId>
-        <artifactId>weld-servlet-core</artifactId>
-        <version>${version.weld.core}</version>
-        <scope>test</scope>
-      </dependency>
-
-      <dependency>
         <groupId>io.smallrye.common</groupId>
         <artifactId>smallrye-common-annotation</artifactId>
         <version>${version.smallrye.common}</version>
@@ -124,29 +133,9 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>${version.release.plugin}</version>
-        <configuration>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <tagNameFormat>@{project.version}</tagNameFormat>
-          <preparationGoals>verify</preparationGoals>
-          <pushChanges>false</pushChanges>
-          <localCheckout>true</localCheckout>
-          <remoteTagging>false</remoteTagging>
-          <arguments>-DskipTests ${release.arguments}</arguments>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>${version.gpg.plugin}</version>
-        <configuration>
-          <gpgArguments>
-            <arg>--pinentry-mode</arg>
-            <arg>loopback</arg>
-          </gpgArguments>
-        </configuration>
+        <groupId>net.revelc.code</groupId>
+        <artifactId>impsort-maven-plugin</artifactId>
+        <version>1.8.0</version>
       </plugin>
     </plugins>
   </build>
