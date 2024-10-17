@@ -42,7 +42,7 @@
     <version.jakarta.servlet>5.0.0</version.jakarta.servlet>
 
     <!-- For testing -->
-    <version.smallrye.testing>2.2.0</version.smallrye.testing>
+    <version.smallrye.testing>2.3.1</version.smallrye.testing>
     <version.wildfly>26.0.0.Final</version.wildfly>
 
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
