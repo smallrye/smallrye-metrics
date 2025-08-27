@@ -7,7 +7,10 @@ image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye
 image:https://img.shields.io/github/license/smallrye/smallrye-metrics.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
 image:https://img.shields.io/maven-central/v/io.smallrye/smallrye-metrics?color=green[]
 
-= SmallRye Metrics
+= SmallRye Metrics (Deprecated)
+
+SmallRye Metrics is no longer under development and was replaced by OpenTelemetry Metrics. In the future,
+please refer to SmallRye OpenTelemetry: https://github.com/smallrye/smallrye-opentelemetry
 
 SmallRye Metrics is an implementation of {microprofile-metrics}[Eclipse MicroProfile Metrics].
 
